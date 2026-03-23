@@ -1,4 +1,5 @@
 import { motion, type Variants } from 'framer-motion'
+import { Helmet } from 'react-helmet-async'
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Reveal } from '../components/Reveal'
@@ -30,6 +31,19 @@ export function Home() {
 
   return (
     <>
+      <Helmet>
+        <title>Trashbox</title>
+        <meta
+          name="description"
+          content="Trashbox LLC builds high-fidelity digital products through focused engineering, product strategy, and editorial design systems."
+        />
+        <meta property="og:title" content="Trashbox LLC - Home" />
+        <meta
+          property="og:description"
+          content="Explore Trashbox LLC's philosophy, selected outputs, and the next generation of digital tools."
+        />
+      </Helmet>
+
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-8 pb-36 pt-28">
         <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,_#1c1b1b_0%,_#131313_100%)]" />
         <motion.div

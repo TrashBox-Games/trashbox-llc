@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { Reveal } from '../components/Reveal'
 
@@ -57,8 +58,19 @@ const cards = [
 
 export function Apps() {
   return (
-    <div className="mx-auto max-w-screen-2xl px-8 pb-24 pt-32">
-      <header className="mb-24">
+    <>
+      <Helmet>
+        <title>Apps</title>
+        <meta
+          name="description"
+          content="Browse selected mobile and experimental applications from Trashbox LLC."
+        />
+        <meta property="og:title" content="Trashbox LLC - Apps" />
+        <meta property="og:description" content="Portfolio highlights from Trashbox LLC products and experiments." />
+      </Helmet>
+
+      <div className="mx-auto max-w-screen-2xl px-8 pb-24 pt-32">
+        <header className="mb-24">
         <motion.div
           className="flex flex-col justify-between gap-8 md:flex-row md:items-end"
           initial={{ opacity: 0, y: 20 }}
@@ -85,79 +97,80 @@ export function Apps() {
             </button>
           </div>
         </motion.div>
-      </header>
+        </header>
 
-      <div className="grid grid-cols-1 gap-px bg-outline-variant/20 md:grid-cols-12">
-        {cards.map((card, i) => (
-          <Reveal
-            key={card.title}
-            className={`group cursor-pointer overflow-hidden border border-white/5 bg-surface-container-low transition-all duration-500 hover:border-white/20 ${card.span}`}
-            delay={i * 0.05}
-          >
-            <div className={`flex h-full flex-col p-12 ${card.large ? '' : ''}`}>
-              <div className={`mb-12 flex ${card.large ? 'justify-between' : ''} ${card.large ? 'items-start' : ''}`}>
-                {card.large && (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-primary">
-                    <span className={`material-symbols-outlined ${card.iconSize} text-on-primary`}>{card.icon}</span>
-                  </div>
-                )}
-                {card.large && (
-                  <span className="rounded-full border border-outline-variant px-3 py-1 font-headline text-[10px] uppercase tracking-widest">
-                    {card.tag}
-                  </span>
-                )}
-                {!card.large && (
-                  <div className={`flex h-16 w-16 items-center justify-center ${card.iconBox}`}>
-                    <span className={`material-symbols-outlined ${card.iconSize} text-primary`}>{card.icon}</span>
-                  </div>
-                )}
+        <div className="grid grid-cols-1 gap-px bg-outline-variant/20 md:grid-cols-12">
+          {cards.map((card, i) => (
+            <Reveal
+              key={card.title}
+              className={`group cursor-pointer overflow-hidden border border-white/5 bg-surface-container-low transition-all duration-500 hover:border-white/20 ${card.span}`}
+              delay={i * 0.05}
+            >
+              <div className={`flex h-full flex-col p-12 ${card.large ? '' : ''}`}>
+                <div className={`mb-12 flex ${card.large ? 'justify-between' : ''} ${card.large ? 'items-start' : ''}`}>
+                  {card.large && (
+                    <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-primary">
+                      <span className={`material-symbols-outlined ${card.iconSize} text-on-primary`}>{card.icon}</span>
+                    </div>
+                  )}
+                  {card.large && (
+                    <span className="rounded-full border border-outline-variant px-3 py-1 font-headline text-[10px] uppercase tracking-widest">
+                      {card.tag}
+                    </span>
+                  )}
+                  {!card.large && (
+                    <div className={`flex h-16 w-16 items-center justify-center ${card.iconBox}`}>
+                      <span className={`material-symbols-outlined ${card.iconSize} text-primary`}>{card.icon}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className={card.large ? 'mt-auto' : 'mt-auto'}>
+                  {!card.large && (
+                    <span className="mb-2 block font-headline text-[10px] uppercase tracking-widest text-outline">{card.tag}</span>
+                  )}
+                  <h2 className={`mb-4 font-headline font-bold tracking-tighter text-primary ${card.large ? 'text-4xl' : 'text-3xl'}`}>
+                    {card.title}
+                  </h2>
+                  <p
+                    className={`font-body leading-relaxed text-on-surface-variant ${card.large ? 'max-w-md text-lg' : 'text-sm'}`}
+                  >
+                    {card.body}
+                  </p>
+                  {card.large && (
+                    <div className="mt-8 flex items-center gap-2 font-headline text-sm font-bold uppercase tracking-tighter text-primary transition-all group-hover:gap-4">
+                      Explore Project <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <div className={card.large ? 'mt-auto' : 'mt-auto'}>
-                {!card.large && (
-                  <span className="mb-2 block font-headline text-[10px] uppercase tracking-widest text-outline">{card.tag}</span>
-                )}
-                <h2 className={`mb-4 font-headline font-bold tracking-tighter text-primary ${card.large ? 'text-4xl' : 'text-3xl'}`}>
-                  {card.title}
-                </h2>
-                <p
-                  className={`font-body leading-relaxed text-on-surface-variant ${card.large ? 'max-w-md text-lg' : 'text-sm'}`}
-                >
-                  {card.body}
-                </p>
-                {card.large && (
-                  <div className="mt-8 flex items-center gap-2 font-headline text-sm font-bold uppercase tracking-tighter text-primary transition-all group-hover:gap-4">
-                    Explore Project <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-
-      <Reveal className="mb-24 mt-48 text-center">
-        <h3 className="mb-8 font-headline text-4xl font-bold tracking-tighter text-primary md:text-5xl">
-          Have a vision for a monolith?
-        </h3>
-        <p className="mx-auto mb-12 max-w-xl text-lg text-outline font-body">
-          We partner with select founders to translate complex ideas into kinetic mobile experiences.
-        </p>
-        <div className="flex flex-col justify-center gap-4 md:flex-row">
-          <Link
-            to="/services#contact"
-            className="bg-primary px-12 py-4 font-headline text-sm font-bold uppercase tracking-widest text-on-primary transition-transform active:scale-95"
-          >
-            Start a Project
-          </Link>
-          <Link
-            to="/services"
-            className="border border-outline-variant px-12 py-4 font-headline text-sm font-bold uppercase tracking-widest text-primary transition-colors hover:bg-white/5"
-          >
-            View Services
-          </Link>
+            </Reveal>
+          ))}
         </div>
-      </Reveal>
-    </div>
+
+        <Reveal className="mb-24 mt-48 text-center">
+          <h3 className="mb-8 font-headline text-4xl font-bold tracking-tighter text-primary md:text-5xl">
+            Have a vision for a monolith?
+          </h3>
+          <p className="mx-auto mb-12 max-w-xl text-lg text-outline font-body">
+            We partner with select founders to translate complex ideas into kinetic mobile experiences.
+          </p>
+          <div className="flex flex-col justify-center gap-4 md:flex-row">
+            <Link
+              to="/services#contact"
+              className="bg-primary px-12 py-4 font-headline text-sm font-bold uppercase tracking-widest text-on-primary transition-transform active:scale-95"
+            >
+              Start a Project
+            </Link>
+            <Link
+              to="/services"
+              className="border border-outline-variant px-12 py-4 font-headline text-sm font-bold uppercase tracking-widest text-primary transition-colors hover:bg-white/5"
+            >
+              View Services
+            </Link>
+          </div>
+        </Reveal>
+      </div>
+    </>
   )
 }

@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { Helmet } from 'react-helmet-async'
 import { useLocation } from 'react-router-dom'
 import { Reveal } from '../components/Reveal'
 
@@ -18,7 +19,21 @@ export function Services() {
   }
 
   return (
-    <div className="mx-auto max-w-screen-2xl px-8 pb-24 pt-32">
+    <>
+      <Helmet>
+        <title>Services</title>
+        <meta
+          name="description"
+          content="Discover Trashbox LLC services in app design, full-stack development, and AI integration."
+        />
+        <meta property="og:title" content="Trashbox LLC - Services" />
+        <meta
+          property="og:description"
+          content="Start a project with Trashbox LLC across product strategy, engineering, and intelligent systems."
+        />
+      </Helmet>
+
+      <div className="mx-auto max-w-screen-2xl px-8 pb-24 pt-32">
       <header className="mb-32">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
           <p className="mb-6 font-label text-xs uppercase tracking-[0.4em] text-outline">Capabilities</p>
@@ -180,6 +195,7 @@ export function Services() {
           </div>
         </motion.form>
       </section>
-    </div>
+      </div>
+    </>
   )
 }
