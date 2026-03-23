@@ -28,6 +28,7 @@ jobs:
         working-directory: web
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
+          VITE_BASE_PATH: /
         run: |
           npm ci
           npm run build
