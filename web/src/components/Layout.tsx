@@ -9,14 +9,14 @@ export function Layout() {
   return (
     <div className="min-h-dvh flex flex-col">
       <Navbar />
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <motion.main
-          key={location.pathname + location.hash}
+          key={location.pathname}
           className="flex-1"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          initial={false}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 1 }}
+          transition={{ duration: 0.01 }}
         >
           <Outlet />
         </motion.main>
