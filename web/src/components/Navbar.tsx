@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import trashboxLogoWhite from '../assets/trashbox-logo-white.png'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
@@ -42,8 +43,8 @@ export function Navbar() {
         ].join(' ')}
       >
         <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-5 md:px-8 md:py-6">
-          <Link to="/" className="font-headline text-xl font-bold uppercase tracking-tighter text-white md:text-2xl">
-            trashbox llc
+          <Link to="/" className="inline-flex items-center" aria-label="Trashbox LLC home">
+            <img src={trashboxLogoWhite} alt="Trashbox LLC logo" className="h-9 w-auto md:h-10" />
           </Link>
 
           <div className="hidden items-center gap-10 md:flex md:gap-12">
@@ -78,7 +79,7 @@ export function Navbar() {
               aria-label={open ? 'Close menu' : 'Open menu'}
               onClick={() => setOpen((v) => !v)}
             >
-              <span className="material-symbols-outlined !text-2xl">{open ? 'close' : 'menu'}</span>
+              <span className="material-symbols-outlined text-2xl!">{open ? 'close' : 'menu'}</span>
             </button>
           </div>
         </div>
