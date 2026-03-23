@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline": "#919191",
+              "error-container": "#93000a",
+              "surface-container-highest": "#353534",
+              "on-error-container": "#ffdad6",
+              "secondary-container": "#464747",
+              "on-secondary-fixed": "#1a1c1c",
+              "on-secondary-fixed-variant": "#3a3c3c",
+              "on-tertiary": "#1b1b1b",
+              "background": "#131313",
+              "secondary": "#c7c6c6",
+              "on-secondary-container": "#e3e2e2",
+              "secondary-fixed-dim": "#ababab",
+              "primary-container": "#d4d4d4",
+              "surface-container-high": "#2a2a2a",
+              "surface": "#131313",
+              "error": "#ffb4ab",
+              "inverse-surface": "#e5e2e1",
+              "on-surface-variant": "#c6c6c6",
+              "primary": "#ffffff",
+              "surface-tint": "#c6c6c7",
+              "surface-container": "#201f1f",
+              "inverse-primary": "#5d5f5f",
+              "on-tertiary-fixed": "#ffffff",
+              "tertiary": "#e2e2e2",
+              "secondary-fixed": "#c7c6c6",
+              "tertiary-fixed-dim": "#474747",
+              "on-tertiary-fixed-variant": "#e2e2e2",
+              "on-background": "#e5e2e1",
+              "on-secondary": "#1a1c1c",
+              "on-primary-container": "#000000",
+              "surface-dim": "#131313",
+              "surface-container-lowest": "#0e0e0e",
+              "tertiary-fixed": "#5e5e5e",
+              "on-primary": "#1a1c1c",
+              "primary-fixed-dim": "#454747",
+              "on-primary-fixed": "#ffffff",
+              "surface-bright": "#3a3939",
+              "primary-fixed": "#5d5f5f",
+              "surface-container-low": "#1c1b1b",
+              "on-surface": "#e5e2e1",
+              "surface-variant": "#353534",
+              "tertiary-container": "#919191",
+              "on-tertiary-container": "#000000",
+              "on-primary-fixed-variant": "#e2e2e2",
+              "outline-variant": "#474747",
+              "on-error": "#690005",
+              "inverse-on-surface": "#313030"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Manrope"],
+              "label": ["Space Grotesk"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            font-family: 'Manrope', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-transparent backdrop-blur-xl">
+<div class="flex justify-between items-center px-8 py-6 max-w-screen-2xl mx-auto">
+<div class="text-2xl font-bold tracking-tighter text-white uppercase font-['Space_Grotesk']">
+                trashbox llc
+            </div>
+<div class="hidden md:flex items-center gap-12">
+<a class="text-white/60 hover:text-white transition-colors font-['Space_Grotesk'] tracking-tight text-sm uppercase" href="#">Home</a>
+<a class="text-white font-bold border-b-2 border-white pb-1 font-['Space_Grotesk'] tracking-tight text-sm uppercase" href="#">Apps</a>
+<a class="text-white/60 hover:text-white transition-colors font-['Space_Grotesk'] tracking-tight text-sm uppercase" href="#">Services</a>
+<a class="text-white/60 hover:text-white transition-colors font-['Space_Grotesk'] tracking-tight text-sm uppercase" href="#">About</a>
+</div>
+<button class="bg-white text-on-primary px-6 py-2 font-['Space_Grotesk'] font-bold text-xs uppercase tracking-widest hover:opacity-80 transition-opacity duration-300 active:scale-95">
+                Contact
+            </button>
+</div>
+</nav>
+<main class="pt-32 pb-24 px-8 max-w-screen-2xl mx-auto">
+<!-- Header Section -->
+<header class="mb-24">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
+<div class="max-w-3xl">
+<span class="font-['Space_Grotesk'] text-xs uppercase tracking-[0.3em] text-outline mb-6 block">Portfolio / 2024</span>
+<h1 class="font-['Space_Grotesk'] text-6xl md:text-8xl font-bold tracking-tighter text-primary leading-[0.9]">
+                        Selected <br/>Mobile Works.
+                    </h1>
+</div>
+<div class="flex items-center gap-4 text-outline font-['Space_Grotesk'] text-xs uppercase tracking-widest">
+<span>Filter:</span>
+<button class="text-primary border-b border-primary pb-1">All Projects</button>
+<button class="hover:text-primary transition-colors">iOS</button>
+<button class="hover:text-primary transition-colors">Android</button>
+</div>
+</div>
+</header>
+<!-- Bento Grid / Curated Gallery -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-px bg-outline-variant/20">
+<!-- App Card 1: Large Feature -->
+<div class="md:col-span-8 bg-surface-container-low group cursor-pointer overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-500">
+<div class="p-12 h-full flex flex-col">
+<div class="flex justify-between items-start mb-24">
+<div class="w-20 h-20 bg-primary flex items-center justify-center rounded-xl">
+<span class="material-symbols-outlined text-on-primary text-4xl" data-icon="token">token</span>
+</div>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest py-1 px-3 border border-outline-variant rounded-full">Utility / 01</span>
+</div>
+<div class="mt-auto">
+<h2 class="font-['Space_Grotesk'] text-4xl font-bold tracking-tighter text-primary mb-4">Vectra</h2>
+<p class="font-['Manrope'] text-on-surface-variant max-w-md leading-relaxed text-lg">
+                            A high-fidelity motion design utility for real-time physics simulation on handheld devices.
+                        </p>
+<div class="mt-8 flex items-center gap-2 text-primary font-['Space_Grotesk'] text-sm font-bold uppercase tracking-tighter group-hover:gap-4 transition-all">
+                            Explore Project <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+<!-- App Card 2: Vertical Stack -->
+<div class="md:col-span-4 bg-surface-container-low group cursor-pointer overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-500">
+<div class="p-12 h-full flex flex-col">
+<div class="mb-12">
+<div class="w-16 h-16 bg-surface-container-highest flex items-center justify-center border border-white/10">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="lens_blur">lens_blur</span>
+</div>
+</div>
+<div class="mt-auto">
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest text-outline block mb-2">Experimental / 02</span>
+<h2 class="font-['Space_Grotesk'] text-3xl font-bold tracking-tighter text-primary mb-4">Aura</h2>
+<p class="font-['Manrope'] text-on-surface-variant leading-relaxed text-sm">
+                            Ambient light sequencing for creative workspaces and focus sessions.
+                        </p>
+</div>
+</div>
+</div>
+<!-- App Card 3 -->
+<div class="md:col-span-4 bg-surface-container-low group cursor-pointer overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-500">
+<div class="p-12 h-full flex flex-col">
+<div class="mb-12">
+<div class="w-16 h-16 bg-surface-container-highest flex items-center justify-center border border-white/10">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="graphic_eq">graphic_eq</span>
+</div>
+</div>
+<div class="mt-auto">
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest text-outline block mb-2">Audio / 03</span>
+<h2 class="font-['Space_Grotesk'] text-3xl font-bold tracking-tighter text-primary mb-4">Oscil</h2>
+<p class="font-['Manrope'] text-on-surface-variant leading-relaxed text-sm">
+                            Granular synthesis engine optimized for mobile touch surfaces.
+                        </p>
+</div>
+</div>
+</div>
+<!-- App Card 4 -->
+<div class="md:col-span-4 bg-surface-container-low group cursor-pointer overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-500">
+<div class="p-12 h-full flex flex-col">
+<div class="mb-12">
+<div class="w-16 h-16 bg-surface-container-highest flex items-center justify-center border border-white/10">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="grid_view">grid_view</span>
+</div>
+</div>
+<div class="mt-auto">
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest text-outline block mb-2">Productivity / 04</span>
+<h2 class="font-['Space_Grotesk'] text-3xl font-bold tracking-tighter text-primary mb-4">Monolith</h2>
+<p class="font-['Manrope'] text-on-surface-variant leading-relaxed text-sm">
+                            A spatial organization tool for complex project hierarchies.
+                        </p>
+</div>
+</div>
+</div>
+<!-- App Card 5 -->
+<div class="md:col-span-4 bg-surface-container-low group cursor-pointer overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-500">
+<div class="p-12 h-full flex flex-col">
+<div class="mb-12">
+<div class="w-16 h-16 bg-surface-container-highest flex items-center justify-center border border-white/10">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="motion_sensor_active">motion_sensor_active</span>
+</div>
+</div>
+<div class="mt-auto">
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest text-outline block mb-2">Haptics / 05</span>
+<h2 class="font-['Space_Grotesk'] text-3xl font-bold tracking-tighter text-primary mb-4">Pulse</h2>
+<p class="font-['Manrope'] text-on-surface-variant leading-relaxed text-sm">
+                            Deep-layer haptic feedback testing and sequence design tool.
+                        </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Call to Action Section -->
+<section class="mt-48 mb-24 text-center">
+<h3 class="font-['Space_Grotesk'] text-4xl md:text-5xl font-bold tracking-tighter text-primary mb-8">Have a vision for a monolith?</h3>
+<p class="font-['Manrope'] text-outline max-w-xl mx-auto mb-12 text-lg">
+                We partner with select founders to translate complex ideas into kinetic mobile experiences.
+            </p>
+<div class="flex flex-col md:flex-row justify-center gap-4">
+<button class="bg-primary text-on-primary px-12 py-4 font-['Space_Grotesk'] font-bold uppercase tracking-widest text-sm active:scale-95 transition-transform">
+                    Start a Project
+                </button>
+<button class="border border-outline-variant text-primary px-12 py-4 font-['Space_Grotesk'] font-bold uppercase tracking-widest text-sm hover:bg-white/5 transition-colors">
+                    View Services
+                </button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 px-8 border-t border-white/10 bg-[#131313]">
+<div class="flex flex-col md:flex-row justify-between items-center gap-6 max-w-screen-2xl mx-auto">
+<div class="text-lg font-bold tracking-tighter text-white font-['Space_Grotesk']">
+                trashbox llc
+            </div>
+<p class="font-['Manrope'] text-xs opacity-50 text-white">
+                © 2024 trashbox llc. Built for the kinetic monolith.
+            </p>
+<div class="flex gap-8">
+<a class="text-white/40 hover:text-white transition-colors font-['Manrope'] text-xs" href="#">Twitter</a>
+<a class="text-white/40 hover:text-white transition-colors font-['Manrope'] text-xs" href="#">GitHub</a>
+<a class="text-white/40 hover:text-white transition-colors font-['Manrope'] text-xs" href="#">LinkedIn</a>
+<a class="text-white/40 hover:text-white transition-colors font-['Manrope'] text-xs" href="#">Instagram</a>
+</div>
+</div>
+</footer>
+</body></html>
