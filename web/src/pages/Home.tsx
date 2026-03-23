@@ -275,9 +275,9 @@ export function Home() {
             </Link>
             <a
               className="font-label text-xs uppercase tracking-[0.4em] text-white/40 transition-colors hover:text-white"
-              href="mailto:hello@trashbox.llc"
+              href="mailto:contact@trashbox.io"
             >
-              hello@trashbox.llc
+              contact@trashbox.io
             </a>
           </div>
         </Reveal>
