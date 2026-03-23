@@ -30,7 +30,7 @@ export function Home() {
 
   return (
     <>
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-8 pt-28">
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-8 pb-36 pt-28">
         <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,_#1c1b1b_0%,_#131313_100%)]" />
         <motion.div
           className="relative z-10 mx-auto max-w-screen-xl text-center"
@@ -80,6 +80,7 @@ export function Home() {
               View Projects
             </Link>
           </motion.div>
+
         </motion.div>
 
         <motion.div
