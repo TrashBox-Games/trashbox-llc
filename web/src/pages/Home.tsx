@@ -52,15 +52,6 @@ export function Home() {
           initial="hidden"
           animate="visible"
         >
-          <motion.div
-            variants={heroItem}
-            className="mb-8 inline-flex items-center gap-2 rounded-full border border-outline-variant/20 bg-secondary-container/30 px-4 py-1.5"
-          >
-            <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-            <span className="font-label text-[10px] uppercase tracking-[0.2em] text-on-secondary-container">
-              The Kinetic Monolith 2024
-            </span>
-          </motion.div>
           <motion.h1
             variants={heroItem}
             className="mb-6 font-headline text-[clamp(3.5rem,10vw,8rem)] font-bold uppercase leading-[0.9] tracking-tighter text-white"
