@@ -1,14 +1,14 @@
-import { motion, type Variants } from 'framer-motion'
-import { Helmet } from 'react-helmet-async'
-import { useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { Reveal } from '../components/Reveal'
+import { motion, type Variants } from "framer-motion";
+import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Reveal } from "../components/Reveal";
 
 const heroStagger: Variants = {
   visible: {
     transition: { staggerChildren: 0.09, delayChildren: 0.12 },
   },
-}
+};
 
 const heroItem: Variants = {
   hidden: { opacity: 0, y: 28 },
@@ -17,17 +17,17 @@ const heroItem: Variants = {
     y: 0,
     transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] as const },
   },
-}
+};
 
 export function Home() {
-  const location = useLocation()
+  const location = useLocation();
 
   useEffect(() => {
-    if (location.hash !== '#about') return
+    if (location.hash !== "#about") return;
     requestAnimationFrame(() => {
-      document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })
-    })
-  }, [location])
+      document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });
+    });
+  }, [location]);
 
   return (
     <>
@@ -60,18 +60,15 @@ export function Home() {
           </motion.h1>
           <motion.p
             variants={heroItem}
-            className="mb-12 font-headline text-lg font-medium italic tracking-tight text-white md:text-2xl"
-          >
-            &ldquo;One man&apos;s trash is another company&apos;s name&rdquo;
-          </motion.p>
-          <motion.p
-            variants={heroItem}
             className="mb-12 max-w-2xl mx-auto text-lg font-light leading-relaxed text-on-surface-variant md:text-xl"
           >
-            Architecting the next generation of digital tools through high-fidelity engineering and editorial design
-            systems.
+            Architecting the next generation of digital tools through
+            high-fidelity engineering and editorial design systems.
           </motion.p>
-          <motion.div variants={heroItem} className="flex flex-col items-center justify-center gap-6 md:flex-row">
+          <motion.div
+            variants={heroItem}
+            className="flex flex-col items-center justify-center gap-6 md:flex-row"
+          >
             <Link
               to="/services#contact"
               className="kinetic-gradient monolith-shadow px-10 py-5 font-headline text-sm font-bold uppercase tracking-widest text-on-primary-container transition-transform hover:scale-[1.02] active:scale-95"
@@ -85,7 +82,6 @@ export function Home() {
               View Projects
             </Link>
           </motion.div>
-
         </motion.div>
 
         <motion.div
@@ -94,11 +90,13 @@ export function Home() {
           animate={{ opacity: 1 }}
           transition={{ delay: 1.1, duration: 0.6 }}
         >
-          <span className="font-label text-[10px] uppercase tracking-widest text-outline">Explore</span>
+          <span className="font-label text-[10px] uppercase tracking-widest text-outline">
+            Explore
+          </span>
           <motion.div
             className="h-12 w-px bg-gradient-to-b from-primary to-transparent"
             animate={{ scaleY: [1, 0.6, 1] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           />
         </motion.div>
       </section>
@@ -107,8 +105,12 @@ export function Home() {
         <div className="mx-auto max-w-screen-2xl">
           <Reveal className="mb-24 flex flex-col items-end justify-between gap-8 md:flex-row">
             <div className="max-w-xl">
-              <span className="mb-4 block font-label text-xs uppercase tracking-[0.3em] text-primary/40">Portfolio</span>
-              <h2 className="font-headline text-5xl font-bold tracking-tight text-white md:text-7xl">Selected Outputs.</h2>
+              <span className="mb-4 block font-label text-xs uppercase tracking-[0.3em] text-primary/40">
+                Portfolio
+              </span>
+              <h2 className="font-headline text-5xl font-bold tracking-tight text-white md:text-7xl">
+                Selected Outputs.
+              </h2>
             </div>
             <div className="border-b border-outline-variant pb-2 font-label text-sm uppercase tracking-widest text-on-surface-variant">
               01 — 04
@@ -128,11 +130,16 @@ export function Home() {
                     <span className="bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-black">
                       Fintech
                     </span>
-                    <span className="font-label text-[10px] uppercase tracking-widest text-white/40">2024</span>
+                    <span className="font-label text-[10px] uppercase tracking-widest text-white/40">
+                      2024
+                    </span>
                   </div>
-                  <h3 className="mb-4 font-headline text-4xl font-bold text-white md:text-5xl">Aura Capital</h3>
+                  <h3 className="mb-4 font-headline text-4xl font-bold text-white md:text-5xl">
+                    Aura Capital
+                  </h3>
                   <p className="max-w-md text-white/60">
-                    The world&apos;s first AI-driven wealth management interface for the kinetic monolith.
+                    The world&apos;s first AI-driven wealth management interface
+                    for the kinetic monolith.
                   </p>
                 </div>
               </div>
@@ -146,10 +153,16 @@ export function Home() {
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2VpWbGD_AuHhU7nWuqdXz3lK5xLABLtdf7wzrkjAgP_ojXvZW8bIyA4tHAYZOtHSRNwI1LEW_i1V45NZM4-sUYmfjS6O6rcQ_DCGgO6Sc-BNoznDoTfqAgE-bgtFOBFQM6m5EpNLsvl6gTEa7ZWTPuUjxP6A1x8LJGuo622CTqHRpNXJ9A01OO-sfHOaXp2-jPrumBZM6N-qFyEXoCqUhZNq1nUMQOOnhRNsJAo39sHFePgZwfdG7aQza3PJuXA71frZBa2dUYOE"
                 />
                 <div className="absolute inset-0 flex flex-col justify-between p-8">
-                  <span className="material-symbols-outlined self-end text-white">arrow_outward</span>
+                  <span className="material-symbols-outlined self-end text-white">
+                    arrow_outward
+                  </span>
                   <div>
-                    <span className="mb-2 block font-label text-[10px] uppercase tracking-widest text-primary/40">Web3</span>
-                    <h3 className="font-headline text-2xl font-bold text-white">Prism Node</h3>
+                    <span className="mb-2 block font-label text-[10px] uppercase tracking-widest text-primary/40">
+                      Web3
+                    </span>
+                    <h3 className="font-headline text-2xl font-bold text-white">
+                      Prism Node
+                    </h3>
                   </div>
                 </div>
               </div>
@@ -163,8 +176,12 @@ export function Home() {
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8KuTXifQLkGMwyxwchwXbVaeqD-kvOJ5gRUiQ_qoy8DV_HuXzVuaSWPXxScxADMe2vDAA9S8NKF_lF9ASSf_lRBDZYAoebY7FHbc4xPiMJ45jIvur-iFDQ1SmpDwmtdRjBQ8b-C3KG0zg9BXovmARPX8FLXTVu7DwDUDT1T9l55uM6UskCPKWfUebpQiJHNbYhqu0vLAzEtTVGRKKnSkqr6_ThVslNKylbbGizbS2MMwRLE8TGIP3-liwL6gnjpAnuSrDFmNgtPE"
                 />
                 <div className="absolute inset-0 flex flex-col justify-end p-8">
-                  <h3 className="mb-2 font-headline text-2xl font-bold text-white">Ghost OS</h3>
-                  <p className="text-sm text-white/40">Experimental spatial operating system.</p>
+                  <h3 className="mb-2 font-headline text-2xl font-bold text-white">
+                    Ghost OS
+                  </h3>
+                  <p className="text-sm text-white/40">
+                    Experimental spatial operating system.
+                  </p>
                 </div>
               </div>
             </Reveal>
@@ -177,8 +194,12 @@ export function Home() {
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSCI4O9qpABcQQI2Cwbess7KBaIAhFgRBp5ihcLyz7nT3Oft6QrjRFfGxL328LBqvUM7yUu2w6FczMsl9oMiMGrXWPqrCGigjsyUBzrcz2s5SUFjt6zf6bk7vm2VCM_ipaVD52v8heKLb-OZfg-SahldXScn_BWQFY-jkH2KIJ0uw1SOiKwb0g5kMD4dqTSde2BM-VfnrLKrYbHfFWvyjI931WZWWytwcWPVgPMda5u7--hPFe0tFfgHQJ48MY6-mqiQrhqfSD4_s"
                 />
                 <div className="absolute inset-0 flex flex-col justify-center bg-gradient-to-r from-black/80 to-transparent p-12">
-                  <span className="mb-2 font-label text-[10px] uppercase tracking-widest text-primary/40">SaaS</span>
-                  <h3 className="font-headline text-4xl font-bold text-white">Monolith Analytics</h3>
+                  <span className="mb-2 font-label text-[10px] uppercase tracking-widest text-primary/40">
+                    SaaS
+                  </span>
+                  <h3 className="font-headline text-4xl font-bold text-white">
+                    Monolith Analytics
+                  </h3>
                 </div>
               </div>
             </Reveal>
@@ -196,52 +217,67 @@ export function Home() {
                 <span className="text-outline-variant">Elegance.</span>
               </h2>
               <p className="mb-12 text-xl leading-relaxed text-on-surface-variant">
-                We don&apos;t just build apps. We construct digital environments that respect the user&apos;s intelligence and
-                the machine&apos;s precision.
+                We don&apos;t just build apps. We construct digital environments
+                that respect the user&apos;s intelligence and the machine&apos;s
+                precision.
               </p>
               <div className="space-y-6">
-                {['Product Strategy', 'UI/UX Systems', 'AI Integration'].map((label, i) => (
-                  <motion.div
-                    key={label}
-                    className="flex items-center gap-4 text-white"
-                    initial={{ opacity: 0, x: -12 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.08, duration: 0.45 }}
-                  >
-                    <span className="font-label text-[10px] text-outline">{String(i + 1).padStart(2, '0')}</span>
-                    <span className="font-headline text-sm font-bold uppercase tracking-widest">{label}</span>
-                  </motion.div>
-                ))}
+                {["Product Strategy", "UI/UX Systems", "AI Integration"].map(
+                  (label, i) => (
+                    <motion.div
+                      key={label}
+                      className="flex items-center gap-4 text-white"
+                      initial={{ opacity: 0, x: -12 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.08, duration: 0.45 }}
+                    >
+                      <span className="font-label text-[10px] text-outline">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="font-headline text-sm font-bold uppercase tracking-widest">
+                        {label}
+                      </span>
+                    </motion.div>
+                  ),
+                )}
               </div>
             </Reveal>
 
             <div className="space-y-16">
               {[
                 {
-                  icon: 'terminal',
-                  title: 'Kinetic Codebases',
-                  body: 'Lightweight, performant, and infinitely scalable architectures built with modern tech stacks like Rust, Go, and React.',
-                  border: 'border-primary',
+                  icon: "terminal",
+                  title: "Kinetic Codebases",
+                  body: "Lightweight, performant, and infinitely scalable architectures built with modern tech stacks like Rust, Go, and React.",
+                  border: "border-primary",
                 },
                 {
-                  icon: 'auto_awesome',
-                  title: 'Intelligent Motion',
-                  body: 'We utilize motion not as decoration, but as a functional guide for user attention and cognitive flow.',
-                  border: 'border-outline-variant',
+                  icon: "auto_awesome",
+                  title: "Intelligent Motion",
+                  body: "We utilize motion not as decoration, but as a functional guide for user attention and cognitive flow.",
+                  border: "border-outline-variant",
                 },
                 {
-                  icon: 'token',
-                  title: 'Editorial Design',
-                  body: 'Precision typography and intentional white space that turns software into a premium editorial experience.',
-                  border: 'border-outline-variant',
+                  icon: "token",
+                  title: "Editorial Design",
+                  body: "Precision typography and intentional white space that turns software into a premium editorial experience.",
+                  border: "border-outline-variant",
                 },
               ].map((card, idx) => (
                 <Reveal key={card.title} delay={idx * 0.06}>
-                  <div className={`border-l-2 ${card.border} bg-surface-container-low p-12`}>
-                    <span className="material-symbols-outlined mb-6 text-primary">{card.icon}</span>
-                    <h4 className="mb-4 font-headline text-2xl font-bold uppercase tracking-tight text-white">{card.title}</h4>
-                    <p className="leading-relaxed text-on-surface-variant">{card.body}</p>
+                  <div
+                    className={`border-l-2 ${card.border} bg-surface-container-low p-12`}
+                  >
+                    <span className="material-symbols-outlined mb-6 text-primary">
+                      {card.icon}
+                    </span>
+                    <h4 className="mb-4 font-headline text-2xl font-bold uppercase tracking-tight text-white">
+                      {card.title}
+                    </h4>
+                    <p className="leading-relaxed text-on-surface-variant">
+                      {card.body}
+                    </p>
                   </div>
                 </Reveal>
               ))}
@@ -274,5 +310,5 @@ export function Home() {
         </Reveal>
       </section>
     </>
-  )
+  );
 }
