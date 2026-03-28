@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-variant": "#353534",
+              "on-background": "#e5e2e1",
+              "surface-container-high": "#2a2a2a",
+              "surface": "#131313",
+              "error-container": "#93000a",
+              "secondary": "#c7c6c6",
+              "on-tertiary": "#1b1b1b",
+              "on-primary-fixed": "#ffffff",
+              "secondary-fixed-dim": "#ababab",
+              "tertiary": "#e2e2e2",
+              "on-primary": "#1a1c1c",
+              "inverse-primary": "#5d5f5f",
+              "surface-container-lowest": "#0e0e0e",
+              "on-tertiary-container": "#000000",
+              "on-surface-variant": "#c6c6c6",
+              "outline-variant": "#474747",
+              "inverse-on-surface": "#313030",
+              "on-secondary-fixed": "#1a1c1c",
+              "on-primary-container": "#000000",
+              "primary": "#ffffff",
+              "inverse-surface": "#e5e2e1",
+              "primary-fixed-dim": "#454747",
+              "on-secondary": "#1a1c1c",
+              "on-error-container": "#ffdad6",
+              "primary-container": "#d4d4d4",
+              "surface-tint": "#c6c6c7",
+              "on-secondary-fixed-variant": "#3a3c3c",
+              "on-secondary-container": "#e3e2e2",
+              "surface-container": "#201f1f",
+              "secondary-fixed": "#c7c6c6",
+              "on-tertiary-fixed-variant": "#e2e2e2",
+              "surface-dim": "#131313",
+              "secondary-container": "#464747",
+              "surface-container-low": "#1c1b1b",
+              "surface-container-highest": "#353534",
+              "error": "#ffb4ab",
+              "on-surface": "#e5e2e1",
+              "on-error": "#690005",
+              "tertiary-fixed": "#5e5e5e",
+              "surface-bright": "#3a3939",
+              "tertiary-container": "#919191",
+              "background": "#131313"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Manrope"],
+              "label": ["Space Grotesk"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+      }
+      .kinetic-gradient {
+        background: radial-gradient(circle at 50% 50%, #1c1b1b 0%, #131313 100%);
+      }
+      .text-glow {
+        text-shadow: 0 0 30px rgba(255,255,255,0.1);
+      }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- Suppressed Navigation Shell for Focused 404 Task -->
+<main class="min-h-screen flex flex-col items-center justify-center px-6 md:px-24 kinetic-gradient relative overflow-hidden">
+<!-- Abstract Background Element (The "Ghost" Logo) -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+<img class="w-[80vw] max-w-4xl grayscale brightness-50" data-alt="large minimalist logo of trashbox llc as a semi-transparent architectural silhouette in dark grey monochrome" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzRuM2kTXMt23nca28pSKz6oVMsstS2FEYErJD1ggAXwamkTAh3ciHKaxikO-yHRTBbEeWQAFJRtoAONJ0JdQm2JUuZdj-IV7H7uZEfFqdEQcsu-zUHsdjpHvlQELheIx47u4YLFAEp6Gvb48vG49ZH2EiZCf_aAyAWX9rPcIO0RI_ire00avlAPBvFG5licJI-HJWC1R-gGDh-4qDEAQMVjkyrUxQmPHDxDNyQHSVJR2i4c4MJWLJee9sg6AbAlZ9Gkzz9SglXGY"/>
+</div>
+<!-- Hero Error Content -->
+<div class="relative z-10 w-full max-w-7xl flex flex-col md:flex-row items-end justify-between gap-12">
+<div class="flex flex-col items-start max-w-2xl">
+<span class="font-label text-xs tracking-[0.4em] uppercase text-outline mb-8 block">Error Code 0x404</span>
+<h1 class="font-headline text-[12rem] md:text-[22rem] leading-none font-bold tracking-tighter text-primary text-glow select-none">
+                    404
+                </h1>
+<div class="mt-[-2rem] md:mt-[-4rem] ml-2">
+<h2 class="font-headline text-4xl md:text-6xl font-light tracking-tight text-on-surface max-w-md">
+                        This link belongs in the <span class="italic font-normal">trash.</span>
+</h2>
+<p class="font-body text-secondary mt-6 text-lg max-w-sm leading-relaxed opacity-70">
+                        The resource you are looking for has been decommissioned or moved to a permanent archive.
+                    </p>
+</div>
+</div>
+<!-- Kinetic Action Column -->
+<div class="flex flex-col items-start md:items-end w-full md:w-auto gap-12">
+<div class="flex flex-col gap-4 w-full md:w-64">
+<a class="group flex items-center justify-between bg-primary text-on-primary px-6 py-5 rounded-DEFAULT transition-all duration-300 hover:scale-[0.98] active:scale-95" href="/">
+<span class="font-label uppercase tracking-widest text-sm font-bold">Back to Safety</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+<a class="group flex items-center justify-between border border-outline-variant/20 px-6 py-5 rounded-DEFAULT transition-all duration-300 hover:bg-surface-container-low" href="/archive">
+<span class="font-label uppercase tracking-widest text-sm text-primary">View Archive</span>
+<span class="material-symbols-outlined opacity-40">inventory_2</span>
+</a>
+</div>
+<nav class="flex flex-col items-start md:items-end gap-3">
+<p class="font-label text-[10px] tracking-[0.3em] uppercase text-outline-variant mb-2">Helpful Destinations</p>
+<ul class="flex flex-col items-start md:items-end gap-2">
+<li><a class="text-sm font-medium hover:text-primary transition-colors py-1 block" href="#">Studio Portfolio</a></li>
+<li><a class="text-sm font-medium hover:text-primary transition-colors py-1 block" href="#">Active Apps</a></li>
+<li><a class="text-sm font-medium hover:text-primary transition-colors py-1 block" href="#">Contact Engineering</a></li>
+<li><a class="text-sm font-medium hover:text-primary transition-colors py-1 block" href="#">Status Page</a></li>
+</ul>
+</nav>
+</div>
+</div>
+<!-- Technical Metadata Accent -->
+<div class="absolute bottom-12 left-12 hidden md:block">
+<div class="flex items-center gap-4">
+<div class="w-12 h-[1px] bg-outline-variant/30"></div>
+<span class="font-mono text-[10px] text-outline-variant tracking-widest uppercase">System.NullReferenceException: Object not found</span>
+</div>
+</div>
+</main>
+<!-- Footer Component from Shared JSON -->
+<footer class="bg-[#131313] dark:bg-[#131313] w-full py-12 px-8 border-t border-[#474747]/15">
+<div class="flex flex-col md:flex-row justify-between items-center gap-6 max-w-7xl mx-auto">
+<div class="text-lg font-black text-white">trashbox llc</div>
+<div class="flex gap-8">
+<a class="font-['Manrope'] text-xs tracking-widest uppercase text-gray-600 hover:text-white transition-colors" href="#">Privacy Policy</a>
+<a class="font-['Manrope'] text-xs tracking-widest uppercase text-gray-600 hover:text-white transition-colors" href="#">Terms of Service</a>
+<a class="font-['Manrope'] text-xs tracking-widest uppercase text-gray-600 hover:text-white transition-colors" href="#">Twitter</a>
+<a class="font-['Manrope'] text-xs tracking-widest uppercase text-gray-600 hover:text-white transition-colors" href="#">GitHub</a>
+</div>
+<p class="font-['Manrope'] text-xs tracking-widest uppercase text-gray-600">
+                © 2024 trashbox llc. All rights reserved.
+            </p>
+</div>
+</footer>
+</body></html>

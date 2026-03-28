@@ -3,6 +3,7 @@ import { Layout } from './components/Layout'
 import { Apps } from './pages/Apps'
 import { AppMarkdownPage } from './pages/apps/AppMarkdownPage'
 import { Home } from './pages/Home'
+import { NotFound } from './pages/NotFound'
 import { Services } from './pages/Services'
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/apps" element={<Apps />} />
         <Route path="/apps/:appSlug/:pageSlug" element={<AppMarkdownPage />} />
         <Route path="/services" element={<Services />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )
