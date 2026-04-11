@@ -131,13 +131,3 @@ We may update this Privacy Policy from time to time. We will post the updated po
 **Trashbox LLC**  
 **Email:** contact@trashbox.io  
 **Address:** 25452 Northpark Lake Dr, TX 77365, United States
-
----
-
-## Checklist before you publish
-
-- [x] Replace all bracketed placeholders (`[Your …]`).  
-- [ ] Host this policy at a **public URL** (required by Google Play and recommended for App Store; AdMob also expects accurate disclosures).  
-- [ ] Complete **Google Play Data safety** and **App Store privacy labels** to match this policy.  
-- [ ] In **AdMob / GDPR / U.S. state messaging** flows, configure consent or messaging as required for your users' regions.  
-- [ ] Have a lawyer review the final text for your situation.
