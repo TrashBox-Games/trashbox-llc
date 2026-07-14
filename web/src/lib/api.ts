@@ -19,11 +19,13 @@ export interface SubmissionsListResponse {
 }
 
 export interface AccountResponse {
-  clientId: string
-  clientName: string
-  tier: 'basic' | 'premium'
-  active: boolean
-  hasBilling: boolean
+  linked: boolean
+  email?: string
+  clientId?: string
+  clientName?: string
+  tier?: 'basic' | 'premium'
+  active?: boolean
+  hasBilling?: boolean
 }
 
 export class ApiError extends Error {
@@ -108,7 +110,22 @@ export async function getAccount(): Promise<AccountResponse> {
   return (await authFetch('/account')) as unknown as AccountResponse
 }
 
-export async function startCheckout(plan: 'basic' | 'premium' = 'premium'): Promise<string> {
+export async function provisionAccount(businessName: string): Promise<
+  AccountResponse & { apiKey?: string; created?: boolean; message?: string }
+> {
+  return (await authFetch('/account/provision', {
+    method: 'POST',
+    body: JSON.stringify({ businessName }),
+  })) as unknown as AccountResponse & {
+    apiKey?: string
+    created?: boolean
+    message?: string
+  }
+}
+
+export async function startCheckout(
+  plan: 'basic' | 'premium' = 'premium',
+): Promise<string> {
   const data = (await authFetch('/billing/checkout', {
     method: 'POST',
     body: JSON.stringify({ plan }),

@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
-import { ApiError, getAccount, listSubmissions, openBillingPortal, startCheckout, type AccountResponse, type Submission } from '../lib/api'
+import { ApiError, getAccount, listSubmissions, openBillingPortal, provisionAccount, startCheckout, type AccountResponse, type Submission } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
 type AuthMode = 'signIn' | 'signUp' | 'confirm'
@@ -42,6 +42,8 @@ export function EmailPortal() {
   const [billingBusy, setBillingBusy] = useState(false)
   const [billingError, setBillingError] = useState<string | null>(null)
   const [billingNotice, setBillingNotice] = useState<string | null>(null)
+  const [businessName, setBusinessName] = useState('')
+  const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -76,20 +78,38 @@ export function EmailPortal() {
       setListBusy(true)
       setListError(null)
       try {
-        const [subs, acct] = await Promise.all([
-          listSubmissions({ limit: 50 }),
-          getAccount(),
-        ])
+        const acct = await getAccount()
         if (cancelled) return
-        setItems(subs.items)
-        setClientName(subs.clientName)
         setAccount(acct)
-        setNextCursor(subs.nextCursor)
-        setSelectedId(subs.items[0]?.submissionId ?? null)
+
+        if (!acct.linked) {
+          setItems([])
+          setClientName(null)
+          setNextCursor(undefined)
+          return
+        }
+
+        setClientName(acct.clientName || null)
+        try {
+          const subs = await listSubmissions({ limit: 50 })
+          if (cancelled) return
+          setItems(subs.items)
+          setNextCursor(subs.nextCursor)
+          setSelectedId(subs.items[0]?.submissionId ?? null)
+        } catch (err) {
+          if (cancelled) return
+          // Inactive / unpaid accounts may not list submissions yet.
+          if (err instanceof ApiError && err.status === 403) {
+            setItems([])
+            setListError(null)
+          } else {
+            setListError(err instanceof ApiError ? err.message : 'Failed to load submissions')
+          }
+        }
       } catch (err) {
         if (cancelled) return
         const message =
-          err instanceof ApiError ? err.message : 'Failed to load submissions'
+          err instanceof ApiError ? err.message : 'Failed to load account'
         setListError(message)
       } finally {
         if (!cancelled) setListBusy(false)
@@ -141,6 +161,37 @@ export function EmailPortal() {
       setListError(err instanceof ApiError ? err.message : 'Failed to load more')
     } finally {
       setListBusy(false)
+    }
+  }
+
+  async function onProvisionAccount() {
+    const name = businessName.trim()
+    if (!name) {
+      setBillingError('Enter a business name')
+      return
+    }
+    setBillingBusy(true)
+    setBillingError(null)
+    try {
+      const result = await provisionAccount(name)
+      if (result.apiKey) setIssuedApiKey(result.apiKey)
+      setAccount({
+        linked: true,
+        email: result.email,
+        clientId: result.clientId,
+        clientName: result.clientName,
+        tier: result.tier,
+        active: result.active,
+        hasBilling: result.hasBilling,
+      })
+      setClientName(result.clientName || name)
+      setBusinessName('')
+    } catch (err) {
+      setBillingError(
+        err instanceof ApiError ? err.message : 'Could not create Email Service',
+      )
+    } finally {
+      setBillingBusy(false)
     }
   }
 
@@ -354,7 +405,7 @@ export function EmailPortal() {
                 {clientName && (
                   <p className="mt-1 text-sm text-on-surface-variant">Client: {clientName}</p>
                 )}
-                {account && (
+                {account?.linked && account.tier && (
                   <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
                     Plan: <span className="text-white">{account.tier}</span>
                     {!account.active ? ' · inactive' : ''}
@@ -376,21 +427,108 @@ export function EmailPortal() {
               </p>
             )}
 
-            {account && (
+            {issuedApiKey && (
+              <section className="border border-amber-400/30 bg-surface-container-low p-6">
+                <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+                  Your API key (shown once)
+                </p>
+                <p className="mt-3 break-all font-mono text-sm text-white">{issuedApiKey}</p>
+                <p className="mt-3 text-sm text-on-surface-variant">
+                  Save this key for your website forms. It cannot be retrieved again.
+                </p>
+                <button
+                  type="button"
+                  className="mt-4 font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(issuedApiKey)
+                  }}
+                >
+                  Copy key
+                </button>
+              </section>
+            )}
+
+            {account && !account.linked && (
+              <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
+                <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+                  Get started
+                </p>
+                <h2 className="mt-3 font-headline text-2xl font-bold text-white md:text-3xl">
+                  Create Email Service
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
+                  No Form API account is linked to {account.email || 'your login'} yet. Create one
+                  now (no payment required). You can add a paid plan anytime after.
+                </p>
+                <div className="mt-8 max-w-md">
+                  <label className={labelClass} htmlFor="business-name">
+                    Business name
+                  </label>
+                  <input
+                    id="business-name"
+                    type="text"
+                    required
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    className={inputClass}
+                    placeholder="Acme Inspections"
+                  />
+                </div>
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
+                    disabled={billingBusy || !businessName.trim()}
+                    onClick={() => void onProvisionAccount()}
+                  >
+                    {billingBusy ? 'Creating…' : 'Create account'}
+                  </button>
+                </div>
+                {billingError && <p className="mt-4 text-sm text-red-300">{billingError}</p>}
+              </section>
+            )}
+
+            {account?.linked && (
               <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
                 <p className="font-label text-[10px] uppercase tracking-widest text-outline">
                   Subscription
                 </p>
                 <h2 className="mt-3 font-headline text-2xl font-bold text-white md:text-3xl">
-                  {account.tier === 'premium' ? 'Premium' : 'Basic'} plan
+                  {account.hasBilling
+                    ? account.tier === 'premium'
+                      ? 'Premium'
+                      : 'Basic'
+                    : 'No paid plan yet'}
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
-                  {account.tier === 'premium'
-                    ? 'Premium includes owner notifications plus confirmation emails to form submitters.'
-                    : 'Basic sends notification emails to you only. Upgrade to Premium for submitter confirmations.'}
+                  {account.hasBilling
+                    ? account.tier === 'premium'
+                      ? 'Premium includes owner notifications plus confirmation emails to form submitters.'
+                      : 'Basic sends notification emails to you only. Upgrade to Premium for submitter confirmations.'
+                    : 'Your Form API account is ready. Add a Stripe plan when you want paid Basic or Premium billing.'}
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
-                  {account.tier !== 'premium' && (
+                  {!account.hasBilling && (
+                    <>
+                      <button
+                        type="button"
+                        className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
+                        disabled={billingBusy}
+                        onClick={() => void onUpgrade('premium')}
+                      >
+                        {billingBusy ? 'Redirecting…' : 'Add Premium plan'}
+                      </button>
+                      <button
+                        type="button"
+                        className="border border-outline-variant/30 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
+                        disabled={billingBusy}
+                        onClick={() => void onUpgrade('basic')}
+                      >
+                        {billingBusy ? 'Redirecting…' : 'Add Basic plan'}
+                      </button>
+                    </>
+                  )}
+                  {account.hasBilling && account.tier !== 'premium' && (
                     <button
                       type="button"
                       className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
@@ -398,16 +536,6 @@ export function EmailPortal() {
                       onClick={() => void onUpgrade('premium')}
                     >
                       {billingBusy ? 'Redirecting…' : 'Upgrade to Premium'}
-                    </button>
-                  )}
-                  {account.tier === 'premium' && !account.hasBilling && (
-                    <button
-                      type="button"
-                      className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-                      disabled={billingBusy}
-                      onClick={() => void onUpgrade('premium')}
-                    >
-                      {billingBusy ? 'Redirecting…' : 'Set up billing'}
                     </button>
                   )}
                   {account.hasBilling && (
@@ -425,17 +553,18 @@ export function EmailPortal() {
               </section>
             )}
 
-            {listError && (
+            {listError &&
+              listError !== 'No Form API account for this email' && (
               <p className="border border-outline-variant/20 bg-surface-container-low p-6 text-on-surface-variant">
                 {listError}
               </p>
             )}
 
-            {listBusy && items.length === 0 && (
+            {listBusy && items.length === 0 && account?.linked && (
               <p className="font-label text-xs uppercase tracking-widest text-outline">Loading…</p>
             )}
 
-            {!listBusy && !listError && items.length === 0 && (
+            {!listBusy && !listError && items.length === 0 && account?.linked && (
               <p className="text-on-surface-variant">No submissions yet.</p>
             )}
 
