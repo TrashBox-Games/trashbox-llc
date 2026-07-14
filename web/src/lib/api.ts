@@ -18,6 +18,14 @@ export interface SubmissionsListResponse {
   nextCursor?: string
 }
 
+export interface AccountResponse {
+  clientId: string
+  clientName: string
+  tier: 'basic' | 'premium'
+  active: boolean
+  hasBilling: boolean
+}
+
 export class ApiError extends Error {
   status: number
 
@@ -32,7 +40,6 @@ async function idToken(): Promise<string> {
   const token = session.tokens?.idToken?.toString()
   if (!token) throw new ApiError(401, 'Not signed in')
 
-  // Prefer ID token (has email). Reject if Amplify somehow only has access token claims.
   const payload = decodeJwtPayload(token)
   if (!payloadHasEmail(payload) && session.tokens?.accessToken) {
     const access = session.tokens.accessToken.toString()
@@ -62,26 +69,20 @@ function payloadHasEmail(payload: Record<string, unknown>): boolean {
   return false
 }
 
-export async function listSubmissions(options?: {
-  limit?: number
-  cursor?: string
-}): Promise<SubmissionsListResponse> {
+async function authFetch(path: string, init?: RequestInit) {
   if (!apiUrl) throw new ApiError(500, 'VITE_API_URL is not configured')
-
-  const params = new URLSearchParams()
-  if (options?.limit) params.set('limit', String(options.limit))
-  if (options?.cursor) params.set('cursor', options.cursor)
-  const qs = params.toString()
-
   const token = await idToken()
-  const res = await fetch(`${apiUrl}/submissions${qs ? `?${qs}` : ''}`, {
+  const res = await fetch(`${apiUrl}${path}`, {
+    ...init,
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: 'application/json',
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      ...init?.headers,
     },
   })
 
-  const data = (await res.json().catch(() => ({}))) as Partial<SubmissionsListResponse> & {
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown> & {
     message?: string
   }
 
@@ -89,5 +90,38 @@ export async function listSubmissions(options?: {
     throw new ApiError(res.status, data.message || `Request failed (${res.status})`)
   }
 
-  return data as SubmissionsListResponse
+  return data
+}
+
+export async function listSubmissions(options?: {
+  limit?: number
+  cursor?: string
+}): Promise<SubmissionsListResponse> {
+  const params = new URLSearchParams()
+  if (options?.limit) params.set('limit', String(options.limit))
+  if (options?.cursor) params.set('cursor', options.cursor)
+  const qs = params.toString()
+  return (await authFetch(`/submissions${qs ? `?${qs}` : ''}`)) as unknown as SubmissionsListResponse
+}
+
+export async function getAccount(): Promise<AccountResponse> {
+  return (await authFetch('/account')) as unknown as AccountResponse
+}
+
+export async function startCheckout(plan: 'basic' | 'premium' = 'premium'): Promise<string> {
+  const data = (await authFetch('/billing/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ plan }),
+  })) as { url?: string }
+  if (!data.url) throw new ApiError(500, 'No checkout URL returned')
+  return data.url
+}
+
+export async function openBillingPortal(): Promise<string> {
+  const data = (await authFetch('/billing/portal', {
+    method: 'POST',
+    body: '{}',
+  })) as { url?: string }
+  if (!data.url) throw new ApiError(500, 'No billing portal URL returned')
+  return data.url
 }

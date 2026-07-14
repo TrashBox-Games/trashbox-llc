@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
-import { ApiError, listSubmissions, type Submission } from '../lib/api'
+import { ApiError, getAccount, listSubmissions, openBillingPortal, startCheckout, type AccountResponse, type Submission } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
 type AuthMode = 'signIn' | 'signUp' | 'confirm'
@@ -35,17 +35,38 @@ export function EmailPortal() {
 
   const [items, setItems] = useState<Submission[]>([])
   const [clientName, setClientName] = useState<string | null>(null)
+  const [account, setAccount] = useState<AccountResponse | null>(null)
   const [nextCursor, setNextCursor] = useState<string | undefined>()
   const [listError, setListError] = useState<string | null>(null)
   const [listBusy, setListBusy] = useState(false)
+  const [billingBusy, setBillingBusy] = useState(false)
+  const [billingError, setBillingError] = useState<string | null>(null)
+  const [billingNotice, setBillingNotice] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const billing = params.get('billing')
+    if (billing === 'success') {
+      setBillingNotice('Billing updated. Plan status refreshes after Stripe confirms payment.')
+    } else if (billing === 'cancel') {
+      setBillingNotice('Checkout canceled. Your plan was not changed.')
+    }
+    if (billing) {
+      params.delete('billing')
+      const next = `${window.location.pathname}${params.toString() ? `?${params}` : ''}${window.location.hash}`
+      window.history.replaceState({}, '', next)
+    }
+  }, [])
 
   useEffect(() => {
     if (auth.status !== 'signedIn') {
       setItems([])
       setClientName(null)
+      setAccount(null)
       setNextCursor(undefined)
       setListError(null)
+      setBillingError(null)
       setSelectedId(null)
       return
     }
@@ -55,12 +76,16 @@ export function EmailPortal() {
       setListBusy(true)
       setListError(null)
       try {
-        const data = await listSubmissions({ limit: 50 })
+        const [subs, acct] = await Promise.all([
+          listSubmissions({ limit: 50 }),
+          getAccount(),
+        ])
         if (cancelled) return
-        setItems(data.items)
-        setClientName(data.clientName)
-        setNextCursor(data.nextCursor)
-        setSelectedId(data.items[0]?.submissionId ?? null)
+        setItems(subs.items)
+        setClientName(subs.clientName)
+        setAccount(acct)
+        setNextCursor(subs.nextCursor)
+        setSelectedId(subs.items[0]?.submissionId ?? null)
       } catch (err) {
         if (cancelled) return
         const message =
@@ -116,6 +141,32 @@ export function EmailPortal() {
       setListError(err instanceof ApiError ? err.message : 'Failed to load more')
     } finally {
       setListBusy(false)
+    }
+  }
+
+  async function onUpgrade(plan: 'basic' | 'premium') {
+    setBillingBusy(true)
+    setBillingError(null)
+    try {
+      const url = await startCheckout(plan)
+      window.location.href = url
+    } catch (err) {
+      setBillingError(err instanceof ApiError ? err.message : 'Checkout failed')
+      setBillingBusy(false)
+    }
+  }
+
+  async function onManageBilling() {
+    setBillingBusy(true)
+    setBillingError(null)
+    try {
+      const url = await openBillingPortal()
+      window.location.href = url
+    } catch (err) {
+      setBillingError(
+        err instanceof ApiError ? err.message : 'Could not open billing portal',
+      )
+      setBillingBusy(false)
     }
   }
 
@@ -303,6 +354,12 @@ export function EmailPortal() {
                 {clientName && (
                   <p className="mt-1 text-sm text-on-surface-variant">Client: {clientName}</p>
                 )}
+                {account && (
+                  <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
+                    Plan: <span className="text-white">{account.tier}</span>
+                    {!account.active ? ' · inactive' : ''}
+                  </p>
+                )}
               </div>
               <button
                 type="button"
@@ -312,6 +369,61 @@ export function EmailPortal() {
                 Sign out
               </button>
             </div>
+
+            {billingNotice && (
+              <p className="border border-outline-variant/20 bg-surface-container-low p-4 text-sm text-on-surface-variant">
+                {billingNotice}
+              </p>
+            )}
+
+            {account && (
+              <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
+                <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+                  Subscription
+                </p>
+                <h2 className="mt-3 font-headline text-2xl font-bold text-white md:text-3xl">
+                  {account.tier === 'premium' ? 'Premium' : 'Basic'} plan
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
+                  {account.tier === 'premium'
+                    ? 'Premium includes owner notifications plus confirmation emails to form submitters.'
+                    : 'Basic sends notification emails to you only. Upgrade to Premium for submitter confirmations.'}
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {account.tier !== 'premium' && (
+                    <button
+                      type="button"
+                      className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
+                      disabled={billingBusy}
+                      onClick={() => void onUpgrade('premium')}
+                    >
+                      {billingBusy ? 'Redirecting…' : 'Upgrade to Premium'}
+                    </button>
+                  )}
+                  {account.tier === 'premium' && !account.hasBilling && (
+                    <button
+                      type="button"
+                      className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
+                      disabled={billingBusy}
+                      onClick={() => void onUpgrade('premium')}
+                    >
+                      {billingBusy ? 'Redirecting…' : 'Set up billing'}
+                    </button>
+                  )}
+                  {account.hasBilling && (
+                    <button
+                      type="button"
+                      className="border border-outline-variant/30 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
+                      disabled={billingBusy}
+                      onClick={() => void onManageBilling()}
+                    >
+                      {billingBusy ? 'Redirecting…' : 'Manage subscription'}
+                    </button>
+                  )}
+                </div>
+                {billingError && <p className="mt-4 text-sm text-red-300">{billingError}</p>}
+              </section>
+            )}
 
             {listError && (
               <p className="border border-outline-variant/20 bg-surface-container-low p-6 text-on-surface-variant">
