@@ -185,6 +185,9 @@ export function EmailPortal() {
         tier: result.tier,
         active: result.active,
         hasBilling: result.hasBilling,
+        emailsUsed: result.emailsUsed,
+        emailLimit: result.emailLimit,
+        usageMonth: result.usageMonth,
       })
       setClientName(result.clientName || name)
       setBusinessName('')
@@ -465,6 +468,18 @@ export function EmailPortal() {
                   <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
                     Plan: <span className="text-white">{account.tier}</span>
                     {!account.active ? ' · inactive' : ''}
+                    {typeof account.emailsUsed === 'number' &&
+                      typeof account.emailLimit === 'number' && (
+                        <>
+                          {' '}
+                          · Usage:{' '}
+                          <span className="text-white">
+                            {account.emailsUsed.toLocaleString()} /{' '}
+                            {account.emailLimit.toLocaleString()}
+                          </span>{' '}
+                          emails
+                        </>
+                      )}
                   </p>
                 )}
               </div>

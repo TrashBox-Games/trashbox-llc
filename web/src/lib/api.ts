@@ -26,6 +26,9 @@ export interface AccountResponse {
   tier?: 'basic' | 'premium'
   active?: boolean
   hasBilling?: boolean
+  emailsUsed?: number
+  emailLimit?: number
+  usageMonth?: string
 }
 
 export class ApiError extends Error {

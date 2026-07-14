@@ -5,6 +5,7 @@ export const EMAIL_PLANS = [
     id: 'basic' as const,
     name: 'Basic',
     price: 10,
+    emailsPerMonth: 1_000,
     blurb: 'Owner notifications for every form submission.',
     features: [
       'Store submissions in your inbox',
@@ -17,6 +18,7 @@ export const EMAIL_PLANS = [
     id: 'premium' as const,
     name: 'Premium',
     price: 15,
+    emailsPerMonth: 10_000,
     blurb: 'Everything in Basic, plus confirmation emails to submitters.',
     featured: true,
     features: [
@@ -82,6 +84,10 @@ export function EmailPlanTiers({ currentPlan = null, className = '' }: EmailPlan
               <p className="mt-6 font-headline text-4xl font-bold tracking-tight text-white">
                 ${plan.price}
                 <span className="ml-1 text-base font-normal text-outline">/mo</span>
+              </p>
+              <p className="mt-2 font-headline text-lg tracking-tight text-white">
+                {plan.emailsPerMonth.toLocaleString()}
+                <span className="ml-1 text-sm font-normal text-outline">emails</span>
               </p>
               <p className="mt-3 text-sm leading-relaxed text-on-surface-variant">{plan.blurb}</p>
 
