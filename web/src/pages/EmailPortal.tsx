@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
+import { EmailPlanTiers } from '../components/EmailPlanTiers'
 import { ApiError, getAccount, listSubmissions, openBillingPortal, provisionAccount, startCheckout, type AccountResponse, type Submission } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
@@ -266,134 +267,138 @@ export function EmailPortal() {
         )}
 
         {auth.configured && auth.status === 'signedOut' && (
-          <motion.form
-            className="mx-auto max-w-xl space-y-10"
-            onSubmit={onAuthSubmit}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="flex gap-6">
-              {(
-                [
-                  ['signIn', 'Sign in'],
-                  ['signUp', 'Sign up'],
-                  ['confirm', 'Confirm'],
-                ] as const
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={[
-                    'font-label text-[10px] uppercase tracking-widest transition-colors',
-                    mode === id ? 'text-white' : 'text-outline hover:text-white',
-                  ].join(' ')}
-                  onClick={() => {
-                    setMode(id)
-                    setAuthError(null)
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+          <div>
+            <motion.form
+              className="mx-auto max-w-xl space-y-10"
+              onSubmit={onAuthSubmit}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex gap-6">
+                {(
+                  [
+                    ['signIn', 'Sign in'],
+                    ['signUp', 'Sign up'],
+                    ['confirm', 'Confirm'],
+                  ] as const
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={[
+                      'font-label text-[10px] uppercase tracking-widest transition-colors',
+                      mode === id ? 'text-white' : 'text-outline hover:text-white',
+                    ].join(' ')}
+                    onClick={() => {
+                      setMode(id)
+                      setAuthError(null)
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-            <div>
-              <label className={labelClass} htmlFor="portal-email">
-                Email
-              </label>
-              <input
-                id="portal-email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-                placeholder="owner@business.com"
-              />
-            </div>
-
-            {mode !== 'confirm' && (
               <div>
-                <label className={labelClass} htmlFor="portal-password">
-                  Password
+                <label className={labelClass} htmlFor="portal-email">
+                  Email
                 </label>
                 <input
-                  id="portal-password"
-                  type="password"
-                  autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
+                  id="portal-email"
+                  type="email"
+                  autoComplete="email"
                   required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className={inputClass}
-                  placeholder="••••••••"
+                  placeholder="owner@business.com"
                 />
               </div>
-            )}
 
-            {mode === 'signUp' && (
-              <div>
-                <label className={labelClass} htmlFor="portal-confirm-password">
-                  Confirm password
-                </label>
-                <input
-                  id="portal-confirm-password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={inputClass}
-                  placeholder="••••••••"
-                />
-              </div>
-            )}
+              {mode !== 'confirm' && (
+                <div>
+                  <label className={labelClass} htmlFor="portal-password">
+                    Password
+                  </label>
+                  <input
+                    id="portal-password"
+                    type="password"
+                    autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
+                    required
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={inputClass}
+                    placeholder="••••••••"
+                  />
+                </div>
+              )}
 
-            {mode === 'confirm' && (
-              <div>
-                <label className={labelClass} htmlFor="portal-code">
-                  Verification code
-                </label>
-                <input
-                  id="portal-code"
-                  type="text"
-                  required
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  className={inputClass}
-                  placeholder="123456"
-                />
-                <button
-                  type="button"
-                  className="mt-4 font-label text-[10px] uppercase tracking-widest text-outline hover:text-white"
-                  onClick={async () => {
-                    setAuthError(null)
-                    try {
-                      await auth.resendCode(email)
-                    } catch (err) {
-                      setAuthError(err instanceof Error ? err.message : 'Could not resend code')
-                    }
-                  }}
-                >
-                  Resend code
-                </button>
-              </div>
-            )}
+              {mode === 'signUp' && (
+                <div>
+                  <label className={labelClass} htmlFor="portal-confirm-password">
+                    Confirm password
+                  </label>
+                  <input
+                    id="portal-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={inputClass}
+                    placeholder="••••••••"
+                  />
+                </div>
+              )}
 
-            {authError && <p className="text-sm text-red-300">{authError}</p>}
+              {mode === 'confirm' && (
+                <div>
+                  <label className={labelClass} htmlFor="portal-code">
+                    Verification code
+                  </label>
+                  <input
+                    id="portal-code"
+                    type="text"
+                    required
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className={inputClass}
+                    placeholder="123456"
+                  />
+                  <button
+                    type="button"
+                    className="mt-4 font-label text-[10px] uppercase tracking-widest text-outline hover:text-white"
+                    onClick={async () => {
+                      setAuthError(null)
+                      try {
+                        await auth.resendCode(email)
+                      } catch (err) {
+                        setAuthError(err instanceof Error ? err.message : 'Could not resend code')
+                      }
+                    }}
+                  >
+                    Resend code
+                  </button>
+                </div>
+              )}
 
-            <button type="submit" className={btnClass} disabled={authBusy}>
-              {authBusy
-                ? 'Working…'
-                : mode === 'signIn'
-                  ? 'Sign in'
-                  : mode === 'signUp'
-                    ? 'Create account'
-                    : 'Confirm & sign in'}
-            </button>
-          </motion.form>
+              {authError && <p className="text-sm text-red-300">{authError}</p>}
+
+              <button type="submit" className={btnClass} disabled={authBusy}>
+                {authBusy
+                  ? 'Working…'
+                  : mode === 'signIn'
+                    ? 'Sign in'
+                    : mode === 'signUp'
+                      ? 'Create account'
+                      : 'Confirm & sign in'}
+              </button>
+            </motion.form>
+
+            <EmailPlanTiers />
+          </div>
         )}
 
         {auth.configured && auth.status === 'signedIn' && (
