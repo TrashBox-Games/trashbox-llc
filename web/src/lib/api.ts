@@ -28,10 +28,38 @@ export class ApiError extends Error {
 }
 
 async function idToken(): Promise<string> {
-  const session = await fetchAuthSession()
+  const session = await fetchAuthSession({ forceRefresh: false })
   const token = session.tokens?.idToken?.toString()
   if (!token) throw new ApiError(401, 'Not signed in')
+
+  // Prefer ID token (has email). Reject if Amplify somehow only has access token claims.
+  const payload = decodeJwtPayload(token)
+  if (!payloadHasEmail(payload) && session.tokens?.accessToken) {
+    const access = session.tokens.accessToken.toString()
+    const accessPayload = decodeJwtPayload(access)
+    if (payloadHasEmail(accessPayload)) return access
+  }
+
   return token
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> {
+  try {
+    const part = token.split('.')[1]
+    if (!part) return {}
+    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(json) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}
+
+function payloadHasEmail(payload: Record<string, unknown>): boolean {
+  for (const key of ['email', 'cognito:username', 'username', 'preferred_username']) {
+    const value = payload[key]
+    if (typeof value === 'string' && value.includes('@')) return true
+  }
+  return false
 }
 
 export async function listSubmissions(options?: {
