@@ -37,7 +37,7 @@ type EmailPlanTiersProps = {
 export function EmailPlanTiers({ currentPlan = null, className = '' }: EmailPlanTiersProps) {
   return (
     <motion.section
-      className={['mt-20', className].filter(Boolean).join(' ')}
+      className={className || 'mt-20'}
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.08 }}

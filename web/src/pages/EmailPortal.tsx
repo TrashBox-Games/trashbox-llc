@@ -27,6 +27,7 @@ function formatWhen(iso: string) {
 export function EmailPortal() {
   const auth = useAuth()
   const [mode, setMode] = useState<AuthMode>('signIn')
+  const [showAuth, setShowAuth] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -249,8 +250,8 @@ export function EmailPortal() {
               Notifications <span className="text-outline">Inbox.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-on-surface-variant">
-              Sign in with the same email used as your Form API notification recipient to view
-              stored submissions.
+              Form notifications for your business sites. Compare plans below, then sign in to manage
+              your inbox and billing.
             </p>
           </motion.div>
         </header>
@@ -268,136 +269,186 @@ export function EmailPortal() {
 
         {auth.configured && auth.status === 'signedOut' && (
           <div>
-            <motion.form
-              className="mx-auto max-w-xl space-y-10"
-              onSubmit={onAuthSubmit}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex gap-6">
-                {(
-                  [
-                    ['signIn', 'Sign in'],
-                    ['signUp', 'Sign up'],
-                    ['confirm', 'Confirm'],
-                  ] as const
-                ).map(([id, label]) => (
+            <EmailPlanTiers className="mt-4" />
+
+            <div className="mx-auto mt-14 flex max-w-xl flex-col items-center gap-4">
+              {!showAuth ? (
+                <>
                   <button
-                    key={id}
                     type="button"
-                    className={[
-                      'font-label text-[10px] uppercase tracking-widest transition-colors',
-                      mode === id ? 'text-white' : 'text-outline hover:text-white',
-                    ].join(' ')}
+                    className="bg-primary px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80"
                     onClick={() => {
-                      setMode(id)
+                      setMode('signIn')
+                      setShowAuth(true)
                       setAuthError(null)
                     }}
                   >
-                    {label}
+                    Sign in
                   </button>
-                ))}
-              </div>
-
-              <div>
-                <label className={labelClass} htmlFor="portal-email">
-                  Email
-                </label>
-                <input
-                  id="portal-email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputClass}
-                  placeholder="owner@business.com"
-                />
-              </div>
-
-              {mode !== 'confirm' && (
-                <div>
-                  <label className={labelClass} htmlFor="portal-password">
-                    Password
-                  </label>
-                  <input
-                    id="portal-password"
-                    type="password"
-                    autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
-                    required
-                    minLength={8}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={inputClass}
-                    placeholder="••••••••"
-                  />
-                </div>
-              )}
-
-              {mode === 'signUp' && (
-                <div>
-                  <label className={labelClass} htmlFor="portal-confirm-password">
-                    Confirm password
-                  </label>
-                  <input
-                    id="portal-confirm-password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    minLength={8}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={inputClass}
-                    placeholder="••••••••"
-                  />
-                </div>
-              )}
-
-              {mode === 'confirm' && (
-                <div>
-                  <label className={labelClass} htmlFor="portal-code">
-                    Verification code
-                  </label>
-                  <input
-                    id="portal-code"
-                    type="text"
-                    required
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className={inputClass}
-                    placeholder="123456"
-                  />
                   <button
                     type="button"
-                    className="mt-4 font-label text-[10px] uppercase tracking-widest text-outline hover:text-white"
-                    onClick={async () => {
+                    className="font-label text-[10px] uppercase tracking-widest text-outline transition-colors hover:text-white"
+                    onClick={() => {
+                      setMode('signUp')
+                      setShowAuth(true)
                       setAuthError(null)
-                      try {
-                        await auth.resendCode(email)
-                      } catch (err) {
-                        setAuthError(err instanceof Error ? err.message : 'Could not resend code')
-                      }
                     }}
                   >
-                    Resend code
+                    New here? Create an account
+                  </button>
+                </>
+              ) : (
+                <div className="flex w-full items-center justify-between gap-4">
+                  <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+                    Account access
+                  </p>
+                  <button
+                    type="button"
+                    className="font-label text-[10px] uppercase tracking-widest text-outline hover:text-white"
+                    onClick={() => {
+                      setShowAuth(false)
+                      setAuthError(null)
+                    }}
+                  >
+                    Hide
                   </button>
                 </div>
               )}
+            </div>
 
-              {authError && <p className="text-sm text-red-300">{authError}</p>}
+            {showAuth && (
+              <motion.form
+                className="mx-auto mt-10 max-w-xl space-y-10"
+                onSubmit={onAuthSubmit}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+              >
+                <div className="flex gap-6">
+                  {(
+                    [
+                      ['signIn', 'Sign in'],
+                      ['signUp', 'Sign up'],
+                      ['confirm', 'Confirm'],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={[
+                        'font-label text-[10px] uppercase tracking-widest transition-colors',
+                        mode === id ? 'text-white' : 'text-outline hover:text-white',
+                      ].join(' ')}
+                      onClick={() => {
+                        setMode(id)
+                        setAuthError(null)
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
 
-              <button type="submit" className={btnClass} disabled={authBusy}>
-                {authBusy
-                  ? 'Working…'
-                  : mode === 'signIn'
-                    ? 'Sign in'
-                    : mode === 'signUp'
-                      ? 'Create account'
-                      : 'Confirm & sign in'}
-              </button>
-            </motion.form>
+                <div>
+                  <label className={labelClass} htmlFor="portal-email">
+                    Email
+                  </label>
+                  <input
+                    id="portal-email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={inputClass}
+                    placeholder="owner@business.com"
+                  />
+                </div>
 
-            <EmailPlanTiers />
+                {mode !== 'confirm' && (
+                  <div>
+                    <label className={labelClass} htmlFor="portal-password">
+                      Password
+                    </label>
+                    <input
+                      id="portal-password"
+                      type="password"
+                      autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
+                      required
+                      minLength={8}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className={inputClass}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                )}
+
+                {mode === 'signUp' && (
+                  <div>
+                    <label className={labelClass} htmlFor="portal-confirm-password">
+                      Confirm password
+                    </label>
+                    <input
+                      id="portal-confirm-password"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      minLength={8}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={inputClass}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                )}
+
+                {mode === 'confirm' && (
+                  <div>
+                    <label className={labelClass} htmlFor="portal-code">
+                      Verification code
+                    </label>
+                    <input
+                      id="portal-code"
+                      type="text"
+                      required
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      className={inputClass}
+                      placeholder="123456"
+                    />
+                    <button
+                      type="button"
+                      className="mt-4 font-label text-[10px] uppercase tracking-widest text-outline hover:text-white"
+                      onClick={async () => {
+                        setAuthError(null)
+                        try {
+                          await auth.resendCode(email)
+                        } catch (err) {
+                          setAuthError(
+                            err instanceof Error ? err.message : 'Could not resend code',
+                          )
+                        }
+                      }}
+                    >
+                      Resend code
+                    </button>
+                  </div>
+                )}
+
+                {authError && <p className="text-sm text-red-300">{authError}</p>}
+
+                <button type="submit" className={btnClass} disabled={authBusy}>
+                  {authBusy
+                    ? 'Working…'
+                    : mode === 'signIn'
+                      ? 'Sign in'
+                      : mode === 'signUp'
+                        ? 'Create account'
+                        : 'Confirm & sign in'}
+                </button>
+              </motion.form>
+            )}
           </div>
         )}
 
