@@ -8,7 +8,7 @@ export const EMAIL_PLANS = [
     emailsPerMonth: 1_000,
     blurb: 'Owner notifications for every form submission.',
     features: [
-      'Store submissions in your inbox',
+      'Unlimited in-site notifications',
       'Email alerts to your business email address',
       'API key for your website forms',
       'Built-in spam protection for contact forms',
@@ -22,6 +22,7 @@ export const EMAIL_PLANS = [
     blurb: 'Everything in Basic, plus confirmation emails to submitters.',
     featured: true,
     features: [
+      'Unlimited in-site notifications',
       'Everything in Basic',
       'Confirmation email to the form submitter',
       'Priority notification delivery',
