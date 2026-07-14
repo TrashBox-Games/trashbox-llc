@@ -1,6 +1,26 @@
 # React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Trashbox LLC marketing site. Email portal lives at `/email` and talks to the Form API with Cognito.
+
+## Email portal env
+
+Copy `.env.example` to `.env.local` after deploying EmailServer:
+
+```bash
+VITE_API_URL=https://api.trashbox.io
+VITE_COGNITO_USER_POOL_ID=...
+VITE_COGNITO_CLIENT_ID=...
+VITE_COGNITO_REGION=us-east-2
+```
+
+For GitHub Pages, set the same names as repository **Variables** (used by `.github/workflows/deploy-pages.yml`).
+
+## Scripts
+
+```bash
+npm run dev
+npm run build
+```
 
 Currently, two official plugins are available:
 

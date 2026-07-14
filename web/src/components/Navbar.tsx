@@ -57,6 +57,9 @@ export function Navbar() {
             <NavLink to="/services" className={navLinkClass}>
               Services
             </NavLink>
+            <NavLink to="/email" className={navLinkClass}>
+              Email
+            </NavLink>
             <Link
               className="font-headline text-sm uppercase tracking-tight text-white/60 transition-colors hover:text-white"
               to={{ pathname: '/', hash: 'about' }}
@@ -103,6 +106,9 @@ export function Navbar() {
               </NavLink>
               <NavLink to="/services" className={navLinkClass} onClick={() => setOpen(false)}>
                 Services
+              </NavLink>
+              <NavLink to="/email" className={navLinkClass} onClick={() => setOpen(false)}>
+                Email
               </NavLink>
               <Link
                 className="font-headline text-sm uppercase tracking-tight text-white/60"
