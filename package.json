@@ -18,7 +18,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,css}\""
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
