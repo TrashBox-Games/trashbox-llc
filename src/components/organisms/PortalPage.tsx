@@ -96,9 +96,7 @@ export function PortalLoginPage() {
     );
   }
 
-  if (auth.status === "loading" || auth.status === "signedIn") {
-    return <PortalSkeleton variant="login" />;
-  }
+  const sessionPending = auth.status === "loading" || auth.status === "signedIn";
 
   return (
     <div>
@@ -112,6 +110,11 @@ export function PortalLoginPage() {
         </p>
       </FadeIn>
 
+      {sessionPending ? (
+        <div className="mt-14">
+          <PortalSkeleton variant="login" />
+        </div>
+      ) : (
       <FadeIn className="mx-auto mt-14 max-w-xl space-y-10" y={12}>
         <form className="space-y-10" onSubmit={onAuthSubmit}>
           <div className="flex gap-6">
@@ -239,6 +242,7 @@ export function PortalLoginPage() {
           </button>
         </form>
       </FadeIn>
+      )}
     </div>
   );
 }
@@ -480,16 +484,15 @@ export function PortalApp({ tab }: PortalAppProps) {
     );
   }
 
-  if (auth.status === "loading" || auth.status === "signedOut" || !ready) {
-    return <PortalSkeleton variant={tab} />;
-  }
-
   const tabMeta =
     tab === "inbox"
       ? { eyebrow: "Inbox", title: <>Notifications <span className="text-outline">Inbox.</span></> }
       : tab === "api-key"
         ? { eyebrow: "API key", title: <>Form API <span className="text-outline">Key.</span></> }
         : { eyebrow: "Membership", title: <>Plan & <span className="text-outline">Billing.</span></> };
+
+  const contentPending =
+    auth.status === "loading" || auth.status === "signedOut" || !ready;
 
   return (
     <div className="space-y-10">
@@ -502,6 +505,10 @@ export function PortalApp({ tab }: PortalAppProps) {
         </h1>
       </header>
 
+      {contentPending ? (
+        <PortalSkeleton variant={tab} />
+      ) : (
+        <>
       {tab === "inbox" && (
         <div className="border-b border-outline-variant/10 pb-6">
           <p className="font-label text-[10px] uppercase tracking-widest text-outline">
@@ -798,6 +805,8 @@ export function PortalApp({ tab }: PortalAppProps) {
               {listBusy ? "Loading…" : "Load more"}
             </button>
           )}
+        </>
+      )}
         </>
       )}
     </div>

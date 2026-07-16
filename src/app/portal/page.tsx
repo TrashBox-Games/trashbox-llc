@@ -17,5 +17,17 @@ export default function PortalIndexPage() {
     }
   }, [auth.status]);
 
-  return <PortalSkeleton variant="inbox" />;
+  return (
+    <div className="space-y-10">
+      <header>
+        <p className="mb-6 font-label text-xs uppercase tracking-[0.4em] text-outline">
+          Inbox
+        </p>
+        <h1 className="max-w-4xl font-headline text-4xl font-bold leading-tight tracking-tighter text-white md:text-6xl">
+          Notifications <span className="text-outline">Inbox.</span>
+        </h1>
+      </header>
+      <PortalSkeleton variant="inbox" />
+    </div>
+  );
 }

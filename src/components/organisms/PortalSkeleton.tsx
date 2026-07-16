@@ -4,16 +4,11 @@ type PortalSkeletonProps = {
   variant?: "login" | "inbox" | "api-key" | "membership";
 };
 
-/** Stable layout placeholders for portal pages while auth/account load. */
+/** Content-only placeholders — titles stay real above these. */
 export function PortalSkeleton({ variant = "inbox" }: PortalSkeletonProps) {
   return (
-    <div className="space-y-10" aria-busy="true" aria-live="polite">
-      <span className="sr-only">Loading portal…</span>
-      <header className="space-y-4">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-12 w-full max-w-xl md:h-14" />
-        {variant === "login" && <Skeleton className="h-5 w-full max-w-md" />}
-      </header>
+    <div aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading…</span>
 
       {variant === "login" && (
         <div className="mx-auto max-w-xl space-y-8">
@@ -30,7 +25,7 @@ export function PortalSkeleton({ variant = "inbox" }: PortalSkeletonProps) {
 
       {variant === "inbox" && (
         <>
-          <div className="space-y-3 border-b border-outline-variant/10 pb-6">
+          <div className="mb-10 space-y-3 border-b border-outline-variant/10 pb-6">
             <Skeleton className="h-3 w-20" />
             <Skeleton className="h-5 w-56" />
             <Skeleton className="h-4 w-40" />
