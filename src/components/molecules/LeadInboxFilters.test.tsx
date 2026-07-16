@@ -29,6 +29,7 @@ describe("LeadInboxFilters", () => {
 
     const search = screen.getByLabelText(/search/i);
     expect(search).toHaveClass("search-clear-muted");
+    expect(search).toHaveClass("placeholder:text-outline");
     await user.type(search, "estimate");
     expect(onChange).toHaveBeenCalled();
 

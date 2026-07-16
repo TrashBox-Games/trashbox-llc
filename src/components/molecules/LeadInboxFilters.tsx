@@ -13,7 +13,7 @@ import {
 } from "@/lib/api";
 
 const inputClass =
-  "w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white placeholder:text-outline-variant/50 focus:border-primary focus:outline-none";
+  "w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white placeholder:text-outline focus:border-primary focus:outline-none";
 const labelClass =
   "mb-1 block font-label text-[10px] uppercase tracking-widest text-outline";
 

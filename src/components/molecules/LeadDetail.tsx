@@ -191,7 +191,7 @@ export function LeadDetail({
             rows={3}
             value={noteDraft}
             onChange={(e) => setNoteDraft(e.target.value)}
-            className="w-full border border-outline-variant/20 bg-transparent p-3 text-sm text-white placeholder:text-outline-variant/50 focus:border-primary focus:outline-none"
+            className="w-full border border-outline-variant/20 bg-transparent p-3 text-sm text-white placeholder:text-outline focus:border-primary focus:outline-none"
             placeholder="Called customer July 15, requested estimate"
             disabled={busy}
           />
