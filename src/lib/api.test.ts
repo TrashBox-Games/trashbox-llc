@@ -221,22 +221,30 @@ describe("team API", () => {
           clientName: "Acme",
           role: "owner",
           members: [
-            { email: "owner@example.com", role: "owner", joinedAt: "2026-01-01" },
+            {
+              email: "owner@example.com",
+              role: "owner",
+              joinedAt: "2026-01-01",
+              emailNotifications: true,
+            },
           ],
           invites: [],
+          memberLimit: 5,
+          memberCount: 1,
         }),
       }),
     );
 
     const team = await getTeam();
     expect(team.role).toBe("owner");
+    expect(team.memberLimit).toBe(5);
     expect(fetch).toHaveBeenCalledWith(
       "https://api.trashbox.io/team",
       expect.any(Object),
     );
   });
 
-  it("createTeamInvite POSTs email", async () => {
+  it("createTeamInvite POSTs email and options", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -248,17 +256,61 @@ describe("team API", () => {
             invitedBy: "owner@example.com",
             createdAt: "2026-07-16",
             expiresAt: "2026-07-23",
+            emailNotifications: true,
+            name: "Teammate",
           },
         }),
       }),
     );
 
-    await createTeamInvite("teammate@example.com");
+    await createTeamInvite({
+      email: "teammate@example.com",
+      name: "Teammate",
+      emailNotifications: true,
+    });
     expect(fetch).toHaveBeenCalledWith(
       "https://api.trashbox.io/team/invites",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ email: "teammate@example.com" }),
+        body: JSON.stringify({
+          email: "teammate@example.com",
+          name: "Teammate",
+          emailNotifications: true,
+        }),
+      }),
+    );
+  });
+
+  it("updateTeamMember PATCHes member prefs", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          member: {
+            email: "teammate@example.com",
+            role: "admin",
+            joinedAt: "2026-01-01",
+            emailNotifications: false,
+            name: "Teammate",
+          },
+        }),
+      }),
+    );
+
+    const { updateTeamMember } = await import("./api");
+    await updateTeamMember("teammate@example.com", {
+      role: "admin",
+      emailNotifications: false,
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.trashbox.io/team/members/teammate%40example.com",
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({
+          role: "admin",
+          emailNotifications: false,
+        }),
       }),
     );
   });

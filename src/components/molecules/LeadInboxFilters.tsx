@@ -109,7 +109,9 @@ export function LeadInboxFilters({
             { value: "", label: "Anyone" },
             ...members.map((member) => ({
               value: member.email,
-              label: member.email,
+              label: member.name?.trim()
+                ? `${member.name.trim()} (${member.email})`
+                : member.email,
             })),
           ]}
         />

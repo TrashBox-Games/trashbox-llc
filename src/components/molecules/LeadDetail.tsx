@@ -108,7 +108,9 @@ export function LeadDetail({
               { value: "", label: "Unassigned" },
               ...members.map((member) => ({
                 value: member.email,
-                label: member.email,
+                label: member.name?.trim()
+                  ? `${member.name.trim()} (${member.email})`
+                  : member.email,
               })),
             ]}
           />

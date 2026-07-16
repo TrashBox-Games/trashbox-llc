@@ -27,13 +27,16 @@ import {
   provisionAccount,
   startCheckout,
   updateSubmission,
+  updateTeamMember,
   type AccountResponse,
+  type CreateTeamInviteInput,
   type LeadStatus,
   type LeadTag,
   type Submission,
   type TeamInvite,
   type TeamMember,
   type TeamRole,
+  type UpdateTeamMemberInput,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PORTAL_PATHS } from "@/lib/sites";
@@ -302,6 +305,8 @@ export function PortalApp({ tab }: PortalAppProps) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [invites, setInvites] = useState<TeamInvite[]>([]);
   const [teamRole, setTeamRole] = useState<TeamRole>("member");
+  const [memberLimit, setMemberLimit] = useState(1);
+  const [memberCount, setMemberCount] = useState(0);
   const [teamBusy, setTeamBusy] = useState(false);
   const [teamError, setTeamError] = useState<string | null>(null);
   const [teamNotice, setTeamNotice] = useState<string | null>(null);
@@ -387,6 +392,10 @@ export function PortalApp({ tab }: PortalAppProps) {
         const acct = await getAccount();
         if (cancelled) return;
         setAccount(acct);
+        setClientName(acct.clientName || null);
+        if (acct.role) setTeamRole(acct.role);
+        if (typeof acct.memberLimit === "number") setMemberLimit(acct.memberLimit);
+        if (typeof acct.memberCount === "number") setMemberCount(acct.memberCount);
 
         if (!acct.linked) {
           setItems([]);
@@ -406,6 +415,8 @@ export function PortalApp({ tab }: PortalAppProps) {
           setMembers(team.members);
           setInvites(team.invites);
           setTeamRole(team.role);
+          setMemberLimit(team.memberLimit);
+          setMemberCount(team.memberCount);
         } catch {
           if (!cancelled) {
             setMembers([]);
@@ -533,15 +544,17 @@ export function PortalApp({ tab }: PortalAppProps) {
     setMembers(team.members);
     setInvites(team.invites);
     setTeamRole(team.role);
+    setMemberLimit(team.memberLimit);
+    setMemberCount(team.memberCount);
   }
 
-  async function onInvite(email: string) {
+  async function onInvite(input: CreateTeamInviteInput) {
     setTeamBusy(true);
     setTeamError(null);
     try {
-      await createTeamInvite(email);
+      await createTeamInvite(input);
       await refreshTeam();
-      setTeamNotice(`Invite sent to ${email}.`);
+      setTeamNotice(`Invite sent to ${input.email}.`);
     } catch (err) {
       setTeamError(
         err instanceof ApiError ? err.message : "Failed to send invite",
@@ -581,6 +594,21 @@ export function PortalApp({ tab }: PortalAppProps) {
     }
   }
 
+  async function onUpdateMember(email: string, patch: UpdateTeamMemberInput) {
+    setTeamBusy(true);
+    setTeamError(null);
+    try {
+      await updateTeamMember(email, patch);
+      await refreshTeam();
+    } catch (err) {
+      setTeamError(
+        err instanceof ApiError ? err.message : "Failed to update member",
+      );
+    } finally {
+      setTeamBusy(false);
+    }
+  }
+
   async function onProvisionAccount() {
     const name = businessName.trim();
     if (!name) {
@@ -605,7 +633,11 @@ export function PortalApp({ tab }: PortalAppProps) {
         emailsUsed: result.emailsUsed,
         emailLimit: result.emailLimit,
         usageMonth: result.usageMonth,
+        memberLimit: result.memberLimit ?? 1,
+        memberCount: result.memberCount ?? 1,
       });
+      setMemberLimit(result.memberLimit ?? 1);
+      setMemberCount(result.memberCount ?? 1);
       setClientName(result.clientName || name);
       setBusinessName("");
     } catch (err) {
@@ -845,7 +877,7 @@ export function PortalApp({ tab }: PortalAppProps) {
         </section>
       )}
 
-      {tab === "membership" && account?.linked && account.role !== "member" && (
+      {tab === "membership" && account?.linked && account.role === "owner" && (
         <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
           <p className="font-label text-[10px] uppercase tracking-widest text-outline">
             Subscription
@@ -860,8 +892,8 @@ export function PortalApp({ tab }: PortalAppProps) {
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
             {account.hasBilling
               ? account.tier === "premium"
-                ? "Premium includes owner notifications plus confirmation emails to form submitters."
-                : "Basic sends notification emails to you only. Upgrade to Premium for submitter confirmations."
+                ? "Premium includes up to 5 team seats, email alerts to opted-in teammates, and confirmation emails to form submitters."
+                : "Basic includes 1 team seat (you) and email alerts to opted-in teammates. Upgrade to Premium for 5 seats and submitter confirmations."
               : "Your Form API account is ready. Add a Stripe plan when you want paid Basic or Premium billing."}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -1050,24 +1082,29 @@ export function PortalApp({ tab }: PortalAppProps) {
       {tab === "team" && account?.linked && (
         <TeamPanel
           role={teamRole}
+          currentUserEmail={account.email}
           members={members}
           invites={invites}
+          memberLimit={memberLimit}
+          memberCount={memberCount}
+          tier={account.tier}
           busy={teamBusy}
           error={teamError}
           notice={teamNotice}
           onInvite={onInvite}
           onRevokeInvite={onRevokeInvite}
           onRemoveMember={onRemoveMember}
+          onUpdateMember={onUpdateMember}
         />
       )}
 
       {tab === "api-key" && account?.linked && account.role === "member" && (
         <p className="text-on-surface-variant">
-          Only the account owner can manage API keys.
+          Only owners and admins can manage API keys.
         </p>
       )}
 
-      {tab === "membership" && account?.linked && account.role === "member" && (
+      {tab === "membership" && account?.linked && account.role !== "owner" && (
         <p className="text-on-surface-variant">
           Only the account owner can manage billing.
         </p>

@@ -44,7 +44,7 @@ export const LEAD_TAG_LABELS: Record<LeadTag, string> = {
   vip: "VIP",
 };
 
-export type TeamRole = "owner" | "member";
+export type TeamRole = "owner" | "admin" | "member";
 
 export interface SubmissionNote {
   id: string;
@@ -88,6 +88,8 @@ export interface AccountResponse {
   emailsUsed?: number;
   emailLimit?: number;
   usageMonth?: string;
+  memberLimit?: number;
+  memberCount?: number;
 }
 
 export interface ApiKeyResponse {
@@ -100,6 +102,8 @@ export interface TeamMember {
   email: string;
   role: TeamRole;
   joinedAt: string;
+  name?: string;
+  emailNotifications: boolean;
 }
 
 export interface TeamInvite {
@@ -108,6 +112,8 @@ export interface TeamInvite {
   invitedBy: string;
   createdAt: string;
   expiresAt: string;
+  name?: string;
+  emailNotifications: boolean;
 }
 
 export interface TeamResponse {
@@ -116,6 +122,21 @@ export interface TeamResponse {
   role: TeamRole;
   members: TeamMember[];
   invites: TeamInvite[];
+  memberLimit: number;
+  memberCount: number;
+}
+
+export interface CreateTeamInviteInput {
+  email: string;
+  name?: string;
+  emailNotifications?: boolean;
+  role?: "member" | "admin";
+}
+
+export interface UpdateTeamMemberInput {
+  name?: string;
+  emailNotifications?: boolean;
+  role?: "member" | "admin";
 }
 
 export class ApiError extends Error {
@@ -244,11 +265,22 @@ export async function getTeam(): Promise<TeamResponse> {
 }
 
 export async function createTeamInvite(
-  email: string,
+  input: CreateTeamInviteInput | string,
 ): Promise<{ invite: TeamInvite; message?: string }> {
+  const body =
+    typeof input === "string"
+      ? { email: input }
+      : {
+          email: input.email,
+          ...(input.name ? { name: input.name } : {}),
+          ...(typeof input.emailNotifications === "boolean"
+            ? { emailNotifications: input.emailNotifications }
+            : {}),
+          ...(input.role ? { role: input.role } : {}),
+        };
   return (await authFetch("/team/invites", {
     method: "POST",
-    body: JSON.stringify({ email }),
+    body: JSON.stringify(body),
   })) as unknown as { invite: TeamInvite; message?: string };
 }
 
@@ -277,6 +309,16 @@ export async function deleteTeamMember(email: string): Promise<void> {
   await authFetch(`/team/members/${encodeURIComponent(email)}`, {
     method: "DELETE",
   });
+}
+
+export async function updateTeamMember(
+  email: string,
+  patch: UpdateTeamMemberInput,
+): Promise<{ member: TeamMember; message?: string }> {
+  return (await authFetch(`/team/members/${encodeURIComponent(email)}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  })) as unknown as { member: TeamMember; message?: string };
 }
 
 export async function getAccount(): Promise<AccountResponse> {

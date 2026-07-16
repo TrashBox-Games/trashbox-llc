@@ -14,7 +14,14 @@ describe("LeadInboxFilters", () => {
     render(
       <LeadInboxFilters
         value={{ q: "", status: "", tag: "", assignedTo: "" }}
-        members={[{ email: "sarah@example.com", role: "member", joinedAt: "2026-01-01" }]}
+        members={[
+          {
+            email: "sarah@example.com",
+            role: "member",
+            joinedAt: "2026-01-01",
+            emailNotifications: false,
+          },
+        ]}
         onChange={onChange}
         onApply={onApply}
       />,
@@ -58,7 +65,14 @@ describe("LeadDetail", () => {
           notes: [],
           assignedTo: null,
         }}
-        members={[{ email: "sarah@example.com", role: "member", joinedAt: "2026-01-01" }]}
+        members={[
+          {
+            email: "sarah@example.com",
+            role: "member",
+            joinedAt: "2026-01-01",
+            emailNotifications: false,
+          },
+        ]}
         onUpdate={onUpdate}
         onAddNote={onAddNote}
       />,
@@ -91,16 +105,33 @@ describe("TeamPanel", () => {
     render(
       <TeamPanel
         role="owner"
-        members={[{ email: "owner@example.com", role: "owner", joinedAt: "2026-01-01" }]}
+        currentUserEmail="owner@example.com"
+        members={[
+          {
+            email: "owner@example.com",
+            role: "owner",
+            joinedAt: "2026-01-01",
+            emailNotifications: true,
+          },
+        ]}
         invites={[]}
+        memberLimit={5}
+        memberCount={1}
+        tier="premium"
         onInvite={onInvite}
         onRevokeInvite={vi.fn()}
         onRemoveMember={vi.fn()}
+        onUpdateMember={vi.fn()}
       />,
     );
 
     await user.type(screen.getByLabelText(/^email$/i), "teammate@example.com");
+    await user.type(screen.getByLabelText(/^name$/i), "Teammate");
     await user.click(screen.getByRole("button", { name: /send invite/i }));
-    expect(onInvite).toHaveBeenCalledWith("teammate@example.com");
+    expect(onInvite).toHaveBeenCalledWith({
+      email: "teammate@example.com",
+      name: "Teammate",
+      emailNotifications: true,
+    });
   });
 });
