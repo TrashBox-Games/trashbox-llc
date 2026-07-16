@@ -1,0 +1,55 @@
+# Trashbox LLC
+
+The Trashbox LLC marketing site, built on the business template stack.
+
+## Tech Stack
+
+- **Framework:** [Next.js](https://nextjs.org/) (App Router)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Animations:** [GSAP](https://gsap.com/)
+- **Component Dev:** [Storybook](https://storybook.js.org/)
+- **Unit Testing:** [Vitest](https://vitest.dev/) + [React Testing Library](https://testing-library.com/react)
+- **E2E Testing:** [Playwright](https://playwright.dev/)
+- **Deployment:** [GitHub Pages](https://pages.github.com/) (static export)
+- **Package Manager:** [pnpm](https://pnpm.io/)
+
+## Getting Started
+
+```bash
+fnm use
+pnpm install
+cp .env.example .env.local
+pnpm dev
+```
+
+## Environment
+
+Copy `.env.example` to `.env.local` and set:
+
+- `NEXT_PUBLIC_API_URL` — Form API base URL
+- `NEXT_PUBLIC_FORM_API_KEY` — public site key for the contact form
+- `NEXT_PUBLIC_COGNITO_USER_POOL_ID` / `NEXT_PUBLIC_COGNITO_CLIENT_ID` — Email Portal auth
+
+For GitHub Pages, set the same names as repository **Secrets** (used by `.github/workflows/deploy-pages.yml`). In repo settings, set Pages source to **GitHub Actions**.
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `pnpm dev` | Start development server |
+| `pnpm build` | Production static export (`out/`) |
+| `pnpm preview` | Serve the static export locally |
+| `pnpm test` | Run unit tests |
+| `pnpm storybook` | Start Storybook |
+| `pnpm test:e2e` | Run Playwright E2E tests |
+
+## Routes
+
+| Path | Page |
+| --- | --- |
+| `/` | Home |
+| `/apps` | Apps portfolio |
+| `/apps/:app/:page` | App markdown pages (e.g. `/apps/bmplayer/privacy`) |
+| `/services` | Services + contact form |
+| `/email` | Email Service portal |

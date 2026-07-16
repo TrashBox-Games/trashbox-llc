@@ -1,0 +1,56 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm test
+
+  e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+
+      - name: Run E2E tests
+        env:
+          NEXT_PUBLIC_API_URL: https://api.trashbox.io
+          NEXT_PUBLIC_FORM_API_KEY: test_ci_key
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID: us-east-2_placeholder
+          NEXT_PUBLIC_COGNITO_CLIENT_ID: placeholder
+          NEXT_PUBLIC_COGNITO_REGION: us-east-2
+        run: pnpm test:e2e

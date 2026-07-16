@@ -1,0 +1,16 @@
+import { expect, test } from "@playwright/test";
+
+test.describe("services page", () => {
+  test("shows contact form fields", async ({ page }) => {
+    await page.goto("/services");
+
+    await expect(page.getByRole("heading", { name: /engineering/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /start a project/i })).toBeVisible();
+    await expect(page.getByPlaceholder("Your Name")).toBeVisible();
+    await expect(page.getByPlaceholder("Email Address")).toBeVisible();
+    await expect(
+      page.getByPlaceholder("Tell us about the monolith you want to build..."),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /send transmission/i })).toBeVisible();
+  });
+});

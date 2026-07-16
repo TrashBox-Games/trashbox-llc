@@ -1,0 +1,51 @@
+---
+description: Storybook story file conventions
+globs: "**/*.stories.ts, **/*.stories.tsx"
+alwaysApply: false
+---
+
+# Storybook Conventions
+
+## File Placement
+
+- Colocate stories next to their component: `Button.stories.tsx` alongside `Button.tsx`.
+- Name story files with the `.stories.tsx` extension.
+
+## Story Structure
+
+- Use CSF3 (Component Story Format 3) with a `meta` default export and named story exports:
+
+```tsx
+import type { Meta, StoryObj } from "@storybook/react";
+import { Button } from "./Button";
+
+const meta = {
+  title: "Components/Button",
+  component: Button,
+  tags: ["autodocs"],
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    children: "Click me",
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    children: "Disabled",
+    disabled: true,
+  },
+};
+```
+
+## Best Practices
+
+- Add `tags: ["autodocs"]` to generate automatic documentation from props.
+- Use `args` for props — this enables the Storybook controls panel.
+- Group stories by folder using the `title` field: `"Components/Button"`, `"Layout/Header"`.
+- Create multiple named exports for meaningful variants (e.g. `Default`, `Loading`, `WithIcon`), not just one.
+- Use `satisfies Meta<typeof Component>` for type-safe meta (not `as Meta`).

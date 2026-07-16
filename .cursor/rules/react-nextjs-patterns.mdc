@@ -1,0 +1,50 @@
+---
+description: React component and Next.js App Router conventions
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# React / Next.js Patterns
+
+## Server vs Client Components
+
+- Default to Server Components. Only add `"use client"` when the component needs hooks, event handlers, browser APIs, or interactivity.
+- Keep client boundaries as low in the tree as possible — wrap only the interactive part, not the whole page.
+
+## Components
+
+- Use functional components only.
+- Use named exports for components (not default exports), except for Next.js pages/layouts which require default exports.
+- Follow the atomic component structure and shadcn/ui conventions in `atomic-components.mdc`.
+
+## Styling
+
+- Use the `cn()` utility from `@/lib/utils` for conditional/merged class names:
+
+```tsx
+import { cn } from "@/lib/utils";
+
+<div className={cn("base-classes", isActive && "active-classes")} />
+```
+
+- Use Tailwind classes directly. Avoid inline `style` props.
+
+## Next.js Conventions
+
+- Set page metadata via the `metadata` export, not `<Head>`:
+
+```tsx
+export const metadata: Metadata = {
+  title: "Page Title",
+  description: "Page description.",
+};
+```
+
+- Use `next/image` for all images and `next/link` for internal navigation.
+- Colocate loading, error, and not-found states using the App Router file conventions (`loading.tsx`, `error.tsx`, `not-found.tsx`).
+
+## Accessibility
+
+- All interactive elements must be keyboard accessible.
+- Images require meaningful `alt` text (or `alt=""` for decorative images).
+- Use semantic HTML elements (`nav`, `main`, `section`, `article`, `button`) over generic `div`/`span`.

@@ -1,0 +1,52 @@
+---
+description: TypeScript coding standards and type safety conventions
+globs: "**/*.ts, **/*.tsx"
+alwaysApply: false
+---
+
+# TypeScript Standards
+
+## Imports
+
+- Use `import type` for type-only imports:
+
+```typescript
+import type { ButtonProps } from "@/components/Button";
+```
+
+- Use the `@/` path alias for all internal imports — never use relative paths like `../../`.
+
+## Type Safety
+
+- Never use `any`. Use `unknown` and narrow the type:
+
+```typescript
+// Bad
+function parse(input: any) { ... }
+
+// Good
+function parse(input: unknown) {
+  if (typeof input === "string") { ... }
+}
+```
+
+- Prefer `interface` over `type` for object shapes (interfaces are extendable and produce clearer error messages). Use `type` for unions, intersections, and mapped types.
+
+## Error Handling
+
+- Always type-narrow caught errors before accessing properties:
+
+```typescript
+try {
+  await fetchData();
+} catch (error) {
+  const message = error instanceof Error ? error.message : "Unknown error";
+  console.error(message);
+}
+```
+
+## General
+
+- Prefer `const` over `let`. Never use `var`.
+- Use explicit return types on exported functions.
+- Prefer `satisfies` over `as` for type assertions when validating shape.

@@ -1,0 +1,81 @@
+---
+description: Atomic component architecture and shadcn/ui conventions
+alwaysApply: false
+---
+# Atomic Components & shadcn/ui
+
+## Directory structure
+
+Organize `src/components/` by atomic design layer:
+
+```
+src/components/
+├── ui/          # shadcn primitives (Button, Input, Card, etc.)
+├── atoms/       # project-specific single elements
+├── molecules/   # small compositions with one responsibility
+├── organisms/   # larger self-contained sections
+└── templates/   # page layouts that arrange organisms (optional)
+```
+
+## Layer responsibilities
+
+| Layer | Purpose | Examples |
+|-------|---------|----------|
+| `ui/` | shadcn-installed primitives — treat as atoms | `Button`, `Input`, `Card` |
+| `atoms/` | custom single-purpose elements not covered by shadcn | `Logo`, `PriceTag` |
+| `molecules/` | groups of atoms/ui | `SearchField`, `NavLink` |
+| `organisms/` | distinct page sections | `SiteHeader`, `Hero`, `ContactForm` |
+| `templates/` | layout shells shared across pages | `MarketingLayout` |
+
+Pages in `src/app/` compose templates or organisms — not raw atoms.
+
+## Import direction
+
+Only import **downward** in the hierarchy:
+
+`templates` → `organisms` → `molecules` → `atoms` → `ui`
+
+Never import an organism from a molecule or atom.
+
+## Prefer shadcn
+
+Before building custom UI from scratch:
+
+1. Check the [shadcn/ui docs](https://ui.shadcn.com/docs/components) for an existing component.
+2. Install it: `pnpm dlx shadcn@latest add <component>`
+3. Import from `@/components/ui/<component>`.
+4. Customize with Tailwind classes and `cn()` — compose in `atoms/` or `molecules/`, don't fork `ui/` files unless the primitive itself must change.
+
+```tsx
+// ✅ GOOD — compose shadcn primitives in a molecule
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+export function SearchField() {
+  return (
+    <div className="flex gap-2">
+      <Input placeholder="Search…" />
+      <Button type="submit">Search</Button>
+    </div>
+  );
+}
+```
+
+```tsx
+// ❌ BAD — reinventing a shadcn primitive
+export function CustomButton({ children }: { children: React.ReactNode }) {
+  return <button className="rounded-md bg-primary px-4 py-2">{children}</button>;
+}
+```
+
+## When custom components are appropriate
+
+- No shadcn equivalent exists for the primitive.
+- The component is business-specific (brand logo, pricing display).
+- You are composing existing `ui/` primitives into higher-level pieces.
+
+## File conventions
+
+- PascalCase component names with named exports.
+- Colocate stories (`*.stories.tsx`) and tests next to the component.
+- Use `@/` path aliases for all imports.

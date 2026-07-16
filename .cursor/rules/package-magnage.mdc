@@ -1,0 +1,6 @@
+---
+description: 
+alwaysApply: true
+---
+
+always use pnpm over npm

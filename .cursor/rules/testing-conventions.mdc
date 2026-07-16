@@ -1,0 +1,43 @@
+---
+description: Vitest, React Testing Library, and Playwright testing conventions
+globs: "**/*.test.ts, **/*.test.tsx, e2e/**/*.ts"
+alwaysApply: false
+---
+
+# Testing Conventions
+
+## Unit Tests (Vitest + React Testing Library)
+
+- Colocate test files next to source: `Button.test.tsx` alongside `Button.tsx`.
+- Import from `@testing-library/react` and use `screen` for queries:
+
+```tsx
+import { render, screen } from "@testing-library/react";
+import { Button } from "./Button";
+
+test("renders button text", () => {
+  render(<Button>Click me</Button>);
+  expect(screen.getByRole("button", { name: /click me/i })).toBeInTheDocument();
+});
+```
+
+- Prefer `getByRole` over `getByTestId` — query the way a user would.
+- Use `userEvent` over `fireEvent` for realistic interaction simulation:
+
+```tsx
+import userEvent from "@testing-library/user-event";
+
+test("handles click", async () => {
+  const user = userEvent.setup();
+  render(<Button onClick={handleClick}>Save</Button>);
+  await user.click(screen.getByRole("button", { name: /save/i }));
+});
+```
+
+- Test behavior and outcomes, not implementation details (avoid testing state values or internal methods directly).
+
+## E2E Tests (Playwright)
+
+- Place E2E tests in the `e2e/` directory.
+- Use locators (`page.getByRole`, `page.getByText`) over CSS selectors.
+- Name test files descriptively: `e2e/contact-form.spec.ts`.
