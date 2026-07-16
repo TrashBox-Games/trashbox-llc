@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
 import { useAuth } from "@/lib/auth";
 import { PORTAL_PATHS } from "@/lib/sites";
 
@@ -16,9 +17,5 @@ export default function PortalIndexPage() {
     }
   }, [auth.status]);
 
-  return (
-    <p className="font-label text-xs uppercase tracking-widest text-outline">
-      Loading portal…
-    </p>
-  );
+  return <PortalSkeleton variant="inbox" />;
 }

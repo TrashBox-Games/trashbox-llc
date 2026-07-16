@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { Skeleton } from "@/components/atoms/Skeleton";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { PLATFORM_PATHS, PORTAL_PATHS } from "@/lib/sites";
@@ -44,6 +45,7 @@ export function PortalHeader() {
   }, [open]);
 
   const signedIn = auth.status === "signedIn";
+  const authLoading = auth.status === "loading";
 
   return (
     <header className="fixed top-0 z-50 w-full">
@@ -75,33 +77,40 @@ export function PortalHeader() {
             </span>
           </Link>
 
-          {signedIn && (
+          {(signedIn || authLoading) && (
             <nav
               className="hidden items-center gap-7 md:flex"
               aria-label="Portal"
+              aria-busy={authLoading}
             >
-              {signedInLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={linkClass(
-                    pathname.startsWith(item.href.replace(/\/$/, "")),
-                  )}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {authLoading
+                ? signedInLinks.map((item) => (
+                    <Skeleton key={item.href} className="h-3 w-14" />
+                  ))
+                : signedInLinks.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={linkClass(
+                        pathname.startsWith(item.href.replace(/\/$/, "")),
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
             </nav>
           )}
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-[7.5rem] items-center justify-end gap-3">
             <Link
               href={PLATFORM_PATHS.hub}
               className="hidden font-label text-[10px] uppercase tracking-widest text-outline transition-colors hover:text-white lg:inline"
             >
               Platform
             </Link>
-            {signedIn ? (
+            {authLoading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : signedIn ? (
               <button
                 type="button"
                 className="font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white"

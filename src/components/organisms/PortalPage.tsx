@@ -2,6 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
+import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
 import {
   ApiError,
   createApiKey,
@@ -96,9 +97,7 @@ export function PortalLoginPage() {
   }
 
   if (auth.status === "loading" || auth.status === "signedIn") {
-    return (
-      <p className="font-label text-xs uppercase tracking-widest text-outline">Loading session…</p>
-    );
+    return <PortalSkeleton variant="login" />;
   }
 
   return (
@@ -264,6 +263,7 @@ export function PortalApp({ tab }: PortalAppProps) {
   const [apiKeyBusy, setApiKeyBusy] = useState(false);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -297,6 +297,7 @@ export function PortalApp({ tab }: PortalAppProps) {
       setApiKeyError(null);
       setIssuedApiKey(null);
       setSelectedId(null);
+      setReady(false);
       return;
     }
 
@@ -304,6 +305,7 @@ export function PortalApp({ tab }: PortalAppProps) {
     async function load() {
       setListBusy(true);
       setListError(null);
+      setReady(false);
       try {
         const acct = await getAccount();
         if (cancelled) return;
@@ -340,7 +342,10 @@ export function PortalApp({ tab }: PortalAppProps) {
           err instanceof ApiError ? err.message : "Failed to load account";
         setListError(message);
       } finally {
-        if (!cancelled) setListBusy(false);
+        if (!cancelled) {
+          setListBusy(false);
+          setReady(true);
+        }
       }
     }
     void load();
@@ -475,10 +480,8 @@ export function PortalApp({ tab }: PortalAppProps) {
     );
   }
 
-  if (auth.status === "loading" || auth.status === "signedOut") {
-    return (
-      <p className="font-label text-xs uppercase tracking-widest text-outline">Loading session…</p>
-    );
+  if (auth.status === "loading" || auth.status === "signedOut" || !ready) {
+    return <PortalSkeleton variant={tab} />;
   }
 
   const tabMeta =
@@ -491,14 +494,12 @@ export function PortalApp({ tab }: PortalAppProps) {
   return (
     <div className="space-y-10">
       <header>
-        <FadeIn>
-          <p className="mb-6 font-label text-xs uppercase tracking-[0.4em] text-outline">
-            {tabMeta.eyebrow}
-          </p>
-          <h1 className="max-w-4xl font-headline text-4xl font-bold leading-tight tracking-tighter text-white md:text-6xl">
-            {tabMeta.title}
-          </h1>
-        </FadeIn>
+        <p className="mb-6 font-label text-xs uppercase tracking-[0.4em] text-outline">
+          {tabMeta.eyebrow}
+        </p>
+        <h1 className="max-w-4xl font-headline text-4xl font-bold leading-tight tracking-tighter text-white md:text-6xl">
+          {tabMeta.title}
+        </h1>
       </header>
 
       {tab === "inbox" && (
