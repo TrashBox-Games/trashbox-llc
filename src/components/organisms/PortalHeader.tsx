@@ -55,7 +55,7 @@ export function PortalHeader() {
             : "border-outline-variant/10 bg-background/80",
         )}
       >
-        <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-6 py-4 md:px-8">
+        <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-4 px-8 py-5 md:py-6">
           <Link
             href={signedIn ? PORTAL_PATHS.inbox : PORTAL_PATHS.login}
             className="inline-flex items-center gap-3"

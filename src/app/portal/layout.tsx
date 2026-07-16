@@ -8,7 +8,7 @@ export default function PortalLayout({
   return (
     <>
       <PortalHeader />
-      <main className="mx-auto max-w-screen-2xl flex-1 px-8 pt-28 pb-24 md:pt-32">
+      <main className="mx-auto w-full max-w-screen-2xl flex-1 px-8 pt-32 pb-24">
         {children}
       </main>
     </>
