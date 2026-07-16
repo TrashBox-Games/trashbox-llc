@@ -13,7 +13,8 @@ export function SiteFooter() {
             alt="Trashbox LLC logo"
             width={128}
             height={32}
-            className="h-8 w-auto"
+            className="h-8"
+            style={{ width: "auto" }}
           />
         </Link>
         <div className="flex flex-wrap justify-center gap-8">
