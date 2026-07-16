@@ -101,7 +101,7 @@ export function EmailPlanTiers({ currentPlan = null, className }: EmailPlanTiers
 
               <p className="mt-8 font-label text-[10px] tracking-widest text-outline uppercase">
                 {plan.featured
-                  ? "Add after you create your Email Service"
+                  ? "Add after you create your Form API account"
                   : "Optional paid billing via Stripe"}
               </p>
             </article>

@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { EmailPortalPage } from "@/components/organisms/EmailPortalPage";
+import { EmailRedirect } from "@/components/organisms/EmailRedirect";
 
 export const metadata: Metadata = {
-  title: "Email Portal",
-  description: "Sign in to view form submissions for your Trashbox Email Service account.",
-  openGraph: {
-    title: "Trashbox LLC - Email Portal",
-  },
+  title: "Platform",
+  description: "Redirecting to the Trashbox Platform.",
+  robots: { index: false, follow: false },
 };
 
 export default function Page() {
-  return <EmailPortalPage />;
+  return <EmailRedirect />;
 }

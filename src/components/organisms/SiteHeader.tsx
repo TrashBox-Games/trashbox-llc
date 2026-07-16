@@ -13,7 +13,7 @@ const navItems = [
   { href: "/", label: "Home", exact: true },
   { href: "/apps", label: "Apps" },
   { href: "/services", label: "Services" },
-  { href: "/email", label: "Email" },
+  { href: "/platform", label: "Platform" },
 ] as const;
 
 function navLinkClass(active: boolean) {

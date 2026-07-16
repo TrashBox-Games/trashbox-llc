@@ -29,7 +29,8 @@ Copy `.env.example` to `.env.local` and set:
 
 - `NEXT_PUBLIC_API_URL` — Form API base URL
 - `NEXT_PUBLIC_FORM_API_KEY` — public site key for the contact form
-- `NEXT_PUBLIC_COGNITO_USER_POOL_ID` / `NEXT_PUBLIC_COGNITO_CLIENT_ID` — Email Portal auth
+- `NEXT_PUBLIC_COGNITO_USER_POOL_ID` / `NEXT_PUBLIC_COGNITO_CLIENT_ID` — Platform portal auth
+- `NEXT_PUBLIC_PORTAL_URL` — portal root for Login CTAs (e.g. `https://trashbox.io/portal`)
 
 For GitHub Pages, set the same names as repository **Secrets** (used by `.github/workflows/deploy-pages.yml`). In repo settings, set Pages source to **GitHub Actions**.
 
@@ -52,4 +53,16 @@ For GitHub Pages, set the same names as repository **Secrets** (used by `.github
 | `/apps` | Apps portfolio |
 | `/apps/:app/:page` | App markdown pages (e.g. `/apps/bmplayer/privacy`) |
 | `/services` | Services + contact form |
-| `/email` | Email Service portal |
+| `/platform` | Platform hub (Overview / Features / Pricing / API / Documentation) |
+| `/platform/features` | Platform features |
+| `/platform/pricing` | Platform pricing |
+| `/platform/api` | Form API usage |
+| `/platform/documentation` | Platform docs + OpenAPI link |
+| `/portal` | Redirects to inbox or login |
+| `/portal/login` | Cognito sign-in / sign-up (separate portal chrome) |
+| `/portal/inbox` | Notifications inbox |
+| `/portal/api-key` | API key management |
+| `/portal/membership` | Subscription / billing |
+| `/email` | Redirects to `/platform` |
+
+Platform marketing lives under `/platform/*` with the main site header. The signed-in product lives under `/portal/*` with its own header.

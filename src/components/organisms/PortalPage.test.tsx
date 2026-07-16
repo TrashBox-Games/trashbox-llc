@@ -2,7 +2,12 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { EmailPortalPage } from "./EmailPortalPage";
+import { PortalApp } from "./PortalPage";
+import { PlatformNav } from "./PlatformNav";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/platform/",
+}));
 
 vi.mock("@/lib/auth", () => ({
   useAuth: vi.fn(),
@@ -29,9 +34,14 @@ vi.mock("@/components/atoms/FadeIn", () => ({
   FadeIn: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
-vi.mock("@/components/organisms/EmailPlanTiers", () => ({
-  EmailPlanTiers: () => null,
-}));
+vi.mock("@/lib/sites", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/sites")>("@/lib/sites");
+  return {
+    ...actual,
+    portalUrl: (path: string = "login") =>
+      path === "inbox" ? "/portal/inbox/" : "/portal/login/",
+  };
+});
 
 import { useAuth } from "@/lib/auth";
 import {
@@ -41,7 +51,22 @@ import {
   listSubmissions,
 } from "@/lib/api";
 
-describe("EmailPortalPage API key management", () => {
+describe("PlatformNav", () => {
+  it("links Features under /platform and Login to portal", () => {
+    render(<PlatformNav />);
+
+    expect(screen.getByRole("link", { name: /^login$/i })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/\/portal\/login\/?$/),
+    );
+    expect(screen.getByRole("link", { name: /^features$/i })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/\/platform\/features\/?$/),
+    );
+  });
+});
+
+describe("PortalApp API key tab", () => {
   beforeEach(() => {
     vi.mocked(useAuth).mockReturnValue({
       configured: true,
@@ -78,9 +103,11 @@ describe("EmailPortalPage API key management", () => {
     });
 
     const user = userEvent.setup();
-    render(<EmailPortalPage />);
+    render(<PortalApp tab="api-key" />);
 
-    expect(await screen.findByRole("heading", { name: /no key issued/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /no key issued/i }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /create key/i }));
 
@@ -106,15 +133,19 @@ describe("EmailPortalPage API key management", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
 
     const user = userEvent.setup();
-    render(<EmailPortalPage />);
+    render(<PortalApp tab="api-key" />);
 
-    expect(await screen.findByRole("heading", { name: /key active/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /key active/i }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /delete key/i }));
 
     expect(deleteApiKey).toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /no key issued/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /no key issued/i }),
+      ).toBeInTheDocument();
     });
   });
 });
