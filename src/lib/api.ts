@@ -26,9 +26,16 @@ export interface AccountResponse {
   tier?: "basic" | "premium";
   active?: boolean;
   hasBilling?: boolean;
+  hasApiKey?: boolean;
   emailsUsed?: number;
   emailLimit?: number;
   usageMonth?: string;
+}
+
+export interface ApiKeyResponse {
+  apiKey?: string;
+  hasApiKey: boolean;
+  message?: string;
 }
 
 export class ApiError extends Error {
@@ -124,6 +131,18 @@ export async function provisionAccount(businessName: string): Promise<
     created?: boolean;
     message?: string;
   };
+}
+
+export async function createApiKey(): Promise<ApiKeyResponse> {
+  return (await authFetch("/account/api-key", {
+    method: "POST",
+  })) as unknown as ApiKeyResponse;
+}
+
+export async function deleteApiKey(): Promise<ApiKeyResponse> {
+  return (await authFetch("/account/api-key", {
+    method: "DELETE",
+  })) as unknown as ApiKeyResponse;
 }
 
 export async function startCheckout(

@@ -5,6 +5,8 @@ import { FadeIn } from "@/components/atoms/FadeIn";
 import { EmailPlanTiers } from "@/components/organisms/EmailPlanTiers";
 import {
   ApiError,
+  createApiKey,
+  deleteApiKey,
   getAccount,
   listSubmissions,
   openBillingPortal,
@@ -56,6 +58,8 @@ export function EmailPortalPage() {
   const [billingNotice, setBillingNotice] = useState<string | null>(null)
   const [businessName, setBusinessName] = useState('')
   const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null)
+  const [apiKeyBusy, setApiKeyBusy] = useState(false)
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -81,6 +85,8 @@ export function EmailPortalPage() {
       setNextCursor(undefined)
       setListError(null)
       setBillingError(null)
+      setApiKeyError(null)
+      setIssuedApiKey(null)
       setSelectedId(null)
       return
     }
@@ -195,6 +201,7 @@ export function EmailPortalPage() {
         tier: result.tier,
         active: result.active,
         hasBilling: result.hasBilling,
+        hasApiKey: Boolean(result.apiKey) || result.hasApiKey,
         emailsUsed: result.emailsUsed,
         emailLimit: result.emailLimit,
         usageMonth: result.usageMonth,
@@ -207,6 +214,45 @@ export function EmailPortalPage() {
       )
     } finally {
       setBillingBusy(false)
+    }
+  }
+
+  async function onCreateApiKey() {
+    setApiKeyBusy(true)
+    setApiKeyError(null)
+    try {
+      const result = await createApiKey()
+      if (result.apiKey) setIssuedApiKey(result.apiKey)
+      setAccount((prev) => (prev ? { ...prev, hasApiKey: true } : prev))
+    } catch (err) {
+      setApiKeyError(
+        err instanceof ApiError ? err.message : 'Could not create API key',
+      )
+    } finally {
+      setApiKeyBusy(false)
+    }
+  }
+
+  async function onDeleteApiKey() {
+    if (
+      !window.confirm(
+        'Delete your API key? Form submissions using it will stop working until you create a new key.',
+      )
+    ) {
+      return
+    }
+    setApiKeyBusy(true)
+    setApiKeyError(null)
+    try {
+      await deleteApiKey()
+      setIssuedApiKey(null)
+      setAccount((prev) => (prev ? { ...prev, hasApiKey: false } : prev))
+    } catch (err) {
+      setApiKeyError(
+        err instanceof ApiError ? err.message : 'Could not delete API key',
+      )
+    } finally {
+      setApiKeyBusy(false)
     }
   }
 
@@ -616,6 +662,47 @@ export function EmailPortalPage() {
                   )}
                 </div>
                 {billingError && <p className="mt-4 text-sm text-red-300">{billingError}</p>}
+              </section>
+            )}
+
+            {account?.linked && (
+              <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
+                <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+                  API key
+                </p>
+                <h2 className="mt-3 font-headline text-2xl font-bold text-white md:text-3xl">
+                  {account.hasApiKey ? 'Key active' : 'No key issued'}
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
+                  {account.hasApiKey
+                    ? 'Use your Form API key in website forms (X-Api-Key). Rotating replaces the current key immediately. The raw key is only shown once.'
+                    : 'Create a key to accept form submissions from your sites. The raw key is only shown once.'}
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
+                    disabled={apiKeyBusy}
+                    onClick={() => void onCreateApiKey()}
+                  >
+                    {apiKeyBusy
+                      ? 'Working…'
+                      : account.hasApiKey
+                        ? 'Rotate key'
+                        : 'Create key'}
+                  </button>
+                  {account.hasApiKey && (
+                    <button
+                      type="button"
+                      className="border border-outline-variant/30 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
+                      disabled={apiKeyBusy}
+                      onClick={() => void onDeleteApiKey()}
+                    >
+                      {apiKeyBusy ? 'Working…' : 'Delete key'}
+                    </button>
+                  )}
+                </div>
+                {apiKeyError && <p className="mt-4 text-sm text-red-300">{apiKeyError}</p>}
               </section>
             )}
 
