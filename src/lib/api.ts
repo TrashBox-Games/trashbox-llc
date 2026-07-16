@@ -28,6 +28,15 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   lost: "Lost",
 };
 
+/** Tailwind classes for the status indicator dot (fill + glow). */
+export const LEAD_STATUS_DOT_CLASS: Record<LeadStatus, string> = {
+  new: "bg-white shadow-[0_0_8px_2px_rgba(255,255,255,0.65)]",
+  contacted: "bg-[#7EB6D4] shadow-[0_0_8px_2px_rgba(126,182,212,0.65)]",
+  qualified: "bg-[#D4B87E] shadow-[0_0_8px_2px_rgba(212,184,126,0.65)]",
+  won: "bg-[#8FCB8F] shadow-[0_0_8px_2px_rgba(143,203,143,0.65)]",
+  lost: "bg-error shadow-[0_0_8px_2px_rgba(255,180,171,0.65)]",
+};
+
 export const LEAD_TAG_LABELS: Record<LeadTag, string> = {
   website_quote: "Website Quote",
   support: "Support",

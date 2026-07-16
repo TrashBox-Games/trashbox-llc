@@ -3,6 +3,7 @@
 import { Select } from "@/components/atoms/Select";
 import {
   LEAD_STATUSES,
+  LEAD_STATUS_DOT_CLASS,
   LEAD_STATUS_LABELS,
   LEAD_TAGS,
   LEAD_TAG_LABELS,
@@ -72,6 +73,7 @@ export function LeadInboxFilters({
             ...LEAD_STATUSES.map((status) => ({
               value: status,
               label: LEAD_STATUS_LABELS[status],
+              indicatorClassName: LEAD_STATUS_DOT_CLASS[status],
             })),
           ]}
         />

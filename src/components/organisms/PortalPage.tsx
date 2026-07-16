@@ -2,6 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
+import { LeadStatusBadge } from "@/components/atoms/LeadStatusBadge";
 import { LeadDetail } from "@/components/molecules/LeadDetail";
 import {
   LeadInboxFilters,
@@ -20,7 +21,6 @@ import {
   deleteTeamMember,
   getAccount,
   getTeam,
-  LEAD_STATUS_LABELS,
   leadStatusOf,
   listSubmissions,
   openBillingPortal,
@@ -998,9 +998,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                           <p className="font-headline text-sm font-bold text-white">
                             {item.senderName}
                           </p>
-                          <span className="font-label text-[10px] uppercase tracking-widest text-outline">
-                            {LEAD_STATUS_LABELS[status]}
-                          </span>
+                          <LeadStatusBadge status={status} />
                         </div>
                         <p className="mt-1 text-xs text-outline">{item.senderEmail}</p>
                         <p className="mt-2 line-clamp-2 text-sm text-on-surface-variant">

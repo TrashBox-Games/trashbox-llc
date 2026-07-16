@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Select } from "@/components/atoms/Select";
 import {
   LEAD_STATUSES,
+  LEAD_STATUS_DOT_CLASS,
   LEAD_STATUS_LABELS,
   LEAD_TAGS,
   LEAD_TAG_LABELS,
@@ -88,6 +89,7 @@ export function LeadDetail({
             options={LEAD_STATUSES.map((s) => ({
               value: s,
               label: LEAD_STATUS_LABELS[s],
+              indicatorClassName: LEAD_STATUS_DOT_CLASS[s],
             }))}
           />
         </div>

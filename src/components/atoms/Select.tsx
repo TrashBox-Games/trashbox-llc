@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 export interface SelectOption {
   value: string;
   label: string;
+  /** Optional Tailwind class for a colored indicator dot. */
+  indicatorClassName?: string;
 }
 
 interface SelectProps {
@@ -139,7 +141,18 @@ export function Select({
           disabled && "cursor-not-allowed opacity-40",
         )}
       >
-        <span className="truncate">{selected?.label ?? ""}</span>
+        <span className="flex min-w-0 items-center gap-2 truncate">
+          {selected?.indicatorClassName && (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "size-2 shrink-0 rounded-full",
+                selected.indicatorClassName,
+              )}
+            />
+          )}
+          <span className="truncate">{selected?.label ?? ""}</span>
+        </span>
         <MaterialIcon
           name="expand_more"
           className={cn(
@@ -171,11 +184,20 @@ export function Select({
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => choose(option.value)}
                 className={cn(
-                  "cursor-pointer px-3 py-2 text-sm text-on-surface",
+                  "flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-on-surface",
                   isActive && "bg-surface-bright text-white",
                   isSelected && "font-medium text-white",
                 )}
               >
+                {option.indicatorClassName && (
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "size-2 shrink-0 rounded-full",
+                      option.indicatorClassName,
+                    )}
+                  />
+                )}
                 {option.label}
               </li>
             );
