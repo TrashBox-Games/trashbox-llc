@@ -1,6 +1,49 @@
 import { fetchAuthSession } from "aws-amplify/auth";
 import { apiUrl } from "./amplify";
 
+export const LEAD_STATUSES = [
+  "new",
+  "contacted",
+  "qualified",
+  "won",
+  "lost",
+] as const;
+
+export type LeadStatus = (typeof LEAD_STATUSES)[number];
+
+export const LEAD_TAGS = [
+  "website_quote",
+  "support",
+  "sales",
+  "vip",
+] as const;
+
+export type LeadTag = (typeof LEAD_TAGS)[number];
+
+export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
+  new: "New",
+  contacted: "Contacted",
+  qualified: "Qualified",
+  won: "Won",
+  lost: "Lost",
+};
+
+export const LEAD_TAG_LABELS: Record<LeadTag, string> = {
+  website_quote: "Website Quote",
+  support: "Support",
+  sales: "Sales",
+  vip: "VIP",
+};
+
+export type TeamRole = "owner" | "member";
+
+export interface SubmissionNote {
+  id: string;
+  body: string;
+  authorEmail: string;
+  createdAt: string;
+}
+
 export interface Submission {
   clientId: string;
   submissionId: string;
@@ -9,6 +52,11 @@ export interface Submission {
   message: string;
   metadata?: Record<string, string>;
   submittedAt: string;
+  status?: LeadStatus;
+  tags?: LeadTag[];
+  notes?: SubmissionNote[];
+  assignedTo?: string | null;
+  updatedAt?: string;
 }
 
 export interface SubmissionsListResponse {
@@ -23,6 +71,7 @@ export interface AccountResponse {
   email?: string;
   clientId?: string;
   clientName?: string;
+  role?: TeamRole;
   tier?: "basic" | "premium";
   active?: boolean;
   hasBilling?: boolean;
@@ -36,6 +85,28 @@ export interface ApiKeyResponse {
   apiKey?: string;
   hasApiKey: boolean;
   message?: string;
+}
+
+export interface TeamMember {
+  email: string;
+  role: TeamRole;
+  joinedAt: string;
+}
+
+export interface TeamInvite {
+  email: string;
+  role: TeamRole;
+  invitedBy: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface TeamResponse {
+  clientId: string;
+  clientName: string;
+  role: TeamRole;
+  members: TeamMember[];
+  invites: TeamInvite[];
 }
 
 export class ApiError extends Error {
@@ -105,15 +176,98 @@ async function authFetch(path: string, init?: RequestInit) {
   return data;
 }
 
-export async function listSubmissions(options?: {
+export interface ListSubmissionsOptions {
   limit?: number;
   cursor?: string;
-}): Promise<SubmissionsListResponse> {
+  status?: LeadStatus;
+  tag?: LeadTag;
+  assignedTo?: string;
+  q?: string;
+  clientId?: string;
+}
+
+export async function listSubmissions(
+  options?: ListSubmissionsOptions,
+): Promise<SubmissionsListResponse> {
   const params = new URLSearchParams();
   if (options?.limit) params.set("limit", String(options.limit));
   if (options?.cursor) params.set("cursor", options.cursor);
+  if (options?.status) params.set("status", options.status);
+  if (options?.tag) params.set("tag", options.tag);
+  if (options?.assignedTo) params.set("assignedTo", options.assignedTo);
+  if (options?.q) params.set("q", options.q);
+  if (options?.clientId) params.set("clientId", options.clientId);
   const qs = params.toString();
-  return (await authFetch(`/submissions${qs ? `?${qs}` : ""}`)) as unknown as SubmissionsListResponse;
+  return (await authFetch(
+    `/submissions${qs ? `?${qs}` : ""}`,
+  )) as unknown as SubmissionsListResponse;
+}
+
+export async function updateSubmission(
+  submissionId: string,
+  patch: {
+    status?: LeadStatus;
+    tags?: LeadTag[];
+    assignedTo?: string | null;
+  },
+): Promise<Submission> {
+  return (await authFetch(`/submissions/${encodeURIComponent(submissionId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  })) as unknown as Submission;
+}
+
+export async function addSubmissionNote(
+  submissionId: string,
+  body: string,
+): Promise<Submission> {
+  return (await authFetch(
+    `/submissions/${encodeURIComponent(submissionId)}/notes`,
+    {
+      method: "POST",
+      body: JSON.stringify({ body }),
+    },
+  )) as unknown as Submission;
+}
+
+export async function getTeam(): Promise<TeamResponse> {
+  return (await authFetch("/team")) as unknown as TeamResponse;
+}
+
+export async function createTeamInvite(
+  email: string,
+): Promise<{ invite: TeamInvite; message?: string }> {
+  return (await authFetch("/team/invites", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  })) as unknown as { invite: TeamInvite; message?: string };
+}
+
+export async function deleteTeamInvite(email: string): Promise<void> {
+  await authFetch(`/team/invites/${encodeURIComponent(email)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function acceptTeamInvite(token: string): Promise<{
+  success: boolean;
+  clientId?: string;
+  clientName?: string;
+}> {
+  return (await authFetch("/team/accept", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  })) as unknown as {
+    success: boolean;
+    clientId?: string;
+    clientName?: string;
+  };
+}
+
+export async function deleteTeamMember(email: string): Promise<void> {
+  await authFetch(`/team/members/${encodeURIComponent(email)}`, {
+    method: "DELETE",
+  });
 }
 
 export async function getAccount(): Promise<AccountResponse> {
@@ -163,4 +317,16 @@ export async function openBillingPortal(): Promise<string> {
   })) as { url?: string };
   if (!data.url) throw new ApiError(500, "No billing portal URL returned");
   return data.url;
+}
+
+export function leadStatusOf(submission: Submission): LeadStatus {
+  return submission.status ?? "new";
+}
+
+export function leadTagsOf(submission: Submission): LeadTag[] {
+  return submission.tags ?? [];
+}
+
+export function leadNotesOf(submission: Submission): SubmissionNote[] {
+  return submission.notes ?? [];
 }

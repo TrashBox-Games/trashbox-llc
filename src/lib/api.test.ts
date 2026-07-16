@@ -10,9 +10,15 @@ vi.mock("./amplify", () => ({
 
 import { fetchAuthSession } from "aws-amplify/auth";
 import {
+  acceptTeamInvite,
+  addSubmissionNote,
   createApiKey,
+  createTeamInvite,
   deleteApiKey,
   getAccount,
+  getTeam,
+  listSubmissions,
+  updateSubmission,
 } from "./api";
 
 function sessionWithEmailToken() {
@@ -88,6 +94,7 @@ describe("api key management", () => {
           hasApiKey: true,
           tier: "basic",
           active: true,
+          role: "owner",
         }),
       }),
     );
@@ -95,5 +102,184 @@ describe("api key management", () => {
     const account = await getAccount();
 
     expect(account.hasApiKey).toBe(true);
+    expect(account.role).toBe("owner");
+  });
+});
+
+describe("CRM submissions API", () => {
+  beforeEach(() => {
+    vi.mocked(fetchAuthSession).mockResolvedValue(
+      sessionWithEmailToken() as Awaited<ReturnType<typeof fetchAuthSession>>,
+    );
+  });
+
+  it("listSubmissions passes status, tag, q, and assignedTo filters", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          clientId: "c1",
+          clientName: "Acme",
+          items: [],
+        }),
+      }),
+    );
+
+    await listSubmissions({
+      status: "contacted",
+      tag: "sales",
+      assignedTo: "sarah@example.com",
+      q: "estimate",
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("https://api.trashbox.io/submissions?"),
+      expect.any(Object),
+    );
+    const url = String(vi.mocked(fetch).mock.calls[0]?.[0]);
+    expect(url).toContain("status=contacted");
+    expect(url).toContain("tag=sales");
+    expect(url).toContain("assignedTo=sarah%40example.com");
+    expect(url).toContain("q=estimate");
+  });
+
+  it("updateSubmission PATCHes status and tags", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          submissionId: "s1",
+          status: "qualified",
+          tags: ["vip"],
+        }),
+      }),
+    );
+
+    const result = await updateSubmission("s1", {
+      status: "qualified",
+      tags: ["vip"],
+    });
+
+    expect(result.status).toBe("qualified");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.trashbox.io/submissions/s1",
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({ status: "qualified", tags: ["vip"] }),
+      }),
+    );
+  });
+
+  it("addSubmissionNote POSTs note body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          submissionId: "s1",
+          notes: [
+            {
+              id: "n1",
+              body: "Called customer July 15, requested estimate",
+              authorEmail: "owner@example.com",
+              createdAt: "2026-07-15T12:00:00.000Z",
+            },
+          ],
+        }),
+      }),
+    );
+
+    const result = await addSubmissionNote(
+      "s1",
+      "Called customer July 15, requested estimate",
+    );
+
+    expect(result.notes?.[0]?.body).toContain("requested estimate");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.trashbox.io/submissions/s1/notes",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+});
+
+describe("team API", () => {
+  beforeEach(() => {
+    vi.mocked(fetchAuthSession).mockResolvedValue(
+      sessionWithEmailToken() as Awaited<ReturnType<typeof fetchAuthSession>>,
+    );
+  });
+
+  it("getTeam fetches roster", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          clientId: "c1",
+          clientName: "Acme",
+          role: "owner",
+          members: [
+            { email: "owner@example.com", role: "owner", joinedAt: "2026-01-01" },
+          ],
+          invites: [],
+        }),
+      }),
+    );
+
+    const team = await getTeam();
+    expect(team.role).toBe("owner");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.trashbox.io/team",
+      expect.any(Object),
+    );
+  });
+
+  it("createTeamInvite POSTs email", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          invite: {
+            email: "teammate@example.com",
+            role: "member",
+            invitedBy: "owner@example.com",
+            createdAt: "2026-07-16",
+            expiresAt: "2026-07-23",
+          },
+        }),
+      }),
+    );
+
+    await createTeamInvite("teammate@example.com");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.trashbox.io/team/invites",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ email: "teammate@example.com" }),
+      }),
+    );
+  });
+
+  it("acceptTeamInvite POSTs token", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, clientId: "c1" }),
+      }),
+    );
+
+    const result = await acceptTeamInvite("abc123");
+    expect(result.success).toBe(true);
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.trashbox.io/team/accept",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ token: "abc123" }),
+      }),
+    );
   });
 });

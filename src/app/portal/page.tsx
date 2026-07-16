@@ -24,7 +24,7 @@ export default function PortalIndexPage() {
           Inbox
         </p>
         <h1 className="max-w-4xl font-headline text-4xl font-bold leading-tight tracking-tighter text-white md:text-6xl">
-          Notifications <span className="text-outline">Inbox.</span>
+          Lead <span className="text-outline">Inbox.</span>
         </h1>
       </header>
       <PortalSkeleton variant="inbox" />

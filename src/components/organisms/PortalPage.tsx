@@ -2,24 +2,44 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
+import { LeadDetail } from "@/components/molecules/LeadDetail";
+import {
+  LeadInboxFilters,
+  type LeadInboxFiltersValue,
+} from "@/components/molecules/LeadInboxFilters";
+import { TeamPanel } from "@/components/molecules/TeamPanel";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
 import {
   ApiError,
+  acceptTeamInvite,
+  addSubmissionNote,
   createApiKey,
+  createTeamInvite,
   deleteApiKey,
+  deleteTeamInvite,
+  deleteTeamMember,
   getAccount,
+  getTeam,
+  LEAD_STATUS_LABELS,
+  leadStatusOf,
   listSubmissions,
   openBillingPortal,
   provisionAccount,
   startCheckout,
+  updateSubmission,
   type AccountResponse,
+  type LeadStatus,
+  type LeadTag,
   type Submission,
+  type TeamInvite,
+  type TeamMember,
+  type TeamRole,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PORTAL_PATHS } from "@/lib/sites";
 
 type AuthMode = "signIn" | "signUp" | "confirm";
-type PortalTab = "inbox" | "api-key" | "membership";
+type PortalTab = "inbox" | "api-key" | "membership" | "team";
 
 const inputClass =
   "w-full border-0 border-b border-outline-variant bg-transparent py-4 text-white placeholder:text-outline-variant/50 focus:border-primary focus:ring-0 focus:outline-none";
@@ -42,6 +62,13 @@ function formatWhen(iso: string) {
 function redirect(path: string) {
   window.location.assign(path);
 }
+
+const emptyFilters: LeadInboxFiltersValue = {
+  q: "",
+  status: "",
+  tag: "",
+  assignedTo: "",
+};
 
 export function PortalLoginPage() {
   const auth = useAuth();
@@ -259,6 +286,7 @@ export function PortalApp({ tab }: PortalAppProps) {
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [listError, setListError] = useState<string | null>(null);
   const [listBusy, setListBusy] = useState(false);
+  const [crmBusy, setCrmBusy] = useState(false);
   const [billingBusy, setBillingBusy] = useState(false);
   const [billingError, setBillingError] = useState<string | null>(null);
   const [billingNotice, setBillingNotice] = useState<string | null>(null);
@@ -268,6 +296,15 @@ export function PortalApp({ tab }: PortalAppProps) {
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [filters, setFilters] = useState<LeadInboxFiltersValue>(emptyFilters);
+  const [appliedFilters, setAppliedFilters] =
+    useState<LeadInboxFiltersValue>(emptyFilters);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [invites, setInvites] = useState<TeamInvite[]>([]);
+  const [teamRole, setTeamRole] = useState<TeamRole>("member");
+  const [teamBusy, setTeamBusy] = useState(false);
+  const [teamError, setTeamError] = useState<string | null>(null);
+  const [teamNotice, setTeamNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -288,6 +325,10 @@ export function PortalApp({ tab }: PortalAppProps) {
 
   useEffect(() => {
     if (auth.status === "signedOut") {
+      const invite = new URLSearchParams(window.location.search).get("invite");
+      if (invite) {
+        sessionStorage.setItem("portalInviteToken", invite);
+      }
       redirect(PORTAL_PATHS.login);
       return;
     }
@@ -301,6 +342,8 @@ export function PortalApp({ tab }: PortalAppProps) {
       setApiKeyError(null);
       setIssuedApiKey(null);
       setSelectedId(null);
+      setMembers([]);
+      setInvites([]);
       setReady(false);
       return;
     }
@@ -311,6 +354,36 @@ export function PortalApp({ tab }: PortalAppProps) {
       setListError(null);
       setReady(false);
       try {
+        const params = new URLSearchParams(window.location.search);
+        const inviteToken =
+          params.get("invite") ||
+          sessionStorage.getItem("portalInviteToken");
+        if (inviteToken) {
+          sessionStorage.removeItem("portalInviteToken");
+          try {
+            const accepted = await acceptTeamInvite(inviteToken);
+            if (!cancelled && accepted.success) {
+              setTeamNotice(
+                accepted.clientName
+                  ? `Joined ${accepted.clientName}.`
+                  : "Invite accepted.",
+              );
+            }
+          } catch (err) {
+            if (!cancelled) {
+              setTeamError(
+                err instanceof ApiError
+                  ? err.message
+                  : "Could not accept invite",
+              );
+            }
+          } finally {
+            params.delete("invite");
+            const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+            window.history.replaceState({}, "", next);
+          }
+        }
+
         const acct = await getAccount();
         if (cancelled) return;
         setAccount(acct);
@@ -319,12 +392,39 @@ export function PortalApp({ tab }: PortalAppProps) {
           setItems([]);
           setClientName(null);
           setNextCursor(undefined);
+          setMembers([]);
+          setInvites([]);
           return;
         }
 
         setClientName(acct.clientName || null);
+        if (acct.role) setTeamRole(acct.role);
+
         try {
-          const subs = await listSubmissions({ limit: 50 });
+          const team = await getTeam();
+          if (cancelled) return;
+          setMembers(team.members);
+          setInvites(team.invites);
+          setTeamRole(team.role);
+        } catch {
+          if (!cancelled) {
+            setMembers([]);
+            setInvites([]);
+          }
+        }
+
+        try {
+          const subs = await listSubmissions({
+            limit: 50,
+            ...(appliedFilters.status
+              ? { status: appliedFilters.status }
+              : {}),
+            ...(appliedFilters.tag ? { tag: appliedFilters.tag } : {}),
+            ...(appliedFilters.assignedTo
+              ? { assignedTo: appliedFilters.assignedTo }
+              : {}),
+            ...(appliedFilters.q.trim() ? { q: appliedFilters.q.trim() } : {}),
+          });
           if (cancelled) return;
           setItems(subs.items);
           setNextCursor(subs.nextCursor);
@@ -336,7 +436,9 @@ export function PortalApp({ tab }: PortalAppProps) {
             setListError(null);
           } else {
             setListError(
-              err instanceof ApiError ? err.message : "Failed to load submissions",
+              err instanceof ApiError
+                ? err.message
+                : "Failed to load submissions",
             );
           }
         }
@@ -356,20 +458,126 @@ export function PortalApp({ tab }: PortalAppProps) {
     return () => {
       cancelled = true;
     };
-  }, [auth.status]);
+  }, [auth.status, appliedFilters]);
 
   async function loadMore() {
     if (!nextCursor) return;
     setListBusy(true);
     setListError(null);
     try {
-      const data = await listSubmissions({ limit: 50, cursor: nextCursor });
+      const data = await listSubmissions({
+        limit: 50,
+        cursor: nextCursor,
+        ...(appliedFilters.status ? { status: appliedFilters.status } : {}),
+        ...(appliedFilters.tag ? { tag: appliedFilters.tag } : {}),
+        ...(appliedFilters.assignedTo
+          ? { assignedTo: appliedFilters.assignedTo }
+          : {}),
+        ...(appliedFilters.q.trim() ? { q: appliedFilters.q.trim() } : {}),
+      });
       setItems((prev) => [...prev, ...data.items]);
       setNextCursor(data.nextCursor);
     } catch (err) {
       setListError(err instanceof ApiError ? err.message : "Failed to load more");
     } finally {
       setListBusy(false);
+    }
+  }
+
+  function replaceItem(updated: Submission) {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.submissionId === updated.submissionId ? updated : item,
+      ),
+    );
+  }
+
+  async function onLeadUpdate(patch: {
+    status?: LeadStatus;
+    tags?: LeadTag[];
+    assignedTo?: string | null;
+  }) {
+    if (!selectedId) return;
+    setCrmBusy(true);
+    setListError(null);
+    try {
+      const updated = await updateSubmission(selectedId, patch);
+      replaceItem(updated);
+    } catch (err) {
+      setListError(
+        err instanceof ApiError ? err.message : "Failed to update lead",
+      );
+    } finally {
+      setCrmBusy(false);
+    }
+  }
+
+  async function onLeadNote(body: string) {
+    if (!selectedId) return;
+    setCrmBusy(true);
+    setListError(null);
+    try {
+      const updated = await addSubmissionNote(selectedId, body);
+      replaceItem(updated);
+    } catch (err) {
+      setListError(
+        err instanceof ApiError ? err.message : "Failed to add note",
+      );
+    } finally {
+      setCrmBusy(false);
+    }
+  }
+
+  async function refreshTeam() {
+    const team = await getTeam();
+    setMembers(team.members);
+    setInvites(team.invites);
+    setTeamRole(team.role);
+  }
+
+  async function onInvite(email: string) {
+    setTeamBusy(true);
+    setTeamError(null);
+    try {
+      await createTeamInvite(email);
+      await refreshTeam();
+      setTeamNotice(`Invite sent to ${email}.`);
+    } catch (err) {
+      setTeamError(
+        err instanceof ApiError ? err.message : "Failed to send invite",
+      );
+    } finally {
+      setTeamBusy(false);
+    }
+  }
+
+  async function onRevokeInvite(email: string) {
+    setTeamBusy(true);
+    setTeamError(null);
+    try {
+      await deleteTeamInvite(email);
+      await refreshTeam();
+    } catch (err) {
+      setTeamError(
+        err instanceof ApiError ? err.message : "Failed to revoke invite",
+      );
+    } finally {
+      setTeamBusy(false);
+    }
+  }
+
+  async function onRemoveMember(email: string) {
+    setTeamBusy(true);
+    setTeamError(null);
+    try {
+      await deleteTeamMember(email);
+      await refreshTeam();
+    } catch (err) {
+      setTeamError(
+        err instanceof ApiError ? err.message : "Failed to remove member",
+      );
+    } finally {
+      setTeamBusy(false);
     }
   }
 
@@ -389,6 +597,7 @@ export function PortalApp({ tab }: PortalAppProps) {
         email: result.email,
         clientId: result.clientId,
         clientName: result.clientName,
+        role: result.role ?? "owner",
         tier: result.tier,
         active: result.active,
         hasBilling: result.hasBilling,
@@ -486,10 +695,40 @@ export function PortalApp({ tab }: PortalAppProps) {
 
   const tabMeta =
     tab === "inbox"
-      ? { eyebrow: "Inbox", title: <>Notifications <span className="text-outline">Inbox.</span></> }
+      ? {
+          eyebrow: "Inbox",
+          title: (
+            <>
+              Lead <span className="text-outline">Inbox.</span>
+            </>
+          ),
+        }
+      : tab === "team"
+        ? {
+            eyebrow: "Team",
+            title: (
+              <>
+                Team <span className="text-outline">Members.</span>
+              </>
+            ),
+          }
       : tab === "api-key"
-        ? { eyebrow: "API key", title: <>Form API <span className="text-outline">Key.</span></> }
-        : { eyebrow: "Membership", title: <>Plan & <span className="text-outline">Billing.</span></> };
+        ? {
+            eyebrow: "API key",
+            title: (
+              <>
+                Form API <span className="text-outline">Key.</span>
+              </>
+            ),
+          }
+        : {
+            eyebrow: "Membership",
+            title: (
+              <>
+                Plan & <span className="text-outline">Billing.</span>
+              </>
+            ),
+          };
 
   const contentPending =
     auth.status === "loading" || auth.status === "signedOut" || !ready;
@@ -606,7 +845,7 @@ export function PortalApp({ tab }: PortalAppProps) {
         </section>
       )}
 
-      {tab === "membership" && account?.linked && (
+      {tab === "membership" && account?.linked && account.role !== "member" && (
         <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
           <p className="font-label text-[10px] uppercase tracking-widest text-outline">
             Subscription
@@ -671,7 +910,7 @@ export function PortalApp({ tab }: PortalAppProps) {
         </section>
       )}
 
-      {tab === "api-key" && account?.linked && (
+      {tab === "api-key" && account?.linked && account.role !== "member" && (
         <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
           <p className="font-label text-[10px] uppercase tracking-widest text-outline">API key</p>
           <h2 className="mt-3 font-headline text-2xl font-bold text-white md:text-3xl">
@@ -712,6 +951,15 @@ export function PortalApp({ tab }: PortalAppProps) {
 
       {tab === "inbox" && (
         <>
+          {account?.linked && (
+            <LeadInboxFilters
+              value={filters}
+              members={members}
+              onChange={setFilters}
+              onApply={() => setAppliedFilters(filters)}
+            />
+          )}
+
           {listError && listError !== "No Form API account for this email" && (
             <p className="border border-outline-variant/20 bg-surface-container-low p-6 text-on-surface-variant">
               {listError}
@@ -719,11 +967,13 @@ export function PortalApp({ tab }: PortalAppProps) {
           )}
 
           {listBusy && items.length === 0 && account?.linked && (
-            <p className="font-label text-xs uppercase tracking-widest text-outline">Loading…</p>
+            <p className="font-label text-xs uppercase tracking-widest text-outline">
+              Loading…
+            </p>
           )}
 
           {!listBusy && !listError && items.length === 0 && account?.linked && (
-            <p className="text-on-surface-variant">No submissions yet.</p>
+            <p className="text-on-surface-variant">No leads match these filters.</p>
           )}
 
           {items.length > 0 && (
@@ -731,6 +981,7 @@ export function PortalApp({ tab }: PortalAppProps) {
               <ul className="space-y-2 lg:col-span-5">
                 {items.map((item) => {
                   const active = item.submissionId === selectedId;
+                  const status = leadStatusOf(item);
                   return (
                     <li key={item.submissionId}>
                       <button
@@ -743,13 +994,23 @@ export function PortalApp({ tab }: PortalAppProps) {
                             : "border-transparent bg-surface-container-low hover:bg-surface-container-high",
                         ].join(" ")}
                       >
-                        <p className="font-headline text-sm font-bold text-white">
-                          {item.senderName}
-                        </p>
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-headline text-sm font-bold text-white">
+                            {item.senderName}
+                          </p>
+                          <span className="font-label text-[10px] uppercase tracking-widest text-outline">
+                            {LEAD_STATUS_LABELS[status]}
+                          </span>
+                        </div>
                         <p className="mt-1 text-xs text-outline">{item.senderEmail}</p>
                         <p className="mt-2 line-clamp-2 text-sm text-on-surface-variant">
                           {item.message}
                         </p>
+                        {item.assignedTo && (
+                          <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
+                            Assigned: {item.assignedTo}
+                          </p>
+                        )}
                         <p className="mt-3 font-label text-[10px] uppercase tracking-widest text-outline">
                           {formatWhen(item.submittedAt)}
                         </p>
@@ -761,35 +1022,15 @@ export function PortalApp({ tab }: PortalAppProps) {
 
               <div className="bg-surface-container-low p-8 lg:col-span-7">
                 {selected ? (
-                  <>
-                    <p className="font-label text-[10px] uppercase tracking-widest text-outline">
-                      Message
-                    </p>
-                    <h2 className="mt-3 font-headline text-3xl font-bold text-white">
-                      {selected.senderName}
-                    </h2>
-                    <p className="mt-2 text-sm text-outline">{selected.senderEmail}</p>
-                    <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
-                      {formatWhen(selected.submittedAt)}
-                    </p>
-                    <p className="mt-8 whitespace-pre-wrap text-lg leading-relaxed text-on-surface-variant">
-                      {selected.message}
-                    </p>
-                    {selected.metadata && Object.keys(selected.metadata).length > 0 && (
-                      <dl className="mt-10 space-y-2 border-t border-outline-variant/10 pt-6">
-                        {Object.entries(selected.metadata).map(([key, value]) => (
-                          <div key={key} className="flex gap-4 text-sm">
-                            <dt className="font-label uppercase tracking-widest text-outline">
-                              {key}
-                            </dt>
-                            <dd className="text-white">{value}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    )}
-                  </>
+                  <LeadDetail
+                    submission={selected}
+                    members={members}
+                    busy={crmBusy}
+                    onUpdate={onLeadUpdate}
+                    onAddNote={onLeadNote}
+                  />
                 ) : (
-                  <p className="text-on-surface-variant">Select a submission.</p>
+                  <p className="text-on-surface-variant">Select a lead.</p>
                 )}
               </div>
             </div>
@@ -806,6 +1047,32 @@ export function PortalApp({ tab }: PortalAppProps) {
             </button>
           )}
         </>
+      )}
+
+      {tab === "team" && account?.linked && (
+        <TeamPanel
+          role={teamRole}
+          members={members}
+          invites={invites}
+          busy={teamBusy}
+          error={teamError}
+          notice={teamNotice}
+          onInvite={onInvite}
+          onRevokeInvite={onRevokeInvite}
+          onRemoveMember={onRemoveMember}
+        />
+      )}
+
+      {tab === "api-key" && account?.linked && account.role === "member" && (
+        <p className="text-on-surface-variant">
+          Only the account owner can manage API keys.
+        </p>
+      )}
+
+      {tab === "membership" && account?.linked && account.role === "member" && (
+        <p className="text-on-surface-variant">
+          Only the account owner can manage billing.
+        </p>
       )}
         </>
       )}
