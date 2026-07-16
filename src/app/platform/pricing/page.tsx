@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { EmailPlanTiers } from "@/components/organisms/EmailPlanTiers";
-import { portalUrl } from "@/lib/sites";
+import { PORTAL_PATHS } from "@/lib/sites";
 
 export const metadata: Metadata = {
   title: "Platform Pricing",
@@ -28,7 +28,7 @@ export default function PortalPricingPage() {
 
       <div className="mt-14 text-center">
         <a
-          href={portalUrl("login")}
+          href={PORTAL_PATHS.login}
           className="inline-block bg-primary px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80"
         >
           Login to subscribe

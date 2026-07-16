@@ -30,7 +30,6 @@ Copy `.env.example` to `.env.local` and set:
 - `NEXT_PUBLIC_API_URL` — Form API base URL
 - `NEXT_PUBLIC_FORM_API_KEY` — public site key for the contact form
 - `NEXT_PUBLIC_COGNITO_USER_POOL_ID` / `NEXT_PUBLIC_COGNITO_CLIENT_ID` — Platform portal auth
-- `NEXT_PUBLIC_PORTAL_URL` — portal root for Login CTAs (e.g. `https://trashbox.io/portal`)
 
 For GitHub Pages, set the same names as repository **Secrets** (used by `.github/workflows/deploy-pages.yml`). In repo settings, set Pages source to **GitHub Actions**.
 

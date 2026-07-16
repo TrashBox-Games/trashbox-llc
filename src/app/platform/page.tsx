@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FadeIn } from "@/components/atoms/FadeIn";
-import { PLATFORM_PATHS, portalUrl } from "@/lib/sites";
+import { PLATFORM_PATHS, PORTAL_PATHS } from "@/lib/sites";
 
 export const metadata: Metadata = {
   title: "Platform",
@@ -50,12 +50,12 @@ export default function PlatformHubPage() {
           inbox. Start free, add a plan when you need more volume.
         </p>
         <div className="mt-10 flex flex-wrap gap-4">
-          <a
-            href={portalUrl("login")}
+          <Link
+            href={PORTAL_PATHS.login}
             className="bg-primary px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80"
           >
             Login
-          </a>
+          </Link>
           <Link
             href={PLATFORM_PATHS.pricing}
             className="border border-outline-variant/30 px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-white transition-colors hover:border-white"

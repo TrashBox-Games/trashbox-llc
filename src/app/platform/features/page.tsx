@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
-import { portalUrl } from "@/lib/sites";
+import { PORTAL_PATHS } from "@/lib/sites";
 
 export const metadata: Metadata = {
   title: "Platform Features",
@@ -71,7 +71,7 @@ export default function PortalFeaturesPage() {
 
       <div className="mt-14">
         <a
-          href={portalUrl("login")}
+          href={PORTAL_PATHS.login}
           className="inline-block bg-primary px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80"
         >
           Login to get started

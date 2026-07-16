@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { FadeIn } from "@/components/atoms/FadeIn";
-import { API_DOCS_URL, portalUrl } from "@/lib/sites";
+import { API_DOCS_URL, PORTAL_PATHS } from "@/lib/sites";
 
 export const metadata: Metadata = {
   title: "Platform API",
@@ -50,7 +50,7 @@ export default function PortalApiPage() {
           Open API docs
         </a>
         <a
-          href={portalUrl("login")}
+          href={PORTAL_PATHS.login}
           className="border border-outline-variant/30 px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-white transition-colors hover:border-white"
         >
           Get an API key

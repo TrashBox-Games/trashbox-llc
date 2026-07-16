@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { PLATFORM_BASE, PLATFORM_PATHS, portalUrl } from "@/lib/sites";
+import { PLATFORM_BASE, PLATFORM_PATHS, PORTAL_PATHS } from "@/lib/sites";
 
 const platformLinks = [
   { href: PLATFORM_PATHS.features, label: "Features" },
@@ -47,12 +47,12 @@ export function PlatformNav() {
           </Link>
         ))}
       </nav>
-      <a
-        href={portalUrl("login")}
+      <Link
+        href={PORTAL_PATHS.login}
         className="bg-primary px-5 py-2.5 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80"
       >
         Login
-      </a>
+      </Link>
     </div>
   );
 }

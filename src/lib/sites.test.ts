@@ -1,10 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   PLATFORM_PATHS,
   PORTAL_PATHS,
   isPlatformPath,
   isPortalPath,
-  portalUrl,
 } from "./sites";
 
 describe("sites helpers", () => {
@@ -20,14 +19,5 @@ describe("sites helpers", () => {
     expect(isPlatformPath("/platform/pricing/")).toBe(true);
     expect(isPortalPath("/portal/inbox/")).toBe(true);
     expect(isPortalPath("/platform")).toBe(false);
-  });
-
-  it("builds absolute portal URLs from NEXT_PUBLIC_PORTAL_URL", () => {
-    vi.stubEnv("NEXT_PUBLIC_PORTAL_URL", "https://trashbox.io/portal");
-    expect(portalUrl("login")).toBe("https://trashbox.io/portal/login/");
-    expect(portalUrl("inbox")).toBe("https://trashbox.io/portal/inbox/");
-    expect(portalUrl("membership")).toBe(
-      "https://trashbox.io/portal/membership/",
-    );
   });
 });

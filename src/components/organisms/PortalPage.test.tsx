@@ -34,15 +34,6 @@ vi.mock("@/components/atoms/FadeIn", () => ({
   FadeIn: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
-vi.mock("@/lib/sites", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/sites")>("@/lib/sites");
-  return {
-    ...actual,
-    portalUrl: (path: string = "login") =>
-      path === "inbox" ? "/portal/inbox/" : "/portal/login/",
-  };
-});
-
 import { useAuth } from "@/lib/auth";
 import {
   createApiKey,
