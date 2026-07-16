@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Select } from "@/components/atoms/Select";
 import {
   LEAD_STATUSES,
   LEAD_STATUS_LABELS,
@@ -18,8 +19,6 @@ import { cn } from "@/lib/utils";
 
 const labelClass =
   "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
-const selectClass =
-  "w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white focus:border-primary focus:outline-none";
 
 function formatWhen(iso: string) {
   try {
@@ -81,44 +80,36 @@ export function LeadDetail({
           <label className={labelClass} htmlFor="detail-status">
             Status
           </label>
-          <select
+          <Select
             id="detail-status"
-            className={selectClass}
             value={status}
             disabled={busy}
-            onChange={(e) =>
-              void onUpdate({ status: e.target.value as LeadStatus })
-            }
-          >
-            {LEAD_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {LEAD_STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
+            onChange={(next) => void onUpdate({ status: next as LeadStatus })}
+            options={LEAD_STATUSES.map((s) => ({
+              value: s,
+              label: LEAD_STATUS_LABELS[s],
+            }))}
+          />
         </div>
         <div>
           <label className={labelClass} htmlFor="detail-assignee">
             Assigned to
           </label>
-          <select
+          <Select
             id="detail-assignee"
-            className={selectClass}
             value={submission.assignedTo ?? ""}
             disabled={busy}
-            onChange={(e) =>
-              void onUpdate({
-                assignedTo: e.target.value ? e.target.value : null,
-              })
+            onChange={(next) =>
+              void onUpdate({ assignedTo: next ? next : null })
             }
-          >
-            <option value="">Unassigned</option>
-            {members.map((member) => (
-              <option key={member.email} value={member.email}>
-                {member.email}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "Unassigned" },
+              ...members.map((member) => ({
+                value: member.email,
+                label: member.email,
+              })),
+            ]}
+          />
         </div>
       </div>
 

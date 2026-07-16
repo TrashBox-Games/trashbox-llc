@@ -1,5 +1,6 @@
 "use client";
 
+import { Select } from "@/components/atoms/Select";
 import {
   LEAD_STATUSES,
   LEAD_STATUS_LABELS,
@@ -10,8 +11,6 @@ import {
   type TeamMember,
 } from "@/lib/api";
 
-const selectClass =
-  "border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white focus:border-primary focus:outline-none";
 const inputClass =
   "w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white placeholder:text-outline-variant/50 focus:border-primary focus:outline-none";
 const labelClass =
@@ -62,62 +61,56 @@ export function LeadInboxFilters({
         <label className={labelClass} htmlFor="lead-status">
           Status
         </label>
-        <select
+        <Select
           id="lead-status"
-          className={`${selectClass} w-full`}
           value={value.status}
-          onChange={(e) =>
-            onChange({
-              ...value,
-              status: e.target.value as LeadStatus | "",
-            })
+          onChange={(status) =>
+            onChange({ ...value, status: status as LeadStatus | "" })
           }
-        >
-          <option value="">All statuses</option>
-          {LEAD_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {LEAD_STATUS_LABELS[status]}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: "", label: "All statuses" },
+            ...LEAD_STATUSES.map((status) => ({
+              value: status,
+              label: LEAD_STATUS_LABELS[status],
+            })),
+          ]}
+        />
       </div>
       <div>
         <label className={labelClass} htmlFor="lead-tag">
           Tag
         </label>
-        <select
+        <Select
           id="lead-tag"
-          className={`${selectClass} w-full`}
           value={value.tag}
-          onChange={(e) =>
-            onChange({ ...value, tag: e.target.value as LeadTag | "" })
+          onChange={(tag) =>
+            onChange({ ...value, tag: tag as LeadTag | "" })
           }
-        >
-          <option value="">All tags</option>
-          {LEAD_TAGS.map((tag) => (
-            <option key={tag} value={tag}>
-              {LEAD_TAG_LABELS[tag]}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: "", label: "All tags" },
+            ...LEAD_TAGS.map((tag) => ({
+              value: tag,
+              label: LEAD_TAG_LABELS[tag],
+            })),
+          ]}
+        />
       </div>
       <div>
         <label className={labelClass} htmlFor="lead-assignee">
           Assigned to
         </label>
-        <select
+        <Select
           id="lead-assignee"
-          className={`${selectClass} w-full`}
           value={value.assignedTo}
-          onChange={(e) => onChange({ ...value, assignedTo: e.target.value })}
-        >
-          <option value="">Anyone</option>
-          {members.map((member) => (
-            <option key={member.email} value={member.email}>
-              {member.email}
-            </option>
-          ))}
-        </select>
+          onChange={(assignedTo) => onChange({ ...value, assignedTo })}
+          options={[
+            { value: "", label: "Anyone" },
+            ...members.map((member) => ({
+              value: member.email,
+              label: member.email,
+            })),
+          ]}
+        />
       </div>
       <div className="md:col-span-4">
         <button

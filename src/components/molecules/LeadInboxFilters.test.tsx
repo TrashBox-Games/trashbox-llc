@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { LeadInboxFilters } from "./LeadInboxFilters";
@@ -22,6 +22,16 @@ describe("LeadInboxFilters", () => {
 
     await user.type(screen.getByLabelText(/search/i), "estimate");
     expect(onChange).toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: /^status$/i }));
+    await user.click(
+      within(screen.getByRole("listbox")).getByRole("option", {
+        name: /contacted/i,
+      }),
+    );
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "contacted" }),
+    );
 
     await user.click(screen.getByRole("button", { name: /apply filters/i }));
     expect(onApply).toHaveBeenCalled();
@@ -54,7 +64,12 @@ describe("LeadDetail", () => {
       />,
     );
 
-    await user.selectOptions(screen.getByLabelText(/^status$/i), "contacted");
+    await user.click(screen.getByRole("button", { name: /^status$/i }));
+    await user.click(
+      within(screen.getByRole("listbox")).getByRole("option", {
+        name: /contacted/i,
+      }),
+    );
     expect(onUpdate).toHaveBeenCalledWith({ status: "contacted" });
 
     await user.type(
