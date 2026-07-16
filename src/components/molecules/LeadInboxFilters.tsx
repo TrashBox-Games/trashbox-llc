@@ -54,7 +54,7 @@ export function LeadInboxFilters({
           type="search"
           value={value.q}
           onChange={(e) => onChange({ ...value, q: e.target.value })}
-          className={inputClass}
+          className={`${inputClass} search-clear-muted`}
           placeholder="Name, email, or message"
         />
       </div>

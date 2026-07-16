@@ -27,7 +27,9 @@ describe("LeadInboxFilters", () => {
       />,
     );
 
-    await user.type(screen.getByLabelText(/search/i), "estimate");
+    const search = screen.getByLabelText(/search/i);
+    expect(search).toHaveClass("search-clear-muted");
+    await user.type(search, "estimate");
     expect(onChange).toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: /^status$/i }));

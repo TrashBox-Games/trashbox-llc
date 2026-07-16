@@ -106,3 +106,20 @@
   background: rgba(53, 53, 52, 0.6);
   backdrop-filter: blur(24px);
 }
+
+/* Native search clear uses the OS accent (often blue); replace with muted outline X. */
+.search-clear-muted::-webkit-search-cancel-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: block;
+  height: 1rem;
+  width: 1rem;
+  margin-left: 0.25rem;
+  cursor: pointer;
+  background-color: transparent;
+  /* 24×24 geometric X — even arms, round caps, balanced inset */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23919191' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
