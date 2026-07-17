@@ -381,3 +381,95 @@ export function leadTagsOf(submission: Submission): LeadTag[] {
 export function leadNotesOf(submission: Submission): SubmissionNote[] {
   return submission.notes ?? [];
 }
+
+export type MailboxProvider = "gmail" | "microsoft";
+
+export interface MailboxStatusResponse {
+  connected: boolean;
+  provider?: MailboxProvider;
+  email?: string;
+  connectedBy?: string;
+  connectedAt?: string;
+  status?: "connected" | "error" | "disconnected";
+  lastSyncAt?: string;
+  lastError?: string;
+}
+
+export type LeadMessageDirection = "outbound" | "inbound";
+
+export interface LeadMessage {
+  clientId: string;
+  submissionId: string;
+  messageId: string;
+  direction: LeadMessageDirection;
+  from: string;
+  to: string;
+  subject: string;
+  bodyText: string;
+  bodyHtml?: string;
+  providerMessageId?: string;
+  threadId?: string;
+  conversationId?: string;
+  sentBy?: string;
+  createdAt: string;
+}
+
+export interface LeadMessagesResponse {
+  submissionId: string;
+  items: LeadMessage[];
+}
+
+export async function getMailbox(): Promise<MailboxStatusResponse> {
+  return (await authFetch("/mailbox")) as unknown as MailboxStatusResponse;
+}
+
+export async function connectMailbox(
+  provider: MailboxProvider,
+): Promise<{ authUrl: string; provider: MailboxProvider }> {
+  return (await authFetch("/mailbox/connect", {
+    method: "POST",
+    body: JSON.stringify({ provider }),
+  })) as unknown as { authUrl: string; provider: MailboxProvider };
+}
+
+export async function disconnectMailbox(): Promise<void> {
+  await authFetch("/mailbox", { method: "DELETE" });
+}
+
+export async function syncMailbox(): Promise<{
+  success: boolean;
+  clientId: string;
+  imported: number;
+  error?: string;
+}> {
+  return (await authFetch("/mailbox/sync", {
+    method: "POST",
+    body: "{}",
+  })) as unknown as {
+    success: boolean;
+    clientId: string;
+    imported: number;
+    error?: string;
+  };
+}
+
+export async function listLeadMessages(
+  submissionId: string,
+): Promise<LeadMessagesResponse> {
+  return (await authFetch(
+    `/submissions/${encodeURIComponent(submissionId)}/messages`,
+  )) as unknown as LeadMessagesResponse;
+}
+
+export async function sendLeadMessage(
+  submissionId: string,
+  input: { body: string; subject?: string },
+): Promise<LeadMessage> {
+  return (await authFetch(
+    `/submissions/${encodeURIComponent(submissionId)}/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  )) as unknown as LeadMessage;
+}

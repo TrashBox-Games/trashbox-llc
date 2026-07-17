@@ -8,30 +8,40 @@ import {
   LeadInboxFilters,
   type LeadInboxFiltersValue,
 } from "@/components/molecules/LeadInboxFilters";
+import { MailboxSettings } from "@/components/molecules/MailboxSettings";
 import { TeamPanel } from "@/components/molecules/TeamPanel";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
 import {
   ApiError,
   acceptTeamInvite,
   addSubmissionNote,
+  connectMailbox,
   createApiKey,
   createTeamInvite,
   deleteApiKey,
   deleteTeamInvite,
   deleteTeamMember,
+  disconnectMailbox,
   getAccount,
+  getMailbox,
   getTeam,
   leadStatusOf,
+  listLeadMessages,
   listSubmissions,
   openBillingPortal,
   provisionAccount,
+  sendLeadMessage,
   startCheckout,
+  syncMailbox,
   updateSubmission,
   updateTeamMember,
   type AccountResponse,
   type CreateTeamInviteInput,
+  type LeadMessage,
   type LeadStatus,
   type LeadTag,
+  type MailboxProvider,
+  type MailboxStatusResponse,
   type Submission,
   type TeamInvite,
   type TeamMember,
@@ -42,7 +52,7 @@ import { useAuth } from "@/lib/auth";
 import { PORTAL_PATHS } from "@/lib/sites";
 
 type AuthMode = "signIn" | "signUp" | "confirm";
-type PortalTab = "inbox" | "api-key" | "membership" | "team";
+type PortalTab = "inbox" | "api-key" | "membership" | "team" | "settings";
 
 const inputClass =
   "w-full border-0 border-b border-outline-variant bg-transparent py-4 text-white placeholder:text-outline-variant/50 focus:border-primary focus:ring-0 focus:outline-none";
@@ -310,10 +320,19 @@ export function PortalApp({ tab }: PortalAppProps) {
   const [teamBusy, setTeamBusy] = useState(false);
   const [teamError, setTeamError] = useState<string | null>(null);
   const [teamNotice, setTeamNotice] = useState<string | null>(null);
+  const [mailbox, setMailbox] = useState<MailboxStatusResponse | null>(null);
+  const [mailboxBusy, setMailboxBusy] = useState(false);
+  const [mailboxError, setMailboxError] = useState<string | null>(null);
+  const [mailboxNotice, setMailboxNotice] = useState<string | null>(null);
+  const [leadMessages, setLeadMessages] = useState<LeadMessage[]>([]);
+  const [messageError, setMessageError] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const billing = params.get("billing");
+    const mailboxParam = params.get("mailbox");
+    const mailboxMessage = params.get("message");
+
     if (billing === "success") {
       setBillingNotice(
         "Billing updated. Plan status refreshes after Stripe confirms payment.",
@@ -321,8 +340,19 @@ export function PortalApp({ tab }: PortalAppProps) {
     } else if (billing === "cancel") {
       setBillingNotice("Checkout canceled. Your plan was not changed.");
     }
-    if (billing) {
+
+    if (mailboxParam === "connected") {
+      setMailboxNotice("Mailbox connected successfully.");
+    } else if (mailboxParam === "error") {
+      setMailboxError(
+        mailboxMessage || "Mailbox connection failed. Try again.",
+      );
+    }
+
+    if (billing || mailboxParam) {
       params.delete("billing");
+      params.delete("mailbox");
+      params.delete("message");
       const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
       window.history.replaceState({}, "", next);
     }
@@ -403,6 +433,7 @@ export function PortalApp({ tab }: PortalAppProps) {
           setNextCursor(undefined);
           setMembers([]);
           setInvites([]);
+          setMailbox({ connected: false });
           return;
         }
 
@@ -422,6 +453,14 @@ export function PortalApp({ tab }: PortalAppProps) {
             setMembers([]);
             setInvites([]);
           }
+        }
+
+        try {
+          const box = await getMailbox();
+          if (cancelled) return;
+          setMailbox(box);
+        } catch {
+          if (!cancelled) setMailbox({ connected: false });
         }
 
         try {
@@ -536,6 +575,109 @@ export function PortalApp({ tab }: PortalAppProps) {
       );
     } finally {
       setCrmBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!selectedId || !account?.linked) {
+      setLeadMessages([]);
+      setMessageError(null);
+      return;
+    }
+    let cancelled = false;
+    async function loadMessages() {
+      setMessageError(null);
+      try {
+        const res = await listLeadMessages(selectedId!);
+        if (!cancelled) setLeadMessages(res.items);
+      } catch (err) {
+        if (!cancelled) {
+          setLeadMessages([]);
+          setMessageError(
+            err instanceof ApiError
+              ? err.message
+              : "Failed to load messages",
+          );
+        }
+      }
+    }
+    void loadMessages();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, account?.linked]);
+
+  async function onSendLeadMessage(body: string) {
+    if (!selectedId) return;
+    setCrmBusy(true);
+    setMessageError(null);
+    try {
+      const message = await sendLeadMessage(selectedId, { body });
+      setLeadMessages((prev) => [...prev, message]);
+    } catch (err) {
+      setMessageError(
+        err instanceof ApiError ? err.message : "Failed to send reply",
+      );
+    } finally {
+      setCrmBusy(false);
+    }
+  }
+
+  async function onMailboxConnect(provider: MailboxProvider) {
+    setMailboxBusy(true);
+    setMailboxError(null);
+    setMailboxNotice(null);
+    try {
+      const { authUrl } = await connectMailbox(provider);
+      window.location.assign(authUrl);
+    } catch (err) {
+      setMailboxError(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to start mailbox connect",
+      );
+      setMailboxBusy(false);
+    }
+  }
+
+  async function onMailboxDisconnect() {
+    setMailboxBusy(true);
+    setMailboxError(null);
+    setMailboxNotice(null);
+    try {
+      await disconnectMailbox();
+      setMailbox({ connected: false });
+      setMailboxNotice("Mailbox disconnected.");
+    } catch (err) {
+      setMailboxError(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to disconnect mailbox",
+      );
+    } finally {
+      setMailboxBusy(false);
+    }
+  }
+
+  async function onMailboxSync() {
+    setMailboxBusy(true);
+    setMailboxError(null);
+    setMailboxNotice(null);
+    try {
+      const result = await syncMailbox();
+      const box = await getMailbox();
+      setMailbox(box);
+      setMailboxNotice(
+        result.imported > 0
+          ? `Synced ${result.imported} new message${result.imported === 1 ? "" : "s"}.`
+          : "Sync complete. No new replies.",
+      );
+    } catch (err) {
+      setMailboxError(
+        err instanceof ApiError ? err.message : "Failed to sync mailbox",
+      );
+    } finally {
+      setMailboxBusy(false);
     }
   }
 
@@ -741,6 +883,15 @@ export function PortalApp({ tab }: PortalAppProps) {
             title: (
               <>
                 Team <span className="text-outline">Members.</span>
+              </>
+            ),
+          }
+      : tab === "settings"
+        ? {
+            eyebrow: "Settings",
+            title: (
+              <>
+                Email <span className="text-outline">Setup.</span>
               </>
             ),
           }
@@ -1056,8 +1207,12 @@ export function PortalApp({ tab }: PortalAppProps) {
                     submission={selected}
                     members={members}
                     busy={crmBusy}
+                    mailboxConnected={Boolean(mailbox?.connected)}
+                    messages={leadMessages}
+                    messageError={messageError}
                     onUpdate={onLeadUpdate}
                     onAddNote={onLeadNote}
+                    onSendMessage={onSendLeadMessage}
                   />
                 ) : (
                   <p className="text-on-surface-variant">Select a lead.</p>
@@ -1095,6 +1250,19 @@ export function PortalApp({ tab }: PortalAppProps) {
           onRevokeInvite={onRevokeInvite}
           onRemoveMember={onRemoveMember}
           onUpdateMember={onUpdateMember}
+        />
+      )}
+
+      {tab === "settings" && account?.linked && (
+        <MailboxSettings
+          role={teamRole}
+          mailbox={mailbox}
+          busy={mailboxBusy}
+          error={mailboxError}
+          notice={mailboxNotice}
+          onConnect={onMailboxConnect}
+          onDisconnect={onMailboxDisconnect}
+          onSync={onMailboxSync}
         />
       )}
 

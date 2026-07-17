@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Select } from "@/components/atoms/Select";
+import { LeadEmailThread } from "@/components/molecules/LeadEmailThread";
 import {
   LEAD_STATUSES,
   LEAD_STATUS_DOT_CLASS,
@@ -11,6 +12,7 @@ import {
   leadNotesOf,
   leadStatusOf,
   leadTagsOf,
+  type LeadMessage,
   type LeadStatus,
   type LeadTag,
   type Submission,
@@ -36,20 +38,28 @@ interface LeadDetailProps {
   submission: Submission;
   members: TeamMember[];
   busy?: boolean;
+  mailboxConnected?: boolean;
+  messages?: LeadMessage[];
+  messageError?: string | null;
   onUpdate: (patch: {
     status?: LeadStatus;
     tags?: LeadTag[];
     assignedTo?: string | null;
   }) => Promise<void>;
   onAddNote: (body: string) => Promise<void>;
+  onSendMessage?: (body: string) => Promise<void>;
 }
 
 export function LeadDetail({
   submission,
   members,
   busy = false,
+  mailboxConnected = false,
+  messages = [],
+  messageError = null,
   onUpdate,
   onAddNote,
+  onSendMessage,
 }: LeadDetailProps) {
   const [noteDraft, setNoteDraft] = useState("");
   const status = leadStatusOf(submission);
@@ -157,6 +167,19 @@ export function LeadDetail({
             </div>
           ))}
         </dl>
+      )}
+
+      {onSendMessage && (
+        <LeadEmailThread
+          formMessage={submission.message}
+          formFrom={submission.senderEmail}
+          formAt={submission.submittedAt}
+          messages={messages}
+          mailboxConnected={mailboxConnected}
+          busy={busy}
+          error={messageError}
+          onSend={onSendMessage}
+        />
       )}
 
       <div className="mt-10 border-t border-outline-variant/10 pt-6">

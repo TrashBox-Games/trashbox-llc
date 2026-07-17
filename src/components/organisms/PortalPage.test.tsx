@@ -22,12 +22,24 @@ vi.mock("@/lib/api", () => ({
     }
   },
   getAccount: vi.fn(),
+  getMailbox: vi.fn().mockResolvedValue({ connected: false }),
+  getTeam: vi.fn().mockResolvedValue({
+    clientId: "c1",
+    clientName: "Test",
+    role: "owner",
+    members: [],
+    invites: [],
+    memberLimit: 1,
+    memberCount: 1,
+  }),
   listSubmissions: vi.fn(),
+  listLeadMessages: vi.fn().mockResolvedValue({ submissionId: "", items: [] }),
   provisionAccount: vi.fn(),
   createApiKey: vi.fn(),
   deleteApiKey: vi.fn(),
   startCheckout: vi.fn(),
   openBillingPortal: vi.fn(),
+  leadStatusOf: (s: { status?: string }) => s.status ?? "new",
 }));
 
 vi.mock("@/components/atoms/FadeIn", () => ({

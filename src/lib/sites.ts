@@ -20,6 +20,7 @@ export const PORTAL_PATHS = {
   apiKey: "/portal/api-key/",
   membership: "/portal/membership/",
   team: "/portal/team/",
+  settings: "/portal/settings/",
 } as const;
 
 export function isPlatformPath(pathname: string): boolean {

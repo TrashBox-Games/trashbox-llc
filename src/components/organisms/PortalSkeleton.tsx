@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/atoms/Skeleton";
 
 type PortalSkeletonProps = {
-  variant?: "login" | "inbox" | "api-key" | "membership" | "team";
+  variant?: "login" | "inbox" | "api-key" | "membership" | "team" | "settings";
 };
 
 /** Content-only placeholders — titles stay real above these. */
@@ -43,7 +43,8 @@ export function PortalSkeleton({ variant = "inbox" }: PortalSkeletonProps) {
 
       {(variant === "api-key" ||
         variant === "membership" ||
-        variant === "team") && (
+        variant === "team" ||
+        variant === "settings") && (
         <div className="space-y-4 border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
           <Skeleton className="h-3 w-24" />
           <Skeleton className="h-8 w-48" />
