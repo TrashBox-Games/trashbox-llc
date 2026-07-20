@@ -3,6 +3,7 @@
 import { MailboxSettings } from "@/components/molecules/MailboxSettings";
 import { SettingsPlaceholder } from "@/components/molecules/SettingsPlaceholder";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
+import { TeamMembersSettings } from "@/components/organisms/TeamMembersSettings";
 import { useAuth } from "@/lib/auth";
 import { usePortal } from "@/lib/portal";
 import {
@@ -56,6 +57,15 @@ export function SettingsSectionContent({
         onConnect={portal.onMailboxConnect}
         onDisconnect={portal.onMailboxDisconnect}
         onSync={portal.onMailboxSync}
+      />
+    );
+  }
+
+  if (sectionId === "members") {
+    return (
+      <TeamMembersSettings
+        currentUserEmail={portal.account.email}
+        tier={portal.account.tier}
       />
     );
   }

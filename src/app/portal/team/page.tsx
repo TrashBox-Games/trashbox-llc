@@ -1,5 +1,7 @@
-import { PortalApp } from "@/components/organisms/PortalPage";
+import { redirect } from "next/navigation";
+import { settingsSectionPath } from "@/lib/portal-settings";
 
-export default function PortalTeamPage() {
-  return <PortalApp tab="team" />;
+/** Legacy /portal/team → Settings → Members. */
+export default function PortalTeamRedirectPage() {
+  redirect(settingsSectionPath("members"));
 }

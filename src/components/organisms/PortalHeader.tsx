@@ -12,7 +12,6 @@ import { PLATFORM_PATHS, PORTAL_PATHS } from "@/lib/sites";
 
 const signedInLinks = [
   { href: PORTAL_PATHS.inbox, label: "Inbox" },
-  { href: PORTAL_PATHS.team, label: "Team" },
   { href: PORTAL_PATHS.settings, label: "Settings" },
   { href: PORTAL_PATHS.apiKey, label: "API key" },
   { href: PORTAL_PATHS.membership, label: "Membership" },

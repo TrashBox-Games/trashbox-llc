@@ -51,7 +51,7 @@ import {
   listSubmissions,
 } from "@/lib/api";
 
-function renderPortalApp(tab: "inbox" | "api-key" | "membership" | "team") {
+function renderPortalApp(tab: "inbox" | "api-key" | "membership") {
   return render(
     <PortalProvider>
       <PortalApp tab={tab} />
@@ -122,12 +122,12 @@ describe("PortalProvider session", () => {
 
     rerender(
       <PortalProvider>
-        <PortalApp tab="team" />
+        <PortalApp tab="membership" />
       </PortalProvider>,
     );
 
     expect(
-      await screen.findByRole("heading", { name: /team members/i }),
+      await screen.findByRole("heading", { name: /no paid plan yet|basic|premium/i }),
     ).toBeInTheDocument();
     expect(getAccount).toHaveBeenCalledTimes(1);
     expect(listSubmissions).toHaveBeenCalledTimes(1);

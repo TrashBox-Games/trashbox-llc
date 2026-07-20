@@ -14,7 +14,7 @@ describe("sites helpers", () => {
     expect(PORTAL_PATHS.inbox).toBe("/portal/inbox/");
     expect(PORTAL_PATHS.apiKey).toBe("/portal/api-key/");
     expect(PORTAL_PATHS.membership).toBe("/portal/membership/");
-    expect(PORTAL_PATHS.team).toBe("/portal/team/");
+    expect(PORTAL_PATHS.team).toBe("/portal/settings/members/");
     expect(PORTAL_PATHS.settings).toBe("/portal/settings/");
     expect(settingsSectionPath("email-accounts")).toBe(
       "/portal/settings/email-accounts/",

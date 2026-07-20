@@ -19,7 +19,7 @@ export const PORTAL_PATHS = {
   inbox: "/portal/inbox/",
   apiKey: "/portal/api-key/",
   membership: "/portal/membership/",
-  team: "/portal/team/",
+  team: "/portal/settings/members/",
   settings: "/portal/settings/",
 } as const;
 

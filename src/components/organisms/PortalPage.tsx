@@ -5,7 +5,6 @@ import { FadeIn } from "@/components/atoms/FadeIn";
 import { LeadStatusBadge } from "@/components/atoms/LeadStatusBadge";
 import { LeadDetail } from "@/components/molecules/LeadDetail";
 import { LeadInboxFilters } from "@/components/molecules/LeadInboxFilters";
-import { TeamPanel } from "@/components/molecules/TeamPanel";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
 import { leadStatusOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -267,32 +266,23 @@ export function PortalApp({ tab }: PortalAppProps) {
             </>
           ),
         }
-      : tab === "team"
+      : tab === "api-key"
         ? {
-            eyebrow: "Team",
+            eyebrow: "API key",
             title: (
               <>
-                Team <span className="text-outline">Members.</span>
+                Form API <span className="text-outline">Key.</span>
               </>
             ),
           }
-        : tab === "api-key"
-          ? {
-              eyebrow: "API key",
-              title: (
-                <>
-                  Form API <span className="text-outline">Key.</span>
-                </>
-              ),
-            }
-          : {
-              eyebrow: "Membership",
-              title: (
-                <>
-                  Plan & <span className="text-outline">Billing.</span>
-                </>
-              ),
-            };
+        : {
+            eyebrow: "Membership",
+            title: (
+              <>
+                Plan & <span className="text-outline">Billing.</span>
+              </>
+            ),
+          };
 
   const contentPending =
     auth.status === "loading" || auth.status === "signedOut" || !portal.ready;
@@ -633,25 +623,6 @@ export function PortalApp({ tab }: PortalAppProps) {
             </button>
           )}
         </>
-      )}
-
-      {tab === "team" && portal.account?.linked && (
-        <TeamPanel
-          role={portal.teamRole}
-          currentUserEmail={portal.account.email}
-          members={portal.members}
-          invites={portal.invites}
-          memberLimit={portal.memberLimit}
-          memberCount={portal.memberCount}
-          tier={portal.account.tier}
-          busy={portal.teamBusy}
-          error={portal.teamError}
-          notice={portal.teamNotice}
-          onInvite={portal.onInvite}
-          onRevokeInvite={portal.onRevokeInvite}
-          onRemoveMember={portal.onRemoveMember}
-          onUpdateMember={portal.onUpdateMember}
-        />
       )}
 
       {tab === "api-key" &&

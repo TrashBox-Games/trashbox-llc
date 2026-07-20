@@ -16,10 +16,7 @@ import {
   addSubmissionNote,
   connectMailbox,
   createApiKey,
-  createTeamInvite,
   deleteApiKey,
-  deleteTeamInvite,
-  deleteTeamMember,
   disconnectMailbox,
   getAccount,
   getMailbox,
@@ -32,24 +29,20 @@ import {
   startCheckout,
   syncMailbox,
   updateSubmission,
-  updateTeamMember,
   type AccountResponse,
-  type CreateTeamInviteInput,
   type LeadMessage,
   type LeadStatus,
   type LeadTag,
   type MailboxProvider,
   type MailboxStatusResponse,
   type Submission,
-  type TeamInvite,
   type TeamMember,
   type TeamRole,
-  type UpdateTeamMemberInput,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PORTAL_PATHS } from "@/lib/sites";
 
-export type PortalTab = "inbox" | "api-key" | "membership" | "team";
+export type PortalTab = "inbox" | "api-key" | "membership";
 
 const emptyFilters: LeadInboxFiltersValue = {
   q: "",
@@ -86,13 +79,7 @@ export interface PortalContextValue {
   setFilters: (value: LeadInboxFiltersValue) => void;
   applyFilters: () => void;
   members: TeamMember[];
-  invites: TeamInvite[];
   teamRole: TeamRole;
-  memberLimit: number;
-  memberCount: number;
-  teamBusy: boolean;
-  teamError: string | null;
-  teamNotice: string | null;
   mailbox: MailboxStatusResponse | null;
   mailboxBusy: boolean;
   mailboxError: string | null;
@@ -110,13 +97,6 @@ export interface PortalContextValue {
   onMailboxConnect: (provider: MailboxProvider) => Promise<void>;
   onMailboxDisconnect: () => Promise<void>;
   onMailboxSync: () => Promise<void>;
-  onInvite: (input: CreateTeamInviteInput) => Promise<void>;
-  onRevokeInvite: (email: string) => Promise<void>;
-  onRemoveMember: (email: string) => Promise<void>;
-  onUpdateMember: (
-    email: string,
-    patch: UpdateTeamMemberInput,
-  ) => Promise<void>;
   onProvisionAccount: () => Promise<void>;
   onCreateApiKey: () => Promise<void>;
   onDeleteApiKey: () => Promise<void>;
@@ -148,13 +128,7 @@ export function PortalProvider({ children }: { children: ReactNode }) {
   const [appliedFilters, setAppliedFilters] =
     useState<LeadInboxFiltersValue>(emptyFilters);
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [invites, setInvites] = useState<TeamInvite[]>([]);
   const [teamRole, setTeamRole] = useState<TeamRole>("member");
-  const [memberLimit, setMemberLimit] = useState(1);
-  const [memberCount, setMemberCount] = useState(0);
-  const [teamBusy, setTeamBusy] = useState(false);
-  const [teamError, setTeamError] = useState<string | null>(null);
-  const [teamNotice, setTeamNotice] = useState<string | null>(null);
   const [mailbox, setMailbox] = useState<MailboxStatusResponse | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
   const [mailboxError, setMailboxError] = useState<string | null>(null);
@@ -216,7 +190,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       setIssuedApiKey(null);
       setSelectedId(null);
       setMembers([]);
-      setInvites([]);
       setReady(false);
       return;
     }
@@ -236,7 +209,8 @@ export function PortalProvider({ children }: { children: ReactNode }) {
           try {
             const accepted = await acceptTeamInvite(inviteToken);
             if (!cancelled && accepted.success) {
-              setTeamNotice(
+              sessionStorage.setItem(
+                "portalTeamNotice",
                 accepted.clientName
                   ? `Joined ${accepted.clientName}.`
                   : "Invite accepted.",
@@ -244,7 +218,8 @@ export function PortalProvider({ children }: { children: ReactNode }) {
             }
           } catch (err) {
             if (!cancelled) {
-              setTeamError(
+              sessionStorage.setItem(
+                "portalTeamNotice",
                 err instanceof ApiError
                   ? err.message
                   : "Could not accept invite",
@@ -262,15 +237,11 @@ export function PortalProvider({ children }: { children: ReactNode }) {
         setAccount(acct);
         setClientName(acct.clientName || null);
         if (acct.role) setTeamRole(acct.role);
-        if (typeof acct.memberLimit === "number") setMemberLimit(acct.memberLimit);
-        if (typeof acct.memberCount === "number") setMemberCount(acct.memberCount);
-
         if (!acct.linked) {
           setItems([]);
           setClientName(null);
           setNextCursor(undefined);
           setMembers([]);
-          setInvites([]);
           setMailbox({ connected: false });
           return;
         }
@@ -282,15 +253,9 @@ export function PortalProvider({ children }: { children: ReactNode }) {
           const team = await getTeam();
           if (cancelled) return;
           setMembers(team.members);
-          setInvites(team.invites);
           setTeamRole(team.role);
-          setMemberLimit(team.memberLimit);
-          setMemberCount(team.memberCount);
         } catch {
-          if (!cancelled) {
-            setMembers([]);
-            setInvites([]);
-          }
+          if (!cancelled) setMembers([]);
         }
 
         try {
@@ -528,88 +493,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const refreshTeam = useCallback(async () => {
-    const team = await getTeam();
-    setMembers(team.members);
-    setInvites(team.invites);
-    setTeamRole(team.role);
-    setMemberLimit(team.memberLimit);
-    setMemberCount(team.memberCount);
-  }, []);
-
-  const onInvite = useCallback(
-    async (input: CreateTeamInviteInput) => {
-      setTeamBusy(true);
-      setTeamError(null);
-      try {
-        await createTeamInvite(input);
-        await refreshTeam();
-        setTeamNotice(`Invite sent to ${input.email}.`);
-      } catch (err) {
-        setTeamError(
-          err instanceof ApiError ? err.message : "Failed to send invite",
-        );
-      } finally {
-        setTeamBusy(false);
-      }
-    },
-    [refreshTeam],
-  );
-
-  const onRevokeInvite = useCallback(
-    async (email: string) => {
-      setTeamBusy(true);
-      setTeamError(null);
-      try {
-        await deleteTeamInvite(email);
-        await refreshTeam();
-      } catch (err) {
-        setTeamError(
-          err instanceof ApiError ? err.message : "Failed to revoke invite",
-        );
-      } finally {
-        setTeamBusy(false);
-      }
-    },
-    [refreshTeam],
-  );
-
-  const onRemoveMember = useCallback(
-    async (email: string) => {
-      setTeamBusy(true);
-      setTeamError(null);
-      try {
-        await deleteTeamMember(email);
-        await refreshTeam();
-      } catch (err) {
-        setTeamError(
-          err instanceof ApiError ? err.message : "Failed to remove member",
-        );
-      } finally {
-        setTeamBusy(false);
-      }
-    },
-    [refreshTeam],
-  );
-
-  const onUpdateMember = useCallback(
-    async (email: string, patch: UpdateTeamMemberInput) => {
-      setTeamBusy(true);
-      setTeamError(null);
-      try {
-        await updateTeamMember(email, patch);
-        await refreshTeam();
-      } catch (err) {
-        setTeamError(
-          err instanceof ApiError ? err.message : "Failed to update member",
-        );
-      } finally {
-        setTeamBusy(false);
-      }
-    },
-    [refreshTeam],
-  );
-
   const onProvisionAccount = useCallback(async () => {
     const name = businessName.trim();
     if (!name) {
@@ -637,8 +520,7 @@ export function PortalProvider({ children }: { children: ReactNode }) {
         memberLimit: result.memberLimit ?? 1,
         memberCount: result.memberCount ?? 1,
       });
-      setMemberLimit(result.memberLimit ?? 1);
-      setMemberCount(result.memberCount ?? 1);
+      setTeamRole(result.role ?? "owner");
       setClientName(result.clientName || name);
       setBusinessName("");
     } catch (err) {
@@ -746,13 +628,7 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       setFilters,
       applyFilters,
       members,
-      invites,
       teamRole,
-      memberLimit,
-      memberCount,
-      teamBusy,
-      teamError,
-      teamNotice,
       mailbox,
       mailboxBusy,
       mailboxError,
@@ -766,10 +642,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       onMailboxConnect,
       onMailboxDisconnect,
       onMailboxSync,
-      onInvite,
-      onRevokeInvite,
-      onRemoveMember,
-      onUpdateMember,
       onProvisionAccount,
       onCreateApiKey,
       onDeleteApiKey,
@@ -797,13 +669,7 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       filters,
       applyFilters,
       members,
-      invites,
       teamRole,
-      memberLimit,
-      memberCount,
-      teamBusy,
-      teamError,
-      teamNotice,
       mailbox,
       mailboxBusy,
       mailboxError,
@@ -817,10 +683,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       onMailboxConnect,
       onMailboxDisconnect,
       onMailboxSync,
-      onInvite,
-      onRevokeInvite,
-      onRemoveMember,
-      onUpdateMember,
       onProvisionAccount,
       onCreateApiKey,
       onDeleteApiKey,
