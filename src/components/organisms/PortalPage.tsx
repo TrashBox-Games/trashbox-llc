@@ -5,7 +5,6 @@ import { FadeIn } from "@/components/atoms/FadeIn";
 import { LeadStatusBadge } from "@/components/atoms/LeadStatusBadge";
 import { LeadDetail } from "@/components/molecules/LeadDetail";
 import { LeadInboxFilters } from "@/components/molecules/LeadInboxFilters";
-import { MailboxSettings } from "@/components/molecules/MailboxSettings";
 import { TeamPanel } from "@/components/molecules/TeamPanel";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
 import { leadStatusOf } from "@/lib/api";
@@ -277,32 +276,23 @@ export function PortalApp({ tab }: PortalAppProps) {
               </>
             ),
           }
-      : tab === "settings"
-        ? {
-            eyebrow: "Settings",
-            title: (
-              <>
-                Email <span className="text-outline">Setup.</span>
-              </>
-            ),
-          }
-      : tab === "api-key"
-        ? {
-            eyebrow: "API key",
-            title: (
-              <>
-                Form API <span className="text-outline">Key.</span>
-              </>
-            ),
-          }
-        : {
-            eyebrow: "Membership",
-            title: (
-              <>
-                Plan & <span className="text-outline">Billing.</span>
-              </>
-            ),
-          };
+        : tab === "api-key"
+          ? {
+              eyebrow: "API key",
+              title: (
+                <>
+                  Form API <span className="text-outline">Key.</span>
+                </>
+              ),
+            }
+          : {
+              eyebrow: "Membership",
+              title: (
+                <>
+                  Plan & <span className="text-outline">Billing.</span>
+                </>
+              ),
+            };
 
   const contentPending =
     auth.status === "loading" || auth.status === "signedOut" || !portal.ready;
@@ -661,19 +651,6 @@ export function PortalApp({ tab }: PortalAppProps) {
           onRevokeInvite={portal.onRevokeInvite}
           onRemoveMember={portal.onRemoveMember}
           onUpdateMember={portal.onUpdateMember}
-        />
-      )}
-
-      {tab === "settings" && portal.account?.linked && (
-        <MailboxSettings
-          role={portal.teamRole}
-          mailbox={portal.mailbox}
-          busy={portal.mailboxBusy}
-          error={portal.mailboxError}
-          notice={portal.mailboxNotice}
-          onConnect={portal.onMailboxConnect}
-          onDisconnect={portal.onMailboxDisconnect}
-          onSync={portal.onMailboxSync}
         />
       )}
 

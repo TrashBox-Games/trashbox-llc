@@ -49,12 +49,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { PORTAL_PATHS } from "@/lib/sites";
 
-export type PortalTab =
-  | "inbox"
-  | "api-key"
-  | "membership"
-  | "team"
-  | "settings";
+export type PortalTab = "inbox" | "api-key" | "membership" | "team";
 
 const emptyFilters: LeadInboxFiltersValue = {
   q: "",

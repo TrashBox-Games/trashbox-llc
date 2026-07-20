@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { settingsSectionPath } from "./portal-settings";
 import {
   PLATFORM_PATHS,
   PORTAL_PATHS,
@@ -15,6 +16,9 @@ describe("sites helpers", () => {
     expect(PORTAL_PATHS.membership).toBe("/portal/membership/");
     expect(PORTAL_PATHS.team).toBe("/portal/team/");
     expect(PORTAL_PATHS.settings).toBe("/portal/settings/");
+    expect(settingsSectionPath("email-accounts")).toBe(
+      "/portal/settings/email-accounts/",
+    );
   });
 
   it("detects platform vs portal paths", () => {

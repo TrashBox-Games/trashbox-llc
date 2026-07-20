@@ -1,0 +1,196 @@
+import { PORTAL_PATHS } from "@/lib/sites";
+
+export type SettingsGroupId =
+  | "workspace"
+  | "team"
+  | "communication"
+  | "crm"
+  | "automation"
+  | "developers"
+  | "billing"
+  | "security";
+
+export type SettingsSectionId =
+  | "general"
+  | "branding"
+  | "business-information"
+  | "members"
+  | "roles-permissions"
+  | "activity-log"
+  | "email-accounts"
+  | "templates"
+  | "signatures"
+  | "snippets"
+  | "sending-preferences"
+  | "custom-fields"
+  | "tags"
+  | "pipelines"
+  | "workflows"
+  | "webhooks"
+  | "api-keys"
+  | "api-documentation"
+  | "current-plan"
+  | "usage"
+  | "payment-methods"
+  | "invoices"
+  | "upgrade-cancel"
+  | "password"
+  | "two-factor"
+  | "sessions"
+  | "audit-log";
+
+export interface SettingsNavItem {
+  id: SettingsSectionId;
+  label: string;
+  icon: string;
+}
+
+export interface SettingsNavGroup {
+  id: SettingsGroupId;
+  label: string;
+  icon: string;
+  items: SettingsNavItem[];
+}
+
+/** Default landing section when visiting /portal/settings. */
+export const DEFAULT_SETTINGS_SECTION: SettingsSectionId = "general";
+
+export const PORTAL_SETTINGS_NAV: SettingsNavGroup[] = [
+  {
+    id: "workspace",
+    label: "Workspace",
+    icon: "corporate_fare",
+    items: [
+      { id: "general", label: "General", icon: "settings" },
+      { id: "branding", label: "Branding", icon: "palette" },
+      {
+        id: "business-information",
+        label: "Business Information",
+        icon: "storefront",
+      },
+    ],
+  },
+  {
+    id: "team",
+    label: "Team",
+    icon: "group",
+    items: [
+      { id: "members", label: "Members", icon: "person" },
+      {
+        id: "roles-permissions",
+        label: "Roles & Permissions",
+        icon: "admin_panel_settings",
+      },
+      { id: "activity-log", label: "Activity Log", icon: "history" },
+    ],
+  },
+  {
+    id: "communication",
+    label: "Communication",
+    icon: "mail",
+    items: [
+      { id: "email-accounts", label: "Email Accounts", icon: "inbox" },
+      { id: "templates", label: "Templates", icon: "description" },
+      { id: "signatures", label: "Signatures", icon: "draw" },
+      { id: "snippets", label: "Snippets", icon: "data_object" },
+      {
+        id: "sending-preferences",
+        label: "Sending Preferences",
+        icon: "tune",
+      },
+    ],
+  },
+  {
+    id: "crm",
+    label: "CRM",
+    icon: "handshake",
+    items: [
+      { id: "custom-fields", label: "Custom Fields", icon: "view_column" },
+      { id: "tags", label: "Tags", icon: "sell" },
+      { id: "pipelines", label: "Pipelines", icon: "view_kanban" },
+    ],
+  },
+  {
+    id: "automation",
+    label: "Automation",
+    icon: "bolt",
+    items: [
+      { id: "workflows", label: "Workflows", icon: "account_tree" },
+      { id: "webhooks", label: "Webhooks", icon: "webhook" },
+    ],
+  },
+  {
+    id: "developers",
+    label: "Developers",
+    icon: "code",
+    items: [
+      { id: "api-keys", label: "API Keys", icon: "key" },
+      {
+        id: "api-documentation",
+        label: "API Documentation",
+        icon: "menu_book",
+      },
+    ],
+  },
+  {
+    id: "billing",
+    label: "Billing",
+    icon: "credit_card",
+    items: [
+      { id: "current-plan", label: "Current Plan", icon: "workspace_premium" },
+      { id: "usage", label: "Usage", icon: "bar_chart" },
+      { id: "payment-methods", label: "Payment Methods", icon: "payments" },
+      { id: "invoices", label: "Invoices", icon: "receipt_long" },
+      {
+        id: "upgrade-cancel",
+        label: "Upgrade / Cancel",
+        icon: "trending_up",
+      },
+    ],
+  },
+  {
+    id: "security",
+    label: "Security",
+    icon: "lock",
+    items: [
+      { id: "password", label: "Password", icon: "password" },
+      {
+        id: "two-factor",
+        label: "Two-Factor Authentication",
+        icon: "phonelink_lock",
+      },
+      { id: "sessions", label: "Sessions", icon: "devices" },
+      { id: "audit-log", label: "Audit Log", icon: "policy" },
+    ],
+  },
+];
+
+const SECTION_BY_ID = new Map(
+  PORTAL_SETTINGS_NAV.flatMap((group) =>
+    group.items.map(
+      (item) =>
+        [
+          item.id,
+          { ...item, groupId: group.id, groupLabel: group.label },
+        ] as const,
+    ),
+  ),
+);
+
+export function isSettingsSectionId(value: string): value is SettingsSectionId {
+  return SECTION_BY_ID.has(value as SettingsSectionId);
+}
+
+export function getSettingsSection(id: string) {
+  return SECTION_BY_ID.get(id as SettingsSectionId);
+}
+
+export function settingsSectionPath(section: SettingsSectionId): string {
+  return `${PORTAL_PATHS.settings}${section}/`;
+}
+
+export function settingsGroupForSection(section: SettingsSectionId) {
+  return PORTAL_SETTINGS_NAV.find((group) =>
+    group.items.some((item) => item.id === section),
+  );
+}

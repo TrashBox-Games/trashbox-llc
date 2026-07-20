@@ -51,7 +51,7 @@ import {
   listSubmissions,
 } from "@/lib/api";
 
-function renderPortalApp(tab: "inbox" | "api-key" | "membership" | "team" | "settings") {
+function renderPortalApp(tab: "inbox" | "api-key" | "membership" | "team") {
   return render(
     <PortalProvider>
       <PortalApp tab={tab} />

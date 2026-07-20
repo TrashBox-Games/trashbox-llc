@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { LeadMessage } from "@/lib/api";
-import { PORTAL_PATHS } from "@/lib/sites";
+import { settingsSectionPath } from "@/lib/portal-settings";
 
 const labelClass =
   "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
@@ -125,7 +125,10 @@ export function LeadEmailThread({
       ) : (
         <p className="mt-6 text-sm text-on-surface-variant">
           Connect a business mailbox in{" "}
-          <a href={PORTAL_PATHS.settings} className="text-white underline">
+          <a
+            href={settingsSectionPath("email-accounts")}
+            className="text-white underline"
+          >
             Settings
           </a>{" "}
           to reply from the portal.

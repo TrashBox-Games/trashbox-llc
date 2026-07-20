@@ -19,7 +19,7 @@ describe("LeadEmailThread", () => {
     expect(screen.getByText(/connect a business mailbox/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /settings/i })).toHaveAttribute(
       "href",
-      "/portal/settings/",
+      "/portal/settings/email-accounts/",
     );
     expect(
       screen.queryByRole("button", { name: /send reply/i }),
