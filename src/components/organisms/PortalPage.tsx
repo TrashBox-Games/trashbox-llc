@@ -2,8 +2,8 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
-import { LeadStatusBadge } from "@/components/atoms/LeadStatusBadge";
 import { LeadDetail } from "@/components/molecules/LeadDetail";
+import { LeadInboxCard } from "@/components/molecules/LeadInboxCard";
 import { LeadInboxFilters } from "@/components/molecules/LeadInboxFilters";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
 import { leadStatusOf } from "@/lib/api";
@@ -19,17 +19,6 @@ const labelClass =
   "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
 const btnClass =
   "w-full bg-primary px-6 py-4 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80 disabled:opacity-40";
-
-function formatWhen(iso: string) {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
 
 function redirect(path: string) {
   window.location.assign(path);
@@ -477,41 +466,22 @@ export function PortalApp({ tab }: PortalAppProps) {
 
           {portal.items.length > 0 && (
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-              <ul className="space-y-2 lg:col-span-5">
+              <ul className="space-y-4 lg:col-span-5">
                 {portal.items.map((item) => {
                   const active = item.submissionId === portal.selectedId;
-                  const status = leadStatusOf(item);
                   return (
                     <li key={item.submissionId}>
-                      <button
-                        type="button"
-                        onClick={() => portal.setSelectedId(item.submissionId)}
-                        className={[
-                          "w-full border-l-2 px-5 py-4 text-left transition-colors",
-                          active
-                            ? "border-white bg-surface-container-high"
-                            : "border-transparent bg-surface-container-low hover:bg-surface-container-high",
-                        ].join(" ")}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="font-headline text-sm font-bold text-white">
-                            {item.senderName}
-                          </p>
-                          <LeadStatusBadge status={status} />
-                        </div>
-                        <p className="mt-1 text-xs text-outline">{item.senderEmail}</p>
-                        <p className="mt-2 line-clamp-2 text-sm text-on-surface-variant">
-                          {item.message}
-                        </p>
-                        {item.assignedTo && (
-                          <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
-                            Assigned: {item.assignedTo}
-                          </p>
-                        )}
-                        <p className="mt-3 font-label text-[10px] uppercase tracking-widest text-outline">
-                          {formatWhen(item.submittedAt)}
-                        </p>
-                      </button>
+                      <LeadInboxCard
+                        senderName={item.senderName}
+                        senderEmail={item.senderEmail}
+                        message={item.message}
+                        submittedAt={item.submittedAt}
+                        status={leadStatusOf(item)}
+                        active={active}
+                        replyCount={item.messageCount ?? 0}
+                        assignedTo={item.assignedTo}
+                        onSelect={() => portal.setSelectedId(item.submissionId)}
+                      />
                     </li>
                   );
                 })}

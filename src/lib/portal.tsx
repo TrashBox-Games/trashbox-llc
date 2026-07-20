@@ -52,6 +52,36 @@ const emptyFilters: LeadInboxFiltersValue = {
   assignedTo: "",
 };
 
+/** Fill reply counts for inbox stacks without requiring each lead to be opened. */
+async function fetchMessageCounts(
+  items: Submission[],
+): Promise<Map<string, number>> {
+  const entries = await Promise.all(
+    items.map(async (item) => {
+      try {
+        const res = await listLeadMessages(item.submissionId);
+        return [item.submissionId, res.items.length] as const;
+      } catch {
+        return [item.submissionId, item.messageCount ?? 0] as const;
+      }
+    }),
+  );
+  return new Map(entries);
+}
+
+function mergeMessageCounts(
+  items: Submission[],
+  counts: Map<string, number>,
+): Submission[] {
+  return items.map((item) => {
+    const messageCount = counts.get(item.submissionId);
+    if (messageCount === undefined || messageCount === (item.messageCount ?? 0)) {
+      return item;
+    }
+    return { ...item, messageCount };
+  });
+}
+
 function redirect(path: string) {
   window.location.assign(path);
 }
@@ -273,6 +303,14 @@ export function PortalProvider({ children }: { children: ReactNode }) {
           setItems(subs.items);
           setNextCursor(subs.nextCursor);
           setSelectedId(subs.items[0]?.submissionId ?? null);
+
+          // Older threads may lack stored messageCount; hydrate so stacks show
+          // before a lead is opened. Safe no-op when the list API already
+          // returns live counts.
+          const counts = await fetchMessageCounts(subs.items);
+          if (!cancelled) {
+            setItems((prev) => mergeMessageCounts(prev, counts));
+          }
         } catch (err) {
           if (cancelled) return;
           if (err instanceof ApiError && err.status === 403) {
@@ -321,6 +359,8 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       });
       setItems((prev) => [...prev, ...data.items]);
       setNextCursor(data.nextCursor);
+      const counts = await fetchMessageCounts(data.items);
+      setItems((prev) => mergeMessageCounts(prev, counts));
     } catch (err) {
       setListError(err instanceof ApiError ? err.message : "Failed to load more");
     } finally {
@@ -389,7 +429,16 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       setMessageError(null);
       try {
         const res = await listLeadMessages(selectedId!);
-        if (!cancelled) setLeadMessages(res.items);
+        if (!cancelled) {
+          setLeadMessages(res.items);
+          setItems((prev) =>
+            prev.map((item) =>
+              item.submissionId === selectedId
+                ? { ...item, messageCount: res.items.length }
+                : item,
+            ),
+          );
+        }
       } catch (err) {
         if (!cancelled) {
           setLeadMessages([]);
@@ -415,6 +464,13 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       try {
         const message = await sendLeadMessage(selectedId, { body });
         setLeadMessages((prev) => [...prev, message]);
+        setItems((items) =>
+          items.map((item) =>
+            item.submissionId === selectedId
+              ? { ...item, messageCount: (item.messageCount ?? 0) + 1 }
+              : item,
+          ),
+        );
       } catch (err) {
         setMessageError(
           err instanceof ApiError ? err.message : "Failed to send reply",

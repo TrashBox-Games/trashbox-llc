@@ -1,0 +1,120 @@
+"use client";
+
+import type { CSSProperties, JSX } from "react";
+import { LeadStatusBadge } from "@/components/atoms/LeadStatusBadge";
+import type { LeadStatus } from "@/lib/api";
+import { cn } from "@/lib/utils";
+
+/** Visible cards in the stack: front card + up to 2 peeking layers below. */
+export function inboxCardStackDepth(replyCount: number): number {
+  if (replyCount <= 0) return 1;
+  return Math.min(3, replyCount + 1);
+}
+
+/** Equal step for each under-card (down + right). */
+const STACK_STEP = "0.5rem";
+
+function formatWhen(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+export interface LeadInboxCardProps {
+  senderName: string;
+  senderEmail: string;
+  message: string;
+  submittedAt: string;
+  status: LeadStatus;
+  active?: boolean;
+  /** Number of email replies on the thread (not including the form submission). */
+  replyCount?: number;
+  assignedTo?: string | null;
+  onSelect: () => void;
+}
+
+export function LeadInboxCard({
+  senderName,
+  senderEmail,
+  message,
+  submittedAt,
+  status,
+  active = false,
+  replyCount = 0,
+  assignedTo,
+  onSelect,
+}: LeadInboxCardProps): JSX.Element {
+  const depth = inboxCardStackDepth(replyCount);
+  const behind = depth - 1;
+
+  return (
+    <div
+      className={cn(
+        // Clearance for the offset stack shadows so list gap stays even.
+        behind === 1 && "pb-2 pr-2",
+        behind >= 2 && "pb-4 pr-4",
+      )}
+      data-testid={behind > 0 ? "inbox-card-stack" : undefined}
+      data-stack-behind={behind > 0 ? behind : undefined}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        data-stack-depth={depth}
+        aria-pressed={active}
+        className={cn(
+          "relative z-10 w-full border-y border-r border-l-2 px-5 py-4 text-left transition-colors",
+          active
+            ? "border-y-outline/45 border-r-outline/45 border-l-white bg-surface-container-high"
+            : "border-y-outline-variant/20 border-r-outline-variant/20 border-l-transparent bg-surface-container-low hover:bg-surface-container-high",
+          behind === 1 &&
+            "[box-shadow:var(--stack-1-fill),var(--stack-1-edge)]",
+          behind >= 2 &&
+            "[box-shadow:var(--stack-1-fill),var(--stack-1-edge),var(--stack-2-fill),var(--stack-2-edge)]",
+        )}
+        style={
+          behind > 0
+            ? ({
+                // Each fill sits above its 1px edge so the border peeks the same
+                // on every under-card (first shadow paints on top).
+                "--stack-1-fill": `${STACK_STEP} ${STACK_STEP} 0 0 var(--color-surface-container-high)`,
+                "--stack-1-edge": `${STACK_STEP} ${STACK_STEP} 0 1px rgb(145 145 145 / 0.45)`,
+                "--stack-2-fill": `calc(${STACK_STEP} * 2) calc(${STACK_STEP} * 2) 0 0 var(--color-surface-container-highest)`,
+                "--stack-2-edge": `calc(${STACK_STEP} * 2) calc(${STACK_STEP} * 2) 0 1px rgb(145 145 145 / 0.45)`,
+              } as CSSProperties)
+            : undefined
+        }
+      >
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-headline text-sm font-bold text-white">
+            {senderName}
+          </p>
+          <LeadStatusBadge status={status} />
+        </div>
+        <p className="mt-1 text-xs text-outline">{senderEmail}</p>
+        <p className="mt-2 line-clamp-2 text-sm text-on-surface-variant">
+          {message}
+        </p>
+        {assignedTo && (
+          <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
+            Assigned: {assignedTo}
+          </p>
+        )}
+        <p className="mt-3 font-label text-[10px] uppercase tracking-widest text-outline">
+          {formatWhen(submittedAt)}
+          {replyCount > 0 && (
+            <>
+              {" · "}
+              {replyCount} {replyCount === 1 ? "reply" : "replies"}
+            </>
+          )}
+        </p>
+      </button>
+    </div>
+  );
+}

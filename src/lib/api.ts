@@ -66,6 +66,8 @@ export interface Submission {
   notes?: SubmissionNote[];
   assignedTo?: string | null;
   updatedAt?: string;
+  /** Email replies on the thread (excludes the original form submission). */
+  messageCount?: number;
 }
 
 export interface SubmissionsListResponse {
