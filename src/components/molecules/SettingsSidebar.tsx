@@ -65,7 +65,7 @@ export function SettingsSidebar() {
               aria-controls={panelId}
               onClick={() => toggleGroup(group.id)}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium transition-colors",
+                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium transition-colors duration-150",
                 open || activeGroupId === group.id
                   ? "text-white"
                   : "text-on-surface-variant hover:bg-surface-container-high hover:text-white",
@@ -79,43 +79,57 @@ export function SettingsSidebar() {
               <MaterialIcon
                 name="expand_more"
                 className={cn(
-                  "text-[16px]! text-outline transition-transform",
+                  "text-[16px]! text-outline transition-transform duration-200 ease-out",
                   open && "rotate-180",
                 )}
               />
             </button>
 
-            {open && (
-              <ul id={panelId} className="mb-1 ml-2 space-y-0.5 border-l border-outline-variant/15 pl-2">
-                {group.items.map((item) => {
-                  const href = settingsSectionPath(item.id);
-                  const active = activeSection === item.id;
-                  return (
-                    <li key={item.id}>
-                      <Link
-                        href={href}
-                        aria-current={active ? "page" : undefined}
-                        className={cn(
-                          "flex items-center gap-2 rounded-md px-2 py-1 text-[13px] transition-colors",
-                          active
-                            ? "bg-surface-container-high font-medium text-white"
-                            : "text-on-surface-variant hover:bg-surface-container-high/70 hover:text-white",
-                        )}
-                      >
-                        <MaterialIcon
-                          name={item.icon}
+            <div
+              id={panelId}
+              role="region"
+              aria-hidden={!open}
+              inert={!open ? true : undefined}
+              className={cn(
+                "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+                open
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0",
+              )}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <ul className="mb-1 ml-2 space-y-0.5 border-l border-outline-variant/15 py-0.5 pl-2">
+                  {group.items.map((item) => {
+                    const href = settingsSectionPath(item.id);
+                    const active = activeSection === item.id;
+                    return (
+                      <li key={item.id}>
+                        <Link
+                          href={href}
+                          tabIndex={open ? undefined : -1}
+                          aria-current={active ? "page" : undefined}
                           className={cn(
-                            "text-[15px]!",
-                            active ? "text-white" : "text-outline",
+                            "flex items-center gap-2 rounded-md px-2 py-1 text-[13px] transition-colors duration-150",
+                            active
+                              ? "bg-surface-container-high font-medium text-white"
+                              : "text-on-surface-variant hover:bg-surface-container-high/70 hover:text-white",
                           )}
-                        />
-                        <span className="min-w-0 truncate">{item.label}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+                        >
+                          <MaterialIcon
+                            name={item.icon}
+                            className={cn(
+                              "text-[15px]!",
+                              active ? "text-white" : "text-outline",
+                            )}
+                          />
+                          <span className="min-w-0 truncate">{item.label}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
           </div>
         );
       })}
