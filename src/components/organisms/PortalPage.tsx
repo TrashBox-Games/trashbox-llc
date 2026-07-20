@@ -266,23 +266,14 @@ export function PortalApp({ tab }: PortalAppProps) {
             </>
           ),
         }
-      : tab === "api-key"
-        ? {
-            eyebrow: "API key",
-            title: (
-              <>
-                Form API <span className="text-outline">Key.</span>
-              </>
-            ),
-          }
-        : {
-            eyebrow: "Membership",
-            title: (
-              <>
-                Plan & <span className="text-outline">Billing.</span>
-              </>
-            ),
-          };
+      : {
+          eyebrow: "Membership",
+          title: (
+            <>
+              Plan & <span className="text-outline">Billing.</span>
+            </>
+          ),
+        };
 
   const contentPending =
     auth.status === "loading" || auth.status === "signedOut" || !portal.ready;
@@ -338,29 +329,6 @@ export function PortalApp({ tab }: PortalAppProps) {
         <p className="border border-outline-variant/20 bg-surface-container-low p-4 text-sm text-on-surface-variant">
           {portal.billingNotice}
         </p>
-      )}
-
-      {tab === "api-key" && portal.issuedApiKey && (
-        <section className="border border-amber-400/30 bg-surface-container-low p-6">
-          <p className="font-label text-[10px] uppercase tracking-widest text-outline">
-            Your API key (shown once)
-          </p>
-          <p className="mt-3 break-all font-mono text-sm text-white">
-            {portal.issuedApiKey}
-          </p>
-          <p className="mt-3 text-sm text-on-surface-variant">
-            Save this key for your website forms. It cannot be retrieved again.
-          </p>
-          <button
-            type="button"
-            className="mt-4 font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white"
-            onClick={() => {
-              void navigator.clipboard.writeText(portal.issuedApiKey!);
-            }}
-          >
-            Copy key
-          </button>
-        </section>
       )}
 
       {portal.account && !portal.account.linked && (
@@ -474,49 +442,6 @@ export function PortalApp({ tab }: PortalAppProps) {
         </section>
       )}
 
-      {tab === "api-key" &&
-        portal.account?.linked &&
-        portal.account.role !== "member" && (
-        <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
-          <p className="font-label text-[10px] uppercase tracking-widest text-outline">API key</p>
-          <h2 className="mt-3 font-headline text-2xl font-bold text-white md:text-3xl">
-            {portal.account.hasApiKey ? "Key active" : "No key issued"}
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
-            {portal.account.hasApiKey
-              ? "Use your Form API key in website forms (X-Api-Key). Rotating replaces the current key immediately. The raw key is only shown once."
-              : "Create a key to accept form submissions from your sites. The raw key is only shown once."}
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <button
-              type="button"
-              className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-              disabled={portal.apiKeyBusy}
-              onClick={() => void portal.onCreateApiKey()}
-            >
-              {portal.apiKeyBusy
-                ? "Working…"
-                : portal.account.hasApiKey
-                  ? "Rotate key"
-                  : "Create key"}
-            </button>
-            {portal.account.hasApiKey && (
-              <button
-                type="button"
-                className="border border-outline-variant/30 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
-                disabled={portal.apiKeyBusy}
-                onClick={() => void portal.onDeleteApiKey()}
-              >
-                {portal.apiKeyBusy ? "Working…" : "Delete key"}
-              </button>
-            )}
-          </div>
-          {portal.apiKeyError && (
-            <p className="mt-4 text-sm text-red-300">{portal.apiKeyError}</p>
-          )}
-        </section>
-      )}
-
       {tab === "inbox" && (
         <>
           {portal.account?.linked && (
@@ -623,14 +548,6 @@ export function PortalApp({ tab }: PortalAppProps) {
             </button>
           )}
         </>
-      )}
-
-      {tab === "api-key" &&
-        portal.account?.linked &&
-        portal.account.role === "member" && (
-        <p className="text-on-surface-variant">
-          Only owners and admins can manage API keys.
-        </p>
       )}
 
       {tab === "membership" &&

@@ -17,7 +17,7 @@ export const PORTAL_PATHS = {
   root: "/portal/",
   login: "/portal/login/",
   inbox: "/portal/inbox/",
-  apiKey: "/portal/api-key/",
+  apiKey: "/portal/settings/api-keys/",
   membership: "/portal/membership/",
   team: "/portal/settings/members/",
   settings: "/portal/settings/",

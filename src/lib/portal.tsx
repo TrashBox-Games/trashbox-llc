@@ -15,8 +15,6 @@ import {
   acceptTeamInvite,
   addSubmissionNote,
   connectMailbox,
-  createApiKey,
-  deleteApiKey,
   disconnectMailbox,
   getAccount,
   getMailbox,
@@ -42,7 +40,10 @@ import {
 import { useAuth } from "@/lib/auth";
 import { PORTAL_PATHS } from "@/lib/sites";
 
-export type PortalTab = "inbox" | "api-key" | "membership";
+export type PortalTab = "inbox" | "membership";
+
+/** One-time issued key for Settings → API Keys after provision. */
+export const PORTAL_ISSUED_API_KEY_STORAGE = "portalIssuedApiKey";
 
 const emptyFilters: LeadInboxFiltersValue = {
   q: "",
@@ -69,9 +70,6 @@ export interface PortalContextValue {
   billingNotice: string | null;
   businessName: string;
   setBusinessName: (value: string) => void;
-  issuedApiKey: string | null;
-  apiKeyBusy: boolean;
-  apiKeyError: string | null;
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
   selected: Submission | null;
@@ -98,8 +96,6 @@ export interface PortalContextValue {
   onMailboxDisconnect: () => Promise<void>;
   onMailboxSync: () => Promise<void>;
   onProvisionAccount: () => Promise<void>;
-  onCreateApiKey: () => Promise<void>;
-  onDeleteApiKey: () => Promise<void>;
   onUpgrade: (plan: "basic" | "premium") => Promise<void>;
   onManageBilling: () => Promise<void>;
 }
@@ -119,9 +115,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
   const [billingError, setBillingError] = useState<string | null>(null);
   const [billingNotice, setBillingNotice] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState("");
-  const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null);
-  const [apiKeyBusy, setApiKeyBusy] = useState(false);
-  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [filters, setFilters] = useState<LeadInboxFiltersValue>(emptyFilters);
@@ -186,8 +179,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       setNextCursor(undefined);
       setListError(null);
       setBillingError(null);
-      setApiKeyError(null);
-      setIssuedApiKey(null);
       setSelectedId(null);
       setMembers([]);
       setReady(false);
@@ -503,7 +494,12 @@ export function PortalProvider({ children }: { children: ReactNode }) {
     setBillingError(null);
     try {
       const result = await provisionAccount(name);
-      if (result.apiKey) setIssuedApiKey(result.apiKey);
+      if (result.apiKey) {
+        sessionStorage.setItem(PORTAL_ISSUED_API_KEY_STORAGE, result.apiKey);
+        setBillingNotice(
+          "Account created. Open Settings → Developers → API Keys to copy your new key (shown once).",
+        );
+      }
       setAccount({
         linked: true,
         email: result.email,
@@ -531,45 +527,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       setBillingBusy(false);
     }
   }, [businessName]);
-
-  const onCreateApiKey = useCallback(async () => {
-    setApiKeyBusy(true);
-    setApiKeyError(null);
-    try {
-      const result = await createApiKey();
-      if (result.apiKey) setIssuedApiKey(result.apiKey);
-      setAccount((prev) => (prev ? { ...prev, hasApiKey: true } : prev));
-    } catch (err) {
-      setApiKeyError(
-        err instanceof ApiError ? err.message : "Could not create API key",
-      );
-    } finally {
-      setApiKeyBusy(false);
-    }
-  }, []);
-
-  const onDeleteApiKey = useCallback(async () => {
-    if (
-      !window.confirm(
-        "Delete your API key? Form submissions using it will stop working until you create a new key.",
-      )
-    ) {
-      return;
-    }
-    setApiKeyBusy(true);
-    setApiKeyError(null);
-    try {
-      await deleteApiKey();
-      setIssuedApiKey(null);
-      setAccount((prev) => (prev ? { ...prev, hasApiKey: false } : prev));
-    } catch (err) {
-      setApiKeyError(
-        err instanceof ApiError ? err.message : "Could not delete API key",
-      );
-    } finally {
-      setApiKeyBusy(false);
-    }
-  }, []);
 
   const onUpgrade = useCallback(async (plan: "basic" | "premium") => {
     setBillingBusy(true);
@@ -618,9 +575,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       billingNotice,
       businessName,
       setBusinessName,
-      issuedApiKey,
-      apiKeyBusy,
-      apiKeyError,
       selectedId,
       setSelectedId,
       selected,
@@ -643,8 +597,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       onMailboxDisconnect,
       onMailboxSync,
       onProvisionAccount,
-      onCreateApiKey,
-      onDeleteApiKey,
       onUpgrade,
       onManageBilling,
     }),
@@ -661,9 +613,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       billingError,
       billingNotice,
       businessName,
-      issuedApiKey,
-      apiKeyBusy,
-      apiKeyError,
       selectedId,
       selected,
       filters,
@@ -684,8 +633,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       onMailboxDisconnect,
       onMailboxSync,
       onProvisionAccount,
-      onCreateApiKey,
-      onDeleteApiKey,
       onUpgrade,
       onManageBilling,
     ],

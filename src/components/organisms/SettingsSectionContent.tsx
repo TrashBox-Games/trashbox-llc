@@ -2,6 +2,7 @@
 
 import { MailboxSettings } from "@/components/molecules/MailboxSettings";
 import { SettingsPlaceholder } from "@/components/molecules/SettingsPlaceholder";
+import { ApiKeysSettings } from "@/components/organisms/ApiKeysSettings";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
 import { TeamMembersSettings } from "@/components/organisms/TeamMembersSettings";
 import { useAuth } from "@/lib/auth";
@@ -68,6 +69,10 @@ export function SettingsSectionContent({
         tier={portal.account.tier}
       />
     );
+  }
+
+  if (sectionId === "api-keys") {
+    return <ApiKeysSettings />;
   }
 
   return (

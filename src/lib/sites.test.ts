@@ -12,7 +12,7 @@ describe("sites helpers", () => {
     expect(PLATFORM_PATHS.features).toBe("/platform/features/");
     expect(PORTAL_PATHS.login).toBe("/portal/login/");
     expect(PORTAL_PATHS.inbox).toBe("/portal/inbox/");
-    expect(PORTAL_PATHS.apiKey).toBe("/portal/api-key/");
+    expect(PORTAL_PATHS.apiKey).toBe("/portal/settings/api-keys/");
     expect(PORTAL_PATHS.membership).toBe("/portal/membership/");
     expect(PORTAL_PATHS.team).toBe("/portal/settings/members/");
     expect(PORTAL_PATHS.settings).toBe("/portal/settings/");

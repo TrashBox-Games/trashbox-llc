@@ -1,11 +1,7 @@
-import type { Metadata } from "next";
-import { PortalApp } from "@/components/organisms/PortalPage";
+import { redirect } from "next/navigation";
+import { settingsSectionPath } from "@/lib/portal-settings";
 
-export const metadata: Metadata = {
-  title: "Portal API Key",
-  description: "Manage your Form API key.",
-};
-
-export default function Page() {
-  return <PortalApp tab="api-key" />;
+/** Legacy /portal/api-key → Settings → Developers → API Keys. */
+export default function PortalApiKeyRedirectPage() {
+  redirect(settingsSectionPath("api-keys"));
 }

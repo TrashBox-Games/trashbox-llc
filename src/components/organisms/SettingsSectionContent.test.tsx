@@ -82,4 +82,16 @@ describe("SettingsSectionContent", () => {
       await screen.findByText(/owner@example.com/i),
     ).toBeInTheDocument();
   });
+
+  it("renders api keys management in the api-keys section", async () => {
+    render(
+      <PortalProvider>
+        <SettingsSectionContent sectionId="api-keys" />
+      </PortalProvider>,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: /key active|no key issued/i }),
+    ).toBeInTheDocument();
+  });
 });
