@@ -2,6 +2,7 @@
 
 import { MailboxSettings } from "@/components/molecules/MailboxSettings";
 import { SettingsPlaceholder } from "@/components/molecules/SettingsPlaceholder";
+import { ApiDocsSettings } from "@/components/organisms/ApiDocsSettings";
 import { ApiKeysSettings } from "@/components/organisms/ApiKeysSettings";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
 import { TeamMembersSettings } from "@/components/organisms/TeamMembersSettings";
@@ -73,6 +74,10 @@ export function SettingsSectionContent({
 
   if (sectionId === "api-keys") {
     return <ApiKeysSettings />;
+  }
+
+  if (sectionId === "api-documentation") {
+    return <ApiDocsSettings />;
   }
 
   return (

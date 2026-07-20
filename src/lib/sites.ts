@@ -2,6 +2,9 @@
 
 export const API_DOCS_URL = "https://api.trashbox.io/docs";
 
+/** Production base URL for the Form API (matches the OpenAPI `servers` entry). */
+export const API_BASE_URL = "https://api.trashbox.io";
+
 export const PLATFORM_BASE = "/platform";
 export const PORTAL_BASE = "/portal";
 
