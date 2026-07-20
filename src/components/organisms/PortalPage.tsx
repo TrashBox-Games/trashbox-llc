@@ -4,55 +4,16 @@ import { type FormEvent, useEffect, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { LeadStatusBadge } from "@/components/atoms/LeadStatusBadge";
 import { LeadDetail } from "@/components/molecules/LeadDetail";
-import {
-  LeadInboxFilters,
-  type LeadInboxFiltersValue,
-} from "@/components/molecules/LeadInboxFilters";
+import { LeadInboxFilters } from "@/components/molecules/LeadInboxFilters";
 import { MailboxSettings } from "@/components/molecules/MailboxSettings";
 import { TeamPanel } from "@/components/molecules/TeamPanel";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
-import {
-  ApiError,
-  acceptTeamInvite,
-  addSubmissionNote,
-  connectMailbox,
-  createApiKey,
-  createTeamInvite,
-  deleteApiKey,
-  deleteTeamInvite,
-  deleteTeamMember,
-  disconnectMailbox,
-  getAccount,
-  getMailbox,
-  getTeam,
-  leadStatusOf,
-  listLeadMessages,
-  listSubmissions,
-  openBillingPortal,
-  provisionAccount,
-  sendLeadMessage,
-  startCheckout,
-  syncMailbox,
-  updateSubmission,
-  updateTeamMember,
-  type AccountResponse,
-  type CreateTeamInviteInput,
-  type LeadMessage,
-  type LeadStatus,
-  type LeadTag,
-  type MailboxProvider,
-  type MailboxStatusResponse,
-  type Submission,
-  type TeamInvite,
-  type TeamMember,
-  type TeamRole,
-  type UpdateTeamMemberInput,
-} from "@/lib/api";
+import { leadStatusOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { usePortal, type PortalTab } from "@/lib/portal";
 import { PORTAL_PATHS } from "@/lib/sites";
 
 type AuthMode = "signIn" | "signUp" | "confirm";
-type PortalTab = "inbox" | "api-key" | "membership" | "team" | "settings";
 
 const inputClass =
   "w-full border-0 border-b border-outline-variant bg-transparent py-4 text-white placeholder:text-outline-variant/50 focus:border-primary focus:ring-0 focus:outline-none";
@@ -75,13 +36,6 @@ function formatWhen(iso: string) {
 function redirect(path: string) {
   window.location.assign(path);
 }
-
-const emptyFilters: LeadInboxFiltersValue = {
-  q: "",
-  status: "",
-  tag: "",
-  assignedTo: "",
-};
 
 export function PortalLoginPage() {
   const auth = useAuth();
@@ -293,570 +247,7 @@ interface PortalAppProps {
 
 export function PortalApp({ tab }: PortalAppProps) {
   const auth = useAuth();
-  const [items, setItems] = useState<Submission[]>([]);
-  const [clientName, setClientName] = useState<string | null>(null);
-  const [account, setAccount] = useState<AccountResponse | null>(null);
-  const [nextCursor, setNextCursor] = useState<string | undefined>();
-  const [listError, setListError] = useState<string | null>(null);
-  const [listBusy, setListBusy] = useState(false);
-  const [crmBusy, setCrmBusy] = useState(false);
-  const [billingBusy, setBillingBusy] = useState(false);
-  const [billingError, setBillingError] = useState<string | null>(null);
-  const [billingNotice, setBillingNotice] = useState<string | null>(null);
-  const [businessName, setBusinessName] = useState("");
-  const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null);
-  const [apiKeyBusy, setApiKeyBusy] = useState(false);
-  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
-  const [filters, setFilters] = useState<LeadInboxFiltersValue>(emptyFilters);
-  const [appliedFilters, setAppliedFilters] =
-    useState<LeadInboxFiltersValue>(emptyFilters);
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [invites, setInvites] = useState<TeamInvite[]>([]);
-  const [teamRole, setTeamRole] = useState<TeamRole>("member");
-  const [memberLimit, setMemberLimit] = useState(1);
-  const [memberCount, setMemberCount] = useState(0);
-  const [teamBusy, setTeamBusy] = useState(false);
-  const [teamError, setTeamError] = useState<string | null>(null);
-  const [teamNotice, setTeamNotice] = useState<string | null>(null);
-  const [mailbox, setMailbox] = useState<MailboxStatusResponse | null>(null);
-  const [mailboxBusy, setMailboxBusy] = useState(false);
-  const [mailboxError, setMailboxError] = useState<string | null>(null);
-  const [mailboxNotice, setMailboxNotice] = useState<string | null>(null);
-  const [leadMessages, setLeadMessages] = useState<LeadMessage[]>([]);
-  const [messageError, setMessageError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const billing = params.get("billing");
-    const mailboxParam = params.get("mailbox");
-    const mailboxMessage = params.get("message");
-
-    if (billing === "success") {
-      setBillingNotice(
-        "Billing updated. Plan status refreshes after Stripe confirms payment.",
-      );
-    } else if (billing === "cancel") {
-      setBillingNotice("Checkout canceled. Your plan was not changed.");
-    }
-
-    if (mailboxParam === "connected") {
-      setMailboxNotice("Mailbox connected successfully.");
-    } else if (mailboxParam === "error") {
-      setMailboxError(
-        mailboxMessage || "Mailbox connection failed. Try again.",
-      );
-    }
-
-    if (billing || mailboxParam) {
-      params.delete("billing");
-      params.delete("mailbox");
-      params.delete("message");
-      const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
-      window.history.replaceState({}, "", next);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (auth.status === "signedOut") {
-      const invite = new URLSearchParams(window.location.search).get("invite");
-      if (invite) {
-        sessionStorage.setItem("portalInviteToken", invite);
-      }
-      redirect(PORTAL_PATHS.login);
-      return;
-    }
-    if (auth.status !== "signedIn") {
-      setItems([]);
-      setClientName(null);
-      setAccount(null);
-      setNextCursor(undefined);
-      setListError(null);
-      setBillingError(null);
-      setApiKeyError(null);
-      setIssuedApiKey(null);
-      setSelectedId(null);
-      setMembers([]);
-      setInvites([]);
-      setReady(false);
-      return;
-    }
-
-    let cancelled = false;
-    async function load() {
-      setListBusy(true);
-      setListError(null);
-      setReady(false);
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const inviteToken =
-          params.get("invite") ||
-          sessionStorage.getItem("portalInviteToken");
-        if (inviteToken) {
-          sessionStorage.removeItem("portalInviteToken");
-          try {
-            const accepted = await acceptTeamInvite(inviteToken);
-            if (!cancelled && accepted.success) {
-              setTeamNotice(
-                accepted.clientName
-                  ? `Joined ${accepted.clientName}.`
-                  : "Invite accepted.",
-              );
-            }
-          } catch (err) {
-            if (!cancelled) {
-              setTeamError(
-                err instanceof ApiError
-                  ? err.message
-                  : "Could not accept invite",
-              );
-            }
-          } finally {
-            params.delete("invite");
-            const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
-            window.history.replaceState({}, "", next);
-          }
-        }
-
-        const acct = await getAccount();
-        if (cancelled) return;
-        setAccount(acct);
-        setClientName(acct.clientName || null);
-        if (acct.role) setTeamRole(acct.role);
-        if (typeof acct.memberLimit === "number") setMemberLimit(acct.memberLimit);
-        if (typeof acct.memberCount === "number") setMemberCount(acct.memberCount);
-
-        if (!acct.linked) {
-          setItems([]);
-          setClientName(null);
-          setNextCursor(undefined);
-          setMembers([]);
-          setInvites([]);
-          setMailbox({ connected: false });
-          return;
-        }
-
-        setClientName(acct.clientName || null);
-        if (acct.role) setTeamRole(acct.role);
-
-        try {
-          const team = await getTeam();
-          if (cancelled) return;
-          setMembers(team.members);
-          setInvites(team.invites);
-          setTeamRole(team.role);
-          setMemberLimit(team.memberLimit);
-          setMemberCount(team.memberCount);
-        } catch {
-          if (!cancelled) {
-            setMembers([]);
-            setInvites([]);
-          }
-        }
-
-        try {
-          const box = await getMailbox();
-          if (cancelled) return;
-          setMailbox(box);
-        } catch {
-          if (!cancelled) setMailbox({ connected: false });
-        }
-
-        try {
-          const subs = await listSubmissions({
-            limit: 50,
-            ...(appliedFilters.status
-              ? { status: appliedFilters.status }
-              : {}),
-            ...(appliedFilters.tag ? { tag: appliedFilters.tag } : {}),
-            ...(appliedFilters.assignedTo
-              ? { assignedTo: appliedFilters.assignedTo }
-              : {}),
-            ...(appliedFilters.q.trim() ? { q: appliedFilters.q.trim() } : {}),
-          });
-          if (cancelled) return;
-          setItems(subs.items);
-          setNextCursor(subs.nextCursor);
-          setSelectedId(subs.items[0]?.submissionId ?? null);
-        } catch (err) {
-          if (cancelled) return;
-          if (err instanceof ApiError && err.status === 403) {
-            setItems([]);
-            setListError(null);
-          } else {
-            setListError(
-              err instanceof ApiError
-                ? err.message
-                : "Failed to load submissions",
-            );
-          }
-        }
-      } catch (err) {
-        if (cancelled) return;
-        const message =
-          err instanceof ApiError ? err.message : "Failed to load account";
-        setListError(message);
-      } finally {
-        if (!cancelled) {
-          setListBusy(false);
-          setReady(true);
-        }
-      }
-    }
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [auth.status, appliedFilters]);
-
-  async function loadMore() {
-    if (!nextCursor) return;
-    setListBusy(true);
-    setListError(null);
-    try {
-      const data = await listSubmissions({
-        limit: 50,
-        cursor: nextCursor,
-        ...(appliedFilters.status ? { status: appliedFilters.status } : {}),
-        ...(appliedFilters.tag ? { tag: appliedFilters.tag } : {}),
-        ...(appliedFilters.assignedTo
-          ? { assignedTo: appliedFilters.assignedTo }
-          : {}),
-        ...(appliedFilters.q.trim() ? { q: appliedFilters.q.trim() } : {}),
-      });
-      setItems((prev) => [...prev, ...data.items]);
-      setNextCursor(data.nextCursor);
-    } catch (err) {
-      setListError(err instanceof ApiError ? err.message : "Failed to load more");
-    } finally {
-      setListBusy(false);
-    }
-  }
-
-  function replaceItem(updated: Submission) {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.submissionId === updated.submissionId ? updated : item,
-      ),
-    );
-  }
-
-  async function onLeadUpdate(patch: {
-    status?: LeadStatus;
-    tags?: LeadTag[];
-    assignedTo?: string | null;
-  }) {
-    if (!selectedId) return;
-    setCrmBusy(true);
-    setListError(null);
-    try {
-      const updated = await updateSubmission(selectedId, patch);
-      replaceItem(updated);
-    } catch (err) {
-      setListError(
-        err instanceof ApiError ? err.message : "Failed to update lead",
-      );
-    } finally {
-      setCrmBusy(false);
-    }
-  }
-
-  async function onLeadNote(body: string) {
-    if (!selectedId) return;
-    setCrmBusy(true);
-    setListError(null);
-    try {
-      const updated = await addSubmissionNote(selectedId, body);
-      replaceItem(updated);
-    } catch (err) {
-      setListError(
-        err instanceof ApiError ? err.message : "Failed to add note",
-      );
-    } finally {
-      setCrmBusy(false);
-    }
-  }
-
-  useEffect(() => {
-    if (!selectedId || !account?.linked) {
-      setLeadMessages([]);
-      setMessageError(null);
-      return;
-    }
-    let cancelled = false;
-    async function loadMessages() {
-      setMessageError(null);
-      try {
-        const res = await listLeadMessages(selectedId!);
-        if (!cancelled) setLeadMessages(res.items);
-      } catch (err) {
-        if (!cancelled) {
-          setLeadMessages([]);
-          setMessageError(
-            err instanceof ApiError
-              ? err.message
-              : "Failed to load messages",
-          );
-        }
-      }
-    }
-    void loadMessages();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedId, account?.linked]);
-
-  async function onSendLeadMessage(body: string) {
-    if (!selectedId) return;
-    setCrmBusy(true);
-    setMessageError(null);
-    try {
-      const message = await sendLeadMessage(selectedId, { body });
-      setLeadMessages((prev) => [...prev, message]);
-    } catch (err) {
-      setMessageError(
-        err instanceof ApiError ? err.message : "Failed to send reply",
-      );
-    } finally {
-      setCrmBusy(false);
-    }
-  }
-
-  async function onMailboxConnect(provider: MailboxProvider) {
-    setMailboxBusy(true);
-    setMailboxError(null);
-    setMailboxNotice(null);
-    try {
-      const { authUrl } = await connectMailbox(provider);
-      window.location.assign(authUrl);
-    } catch (err) {
-      setMailboxError(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to start mailbox connect",
-      );
-      setMailboxBusy(false);
-    }
-  }
-
-  async function onMailboxDisconnect() {
-    setMailboxBusy(true);
-    setMailboxError(null);
-    setMailboxNotice(null);
-    try {
-      await disconnectMailbox();
-      setMailbox({ connected: false });
-      setMailboxNotice("Mailbox disconnected.");
-    } catch (err) {
-      setMailboxError(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to disconnect mailbox",
-      );
-    } finally {
-      setMailboxBusy(false);
-    }
-  }
-
-  async function onMailboxSync() {
-    setMailboxBusy(true);
-    setMailboxError(null);
-    setMailboxNotice(null);
-    try {
-      const result = await syncMailbox();
-      const box = await getMailbox();
-      setMailbox(box);
-      setMailboxNotice(
-        result.imported > 0
-          ? `Synced ${result.imported} new message${result.imported === 1 ? "" : "s"}.`
-          : "Sync complete. No new replies.",
-      );
-    } catch (err) {
-      setMailboxError(
-        err instanceof ApiError ? err.message : "Failed to sync mailbox",
-      );
-    } finally {
-      setMailboxBusy(false);
-    }
-  }
-
-  async function refreshTeam() {
-    const team = await getTeam();
-    setMembers(team.members);
-    setInvites(team.invites);
-    setTeamRole(team.role);
-    setMemberLimit(team.memberLimit);
-    setMemberCount(team.memberCount);
-  }
-
-  async function onInvite(input: CreateTeamInviteInput) {
-    setTeamBusy(true);
-    setTeamError(null);
-    try {
-      await createTeamInvite(input);
-      await refreshTeam();
-      setTeamNotice(`Invite sent to ${input.email}.`);
-    } catch (err) {
-      setTeamError(
-        err instanceof ApiError ? err.message : "Failed to send invite",
-      );
-    } finally {
-      setTeamBusy(false);
-    }
-  }
-
-  async function onRevokeInvite(email: string) {
-    setTeamBusy(true);
-    setTeamError(null);
-    try {
-      await deleteTeamInvite(email);
-      await refreshTeam();
-    } catch (err) {
-      setTeamError(
-        err instanceof ApiError ? err.message : "Failed to revoke invite",
-      );
-    } finally {
-      setTeamBusy(false);
-    }
-  }
-
-  async function onRemoveMember(email: string) {
-    setTeamBusy(true);
-    setTeamError(null);
-    try {
-      await deleteTeamMember(email);
-      await refreshTeam();
-    } catch (err) {
-      setTeamError(
-        err instanceof ApiError ? err.message : "Failed to remove member",
-      );
-    } finally {
-      setTeamBusy(false);
-    }
-  }
-
-  async function onUpdateMember(email: string, patch: UpdateTeamMemberInput) {
-    setTeamBusy(true);
-    setTeamError(null);
-    try {
-      await updateTeamMember(email, patch);
-      await refreshTeam();
-    } catch (err) {
-      setTeamError(
-        err instanceof ApiError ? err.message : "Failed to update member",
-      );
-    } finally {
-      setTeamBusy(false);
-    }
-  }
-
-  async function onProvisionAccount() {
-    const name = businessName.trim();
-    if (!name) {
-      setBillingError("Enter a business name");
-      return;
-    }
-    setBillingBusy(true);
-    setBillingError(null);
-    try {
-      const result = await provisionAccount(name);
-      if (result.apiKey) setIssuedApiKey(result.apiKey);
-      setAccount({
-        linked: true,
-        email: result.email,
-        clientId: result.clientId,
-        clientName: result.clientName,
-        role: result.role ?? "owner",
-        tier: result.tier,
-        active: result.active,
-        hasBilling: result.hasBilling,
-        hasApiKey: Boolean(result.apiKey) || result.hasApiKey,
-        emailsUsed: result.emailsUsed,
-        emailLimit: result.emailLimit,
-        usageMonth: result.usageMonth,
-        memberLimit: result.memberLimit ?? 1,
-        memberCount: result.memberCount ?? 1,
-      });
-      setMemberLimit(result.memberLimit ?? 1);
-      setMemberCount(result.memberCount ?? 1);
-      setClientName(result.clientName || name);
-      setBusinessName("");
-    } catch (err) {
-      setBillingError(
-        err instanceof ApiError ? err.message : "Could not create Form API account",
-      );
-    } finally {
-      setBillingBusy(false);
-    }
-  }
-
-  async function onCreateApiKey() {
-    setApiKeyBusy(true);
-    setApiKeyError(null);
-    try {
-      const result = await createApiKey();
-      if (result.apiKey) setIssuedApiKey(result.apiKey);
-      setAccount((prev) => (prev ? { ...prev, hasApiKey: true } : prev));
-    } catch (err) {
-      setApiKeyError(
-        err instanceof ApiError ? err.message : "Could not create API key",
-      );
-    } finally {
-      setApiKeyBusy(false);
-    }
-  }
-
-  async function onDeleteApiKey() {
-    if (
-      !window.confirm(
-        "Delete your API key? Form submissions using it will stop working until you create a new key.",
-      )
-    ) {
-      return;
-    }
-    setApiKeyBusy(true);
-    setApiKeyError(null);
-    try {
-      await deleteApiKey();
-      setIssuedApiKey(null);
-      setAccount((prev) => (prev ? { ...prev, hasApiKey: false } : prev));
-    } catch (err) {
-      setApiKeyError(
-        err instanceof ApiError ? err.message : "Could not delete API key",
-      );
-    } finally {
-      setApiKeyBusy(false);
-    }
-  }
-
-  async function onUpgrade(plan: "basic" | "premium") {
-    setBillingBusy(true);
-    setBillingError(null);
-    try {
-      const url = await startCheckout(plan);
-      window.location.href = url;
-    } catch (err) {
-      setBillingError(err instanceof ApiError ? err.message : "Checkout failed");
-      setBillingBusy(false);
-    }
-  }
-
-  async function onManageBilling() {
-    setBillingBusy(true);
-    setBillingError(null);
-    try {
-      const url = await openBillingPortal();
-      window.location.href = url;
-    } catch (err) {
-      setBillingError(
-        err instanceof ApiError ? err.message : "Could not open billing portal",
-      );
-      setBillingBusy(false);
-    }
-  }
-
-  const selected = items.find((s) => s.submissionId === selectedId) ?? null;
+  const portal = usePortal();
 
   if (!auth.configured) {
     return (
@@ -914,7 +305,7 @@ export function PortalApp({ tab }: PortalAppProps) {
           };
 
   const contentPending =
-    auth.status === "loading" || auth.status === "signedOut" || !ready;
+    auth.status === "loading" || auth.status === "signedOut" || !portal.ready;
 
   return (
     <div className="space-y-10">
@@ -937,21 +328,23 @@ export function PortalApp({ tab }: PortalAppProps) {
             Signed in
           </p>
           <p className="mt-1 text-white">{auth.email}</p>
-          {clientName && (
-            <p className="mt-1 text-sm text-on-surface-variant">Client: {clientName}</p>
+          {portal.clientName && (
+            <p className="mt-1 text-sm text-on-surface-variant">
+              Client: {portal.clientName}
+            </p>
           )}
-          {account?.linked && account.tier && (
+          {portal.account?.linked && portal.account.tier && (
             <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
-              Plan: <span className="text-white">{account.tier}</span>
-              {!account.active ? " · inactive" : ""}
-              {typeof account.emailsUsed === "number" &&
-                typeof account.emailLimit === "number" && (
+              Plan: <span className="text-white">{portal.account.tier}</span>
+              {!portal.account.active ? " · inactive" : ""}
+              {typeof portal.account.emailsUsed === "number" &&
+                typeof portal.account.emailLimit === "number" && (
                   <>
                     {" "}
                     · Usage:{" "}
                     <span className="text-white">
-                      {account.emailsUsed.toLocaleString()} /{" "}
-                      {account.emailLimit.toLocaleString()}
+                      {portal.account.emailsUsed.toLocaleString()} /{" "}
+                      {portal.account.emailLimit.toLocaleString()}
                     </span>{" "}
                     emails
                   </>
@@ -961,18 +354,20 @@ export function PortalApp({ tab }: PortalAppProps) {
         </div>
       )}
 
-      {tab === "inbox" && billingNotice && (
+      {tab === "inbox" && portal.billingNotice && (
         <p className="border border-outline-variant/20 bg-surface-container-low p-4 text-sm text-on-surface-variant">
-          {billingNotice}
+          {portal.billingNotice}
         </p>
       )}
 
-      {tab === "api-key" && issuedApiKey && (
+      {tab === "api-key" && portal.issuedApiKey && (
         <section className="border border-amber-400/30 bg-surface-container-low p-6">
           <p className="font-label text-[10px] uppercase tracking-widest text-outline">
             Your API key (shown once)
           </p>
-          <p className="mt-3 break-all font-mono text-sm text-white">{issuedApiKey}</p>
+          <p className="mt-3 break-all font-mono text-sm text-white">
+            {portal.issuedApiKey}
+          </p>
           <p className="mt-3 text-sm text-on-surface-variant">
             Save this key for your website forms. It cannot be retrieved again.
           </p>
@@ -980,7 +375,7 @@ export function PortalApp({ tab }: PortalAppProps) {
             type="button"
             className="mt-4 font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white"
             onClick={() => {
-              void navigator.clipboard.writeText(issuedApiKey);
+              void navigator.clipboard.writeText(portal.issuedApiKey!);
             }}
           >
             Copy key
@@ -988,7 +383,7 @@ export function PortalApp({ tab }: PortalAppProps) {
         </section>
       )}
 
-      {account && !account.linked && (
+      {portal.account && !portal.account.linked && (
         <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
           <p className="font-label text-[10px] uppercase tracking-widest text-outline">
             Get started
@@ -997,7 +392,7 @@ export function PortalApp({ tab }: PortalAppProps) {
             Create Form API account
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
-            No Form API account is linked to {account.email || "your login"} yet. Create one now
+            No Form API account is linked to {portal.account.email || "your login"} yet. Create one now
             (no payment required). You can add a paid plan anytime after.
           </p>
           <div className="mt-8 max-w-md">
@@ -1008,8 +403,8 @@ export function PortalApp({ tab }: PortalAppProps) {
               id="business-name"
               type="text"
               required
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
+              value={portal.businessName}
+              onChange={(e) => portal.setBusinessName(e.target.value)}
               className={inputClass}
               placeholder="Acme Inspections"
             />
@@ -1018,89 +413,97 @@ export function PortalApp({ tab }: PortalAppProps) {
             <button
               type="button"
               className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-              disabled={billingBusy || !businessName.trim()}
-              onClick={() => void onProvisionAccount()}
+              disabled={portal.billingBusy || !portal.businessName.trim()}
+              onClick={() => void portal.onProvisionAccount()}
             >
-              {billingBusy ? "Creating…" : "Create account"}
+              {portal.billingBusy ? "Creating…" : "Create account"}
             </button>
           </div>
-          {billingError && <p className="mt-4 text-sm text-red-300">{billingError}</p>}
+          {portal.billingError && (
+            <p className="mt-4 text-sm text-red-300">{portal.billingError}</p>
+          )}
         </section>
       )}
 
-      {tab === "membership" && account?.linked && account.role === "owner" && (
+      {tab === "membership" &&
+        portal.account?.linked &&
+        portal.account.role === "owner" && (
         <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
           <p className="font-label text-[10px] uppercase tracking-widest text-outline">
             Subscription
           </p>
           <h2 className="mt-3 font-headline text-2xl font-bold text-white md:text-3xl">
-            {account.hasBilling
-              ? account.tier === "premium"
+            {portal.account.hasBilling
+              ? portal.account.tier === "premium"
                 ? "Premium"
                 : "Basic"
               : "No paid plan yet"}
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
-            {account.hasBilling
-              ? account.tier === "premium"
+            {portal.account.hasBilling
+              ? portal.account.tier === "premium"
                 ? "Premium includes up to 5 team seats, email alerts to opted-in teammates, and confirmation emails to form submitters."
                 : "Basic includes 1 team seat (you) and email alerts to opted-in teammates. Upgrade to Premium for 5 seats and submitter confirmations."
               : "Your Form API account is ready. Add a Stripe plan when you want paid Basic or Premium billing."}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            {!account.hasBilling && (
+            {!portal.account.hasBilling && (
               <>
                 <button
                   type="button"
                   className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-                  disabled={billingBusy}
-                  onClick={() => void onUpgrade("premium")}
+                  disabled={portal.billingBusy}
+                  onClick={() => void portal.onUpgrade("premium")}
                 >
-                  {billingBusy ? "Redirecting…" : "Add Premium plan"}
+                  {portal.billingBusy ? "Redirecting…" : "Add Premium plan"}
                 </button>
                 <button
                   type="button"
                   className="border border-outline-variant/30 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
-                  disabled={billingBusy}
-                  onClick={() => void onUpgrade("basic")}
+                  disabled={portal.billingBusy}
+                  onClick={() => void portal.onUpgrade("basic")}
                 >
-                  {billingBusy ? "Redirecting…" : "Add Basic plan"}
+                  {portal.billingBusy ? "Redirecting…" : "Add Basic plan"}
                 </button>
               </>
             )}
-            {account.hasBilling && account.tier !== "premium" && (
+            {portal.account.hasBilling && portal.account.tier !== "premium" && (
               <button
                 type="button"
                 className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-                disabled={billingBusy}
-                onClick={() => void onUpgrade("premium")}
+                disabled={portal.billingBusy}
+                onClick={() => void portal.onUpgrade("premium")}
               >
-                {billingBusy ? "Redirecting…" : "Upgrade to Premium"}
+                {portal.billingBusy ? "Redirecting…" : "Upgrade to Premium"}
               </button>
             )}
-            {account.hasBilling && (
+            {portal.account.hasBilling && (
               <button
                 type="button"
                 className="border border-outline-variant/30 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
-                disabled={billingBusy}
-                onClick={() => void onManageBilling()}
+                disabled={portal.billingBusy}
+                onClick={() => void portal.onManageBilling()}
               >
-                {billingBusy ? "Redirecting…" : "Manage subscription"}
+                {portal.billingBusy ? "Redirecting…" : "Manage subscription"}
               </button>
             )}
           </div>
-          {billingError && <p className="mt-4 text-sm text-red-300">{billingError}</p>}
+          {portal.billingError && (
+            <p className="mt-4 text-sm text-red-300">{portal.billingError}</p>
+          )}
         </section>
       )}
 
-      {tab === "api-key" && account?.linked && account.role !== "member" && (
+      {tab === "api-key" &&
+        portal.account?.linked &&
+        portal.account.role !== "member" && (
         <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
           <p className="font-label text-[10px] uppercase tracking-widest text-outline">API key</p>
           <h2 className="mt-3 font-headline text-2xl font-bold text-white md:text-3xl">
-            {account.hasApiKey ? "Key active" : "No key issued"}
+            {portal.account.hasApiKey ? "Key active" : "No key issued"}
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
-            {account.hasApiKey
+            {portal.account.hasApiKey
               ? "Use your Form API key in website forms (X-Api-Key). Rotating replaces the current key immediately. The raw key is only shown once."
               : "Create a key to accept form submissions from your sites. The raw key is only shown once."}
           </p>
@@ -1108,68 +511,76 @@ export function PortalApp({ tab }: PortalAppProps) {
             <button
               type="button"
               className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-              disabled={apiKeyBusy}
-              onClick={() => void onCreateApiKey()}
+              disabled={portal.apiKeyBusy}
+              onClick={() => void portal.onCreateApiKey()}
             >
-              {apiKeyBusy
+              {portal.apiKeyBusy
                 ? "Working…"
-                : account.hasApiKey
+                : portal.account.hasApiKey
                   ? "Rotate key"
                   : "Create key"}
             </button>
-            {account.hasApiKey && (
+            {portal.account.hasApiKey && (
               <button
                 type="button"
                 className="border border-outline-variant/30 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
-                disabled={apiKeyBusy}
-                onClick={() => void onDeleteApiKey()}
+                disabled={portal.apiKeyBusy}
+                onClick={() => void portal.onDeleteApiKey()}
               >
-                {apiKeyBusy ? "Working…" : "Delete key"}
+                {portal.apiKeyBusy ? "Working…" : "Delete key"}
               </button>
             )}
           </div>
-          {apiKeyError && <p className="mt-4 text-sm text-red-300">{apiKeyError}</p>}
+          {portal.apiKeyError && (
+            <p className="mt-4 text-sm text-red-300">{portal.apiKeyError}</p>
+          )}
         </section>
       )}
 
       {tab === "inbox" && (
         <>
-          {account?.linked && (
+          {portal.account?.linked && (
             <LeadInboxFilters
-              value={filters}
-              members={members}
-              onChange={setFilters}
-              onApply={() => setAppliedFilters(filters)}
+              value={portal.filters}
+              members={portal.members}
+              onChange={portal.setFilters}
+              onApply={portal.applyFilters}
             />
           )}
 
-          {listError && listError !== "No Form API account for this email" && (
+          {portal.listError &&
+            portal.listError !== "No Form API account for this email" && (
             <p className="border border-outline-variant/20 bg-surface-container-low p-6 text-on-surface-variant">
-              {listError}
+              {portal.listError}
             </p>
           )}
 
-          {listBusy && items.length === 0 && account?.linked && (
+          {portal.listBusy &&
+            portal.items.length === 0 &&
+            portal.account?.linked && (
             <p className="font-label text-xs uppercase tracking-widest text-outline">
               Loading…
             </p>
           )}
 
-          {!listBusy && !listError && items.length === 0 && account?.linked && (
+          {!portal.listBusy &&
+            !portal.listError &&
+            portal.items.length === 0 &&
+            portal.account?.linked && (
             <p className="text-on-surface-variant">No leads match these filters.</p>
           )}
 
-          {items.length > 0 && (
+          {portal.items.length > 0 && (
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
               <ul className="space-y-2 lg:col-span-5">
-                {items.map((item) => {
-                  const active = item.submissionId === selectedId;
+                {portal.items.map((item) => {
+                  const active = item.submissionId === portal.selectedId;
                   const status = leadStatusOf(item);
                   return (
                     <li key={item.submissionId}>
                       <button
                         type="button"
-                        onClick={() => setSelectedId(item.submissionId)}
+                        onClick={() => portal.setSelectedId(item.submissionId)}
                         className={[
                           "w-full border-l-2 px-5 py-4 text-left transition-colors",
                           active
@@ -1202,17 +613,17 @@ export function PortalApp({ tab }: PortalAppProps) {
               </ul>
 
               <div className="bg-surface-container-low p-8 lg:col-span-7">
-                {selected ? (
+                {portal.selected ? (
                   <LeadDetail
-                    submission={selected}
-                    members={members}
-                    busy={crmBusy}
-                    mailboxConnected={Boolean(mailbox?.connected)}
-                    messages={leadMessages}
-                    messageError={messageError}
-                    onUpdate={onLeadUpdate}
-                    onAddNote={onLeadNote}
-                    onSendMessage={onSendLeadMessage}
+                    submission={portal.selected}
+                    members={portal.members}
+                    busy={portal.crmBusy}
+                    mailboxConnected={Boolean(portal.mailbox?.connected)}
+                    messages={portal.leadMessages}
+                    messageError={portal.messageError}
+                    onUpdate={portal.onLeadUpdate}
+                    onAddNote={portal.onLeadNote}
+                    onSendMessage={portal.onSendLeadMessage}
                   />
                 ) : (
                   <p className="text-on-surface-variant">Select a lead.</p>
@@ -1221,58 +632,62 @@ export function PortalApp({ tab }: PortalAppProps) {
             </div>
           )}
 
-          {nextCursor && (
+          {portal.nextCursor && (
             <button
               type="button"
               className={btnClass + " max-w-xs"}
-              disabled={listBusy}
-              onClick={() => void loadMore()}
+              disabled={portal.listBusy}
+              onClick={() => void portal.loadMore()}
             >
-              {listBusy ? "Loading…" : "Load more"}
+              {portal.listBusy ? "Loading…" : "Load more"}
             </button>
           )}
         </>
       )}
 
-      {tab === "team" && account?.linked && (
+      {tab === "team" && portal.account?.linked && (
         <TeamPanel
-          role={teamRole}
-          currentUserEmail={account.email}
-          members={members}
-          invites={invites}
-          memberLimit={memberLimit}
-          memberCount={memberCount}
-          tier={account.tier}
-          busy={teamBusy}
-          error={teamError}
-          notice={teamNotice}
-          onInvite={onInvite}
-          onRevokeInvite={onRevokeInvite}
-          onRemoveMember={onRemoveMember}
-          onUpdateMember={onUpdateMember}
+          role={portal.teamRole}
+          currentUserEmail={portal.account.email}
+          members={portal.members}
+          invites={portal.invites}
+          memberLimit={portal.memberLimit}
+          memberCount={portal.memberCount}
+          tier={portal.account.tier}
+          busy={portal.teamBusy}
+          error={portal.teamError}
+          notice={portal.teamNotice}
+          onInvite={portal.onInvite}
+          onRevokeInvite={portal.onRevokeInvite}
+          onRemoveMember={portal.onRemoveMember}
+          onUpdateMember={portal.onUpdateMember}
         />
       )}
 
-      {tab === "settings" && account?.linked && (
+      {tab === "settings" && portal.account?.linked && (
         <MailboxSettings
-          role={teamRole}
-          mailbox={mailbox}
-          busy={mailboxBusy}
-          error={mailboxError}
-          notice={mailboxNotice}
-          onConnect={onMailboxConnect}
-          onDisconnect={onMailboxDisconnect}
-          onSync={onMailboxSync}
+          role={portal.teamRole}
+          mailbox={portal.mailbox}
+          busy={portal.mailboxBusy}
+          error={portal.mailboxError}
+          notice={portal.mailboxNotice}
+          onConnect={portal.onMailboxConnect}
+          onDisconnect={portal.onMailboxDisconnect}
+          onSync={portal.onMailboxSync}
         />
       )}
 
-      {tab === "api-key" && account?.linked && account.role === "member" && (
+      {tab === "api-key" &&
+        portal.account?.linked &&
+        portal.account.role === "member" && (
         <p className="text-on-surface-variant">
           Only owners and admins can manage API keys.
         </p>
       )}
 
-      {tab === "membership" && account?.linked && account.role !== "owner" && (
+      {tab === "membership" &&
+        portal.account?.linked &&
+        portal.account.role !== "owner" && (
         <p className="text-on-surface-variant">
           Only the account owner can manage billing.
         </p>

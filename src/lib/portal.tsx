@@ -1,0 +1,846 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import type { LeadInboxFiltersValue } from "@/components/molecules/LeadInboxFilters";
+import {
+  ApiError,
+  acceptTeamInvite,
+  addSubmissionNote,
+  connectMailbox,
+  createApiKey,
+  createTeamInvite,
+  deleteApiKey,
+  deleteTeamInvite,
+  deleteTeamMember,
+  disconnectMailbox,
+  getAccount,
+  getMailbox,
+  getTeam,
+  listLeadMessages,
+  listSubmissions,
+  openBillingPortal,
+  provisionAccount,
+  sendLeadMessage,
+  startCheckout,
+  syncMailbox,
+  updateSubmission,
+  updateTeamMember,
+  type AccountResponse,
+  type CreateTeamInviteInput,
+  type LeadMessage,
+  type LeadStatus,
+  type LeadTag,
+  type MailboxProvider,
+  type MailboxStatusResponse,
+  type Submission,
+  type TeamInvite,
+  type TeamMember,
+  type TeamRole,
+  type UpdateTeamMemberInput,
+} from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { PORTAL_PATHS } from "@/lib/sites";
+
+export type PortalTab =
+  | "inbox"
+  | "api-key"
+  | "membership"
+  | "team"
+  | "settings";
+
+const emptyFilters: LeadInboxFiltersValue = {
+  q: "",
+  status: "",
+  tag: "",
+  assignedTo: "",
+};
+
+function redirect(path: string) {
+  window.location.assign(path);
+}
+
+export interface PortalContextValue {
+  ready: boolean;
+  items: Submission[];
+  clientName: string | null;
+  account: AccountResponse | null;
+  nextCursor: string | undefined;
+  listError: string | null;
+  listBusy: boolean;
+  crmBusy: boolean;
+  billingBusy: boolean;
+  billingError: string | null;
+  billingNotice: string | null;
+  businessName: string;
+  setBusinessName: (value: string) => void;
+  issuedApiKey: string | null;
+  apiKeyBusy: boolean;
+  apiKeyError: string | null;
+  selectedId: string | null;
+  setSelectedId: (id: string | null) => void;
+  selected: Submission | null;
+  filters: LeadInboxFiltersValue;
+  setFilters: (value: LeadInboxFiltersValue) => void;
+  applyFilters: () => void;
+  members: TeamMember[];
+  invites: TeamInvite[];
+  teamRole: TeamRole;
+  memberLimit: number;
+  memberCount: number;
+  teamBusy: boolean;
+  teamError: string | null;
+  teamNotice: string | null;
+  mailbox: MailboxStatusResponse | null;
+  mailboxBusy: boolean;
+  mailboxError: string | null;
+  mailboxNotice: string | null;
+  leadMessages: LeadMessage[];
+  messageError: string | null;
+  loadMore: () => Promise<void>;
+  onLeadUpdate: (patch: {
+    status?: LeadStatus;
+    tags?: LeadTag[];
+    assignedTo?: string | null;
+  }) => Promise<void>;
+  onLeadNote: (body: string) => Promise<void>;
+  onSendLeadMessage: (body: string) => Promise<void>;
+  onMailboxConnect: (provider: MailboxProvider) => Promise<void>;
+  onMailboxDisconnect: () => Promise<void>;
+  onMailboxSync: () => Promise<void>;
+  onInvite: (input: CreateTeamInviteInput) => Promise<void>;
+  onRevokeInvite: (email: string) => Promise<void>;
+  onRemoveMember: (email: string) => Promise<void>;
+  onUpdateMember: (
+    email: string,
+    patch: UpdateTeamMemberInput,
+  ) => Promise<void>;
+  onProvisionAccount: () => Promise<void>;
+  onCreateApiKey: () => Promise<void>;
+  onDeleteApiKey: () => Promise<void>;
+  onUpgrade: (plan: "basic" | "premium") => Promise<void>;
+  onManageBilling: () => Promise<void>;
+}
+
+const PortalContext = createContext<PortalContextValue | null>(null);
+
+export function PortalProvider({ children }: { children: ReactNode }) {
+  const auth = useAuth();
+  const [items, setItems] = useState<Submission[]>([]);
+  const [clientName, setClientName] = useState<string | null>(null);
+  const [account, setAccount] = useState<AccountResponse | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | undefined>();
+  const [listError, setListError] = useState<string | null>(null);
+  const [listBusy, setListBusy] = useState(false);
+  const [crmBusy, setCrmBusy] = useState(false);
+  const [billingBusy, setBillingBusy] = useState(false);
+  const [billingError, setBillingError] = useState<string | null>(null);
+  const [billingNotice, setBillingNotice] = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState("");
+  const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null);
+  const [apiKeyBusy, setApiKeyBusy] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+  const [filters, setFilters] = useState<LeadInboxFiltersValue>(emptyFilters);
+  const [appliedFilters, setAppliedFilters] =
+    useState<LeadInboxFiltersValue>(emptyFilters);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [invites, setInvites] = useState<TeamInvite[]>([]);
+  const [teamRole, setTeamRole] = useState<TeamRole>("member");
+  const [memberLimit, setMemberLimit] = useState(1);
+  const [memberCount, setMemberCount] = useState(0);
+  const [teamBusy, setTeamBusy] = useState(false);
+  const [teamError, setTeamError] = useState<string | null>(null);
+  const [teamNotice, setTeamNotice] = useState<string | null>(null);
+  const [mailbox, setMailbox] = useState<MailboxStatusResponse | null>(null);
+  const [mailboxBusy, setMailboxBusy] = useState(false);
+  const [mailboxError, setMailboxError] = useState<string | null>(null);
+  const [mailboxNotice, setMailboxNotice] = useState<string | null>(null);
+  const [leadMessages, setLeadMessages] = useState<LeadMessage[]>([]);
+  const [messageError, setMessageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const billing = params.get("billing");
+    const mailboxParam = params.get("mailbox");
+    const mailboxMessage = params.get("message");
+
+    if (billing === "success") {
+      setBillingNotice(
+        "Billing updated. Plan status refreshes after Stripe confirms payment.",
+      );
+    } else if (billing === "cancel") {
+      setBillingNotice("Checkout canceled. Your plan was not changed.");
+    }
+
+    if (mailboxParam === "connected") {
+      setMailboxNotice("Mailbox connected successfully.");
+    } else if (mailboxParam === "error") {
+      setMailboxError(
+        mailboxMessage || "Mailbox connection failed. Try again.",
+      );
+    }
+
+    if (billing || mailboxParam) {
+      params.delete("billing");
+      params.delete("mailbox");
+      params.delete("message");
+      const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+      window.history.replaceState({}, "", next);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (auth.status === "signedOut") {
+      const invite = new URLSearchParams(window.location.search).get("invite");
+      if (invite) {
+        sessionStorage.setItem("portalInviteToken", invite);
+      }
+      const path = window.location.pathname.replace(/\/$/, "") || "/";
+      if (path !== PORTAL_PATHS.login.replace(/\/$/, "")) {
+        redirect(PORTAL_PATHS.login);
+      }
+      return;
+    }
+    if (auth.status !== "signedIn") {
+      setItems([]);
+      setClientName(null);
+      setAccount(null);
+      setNextCursor(undefined);
+      setListError(null);
+      setBillingError(null);
+      setApiKeyError(null);
+      setIssuedApiKey(null);
+      setSelectedId(null);
+      setMembers([]);
+      setInvites([]);
+      setReady(false);
+      return;
+    }
+
+    let cancelled = false;
+    async function load() {
+      setListBusy(true);
+      setListError(null);
+      setReady(false);
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const inviteToken =
+          params.get("invite") ||
+          sessionStorage.getItem("portalInviteToken");
+        if (inviteToken) {
+          sessionStorage.removeItem("portalInviteToken");
+          try {
+            const accepted = await acceptTeamInvite(inviteToken);
+            if (!cancelled && accepted.success) {
+              setTeamNotice(
+                accepted.clientName
+                  ? `Joined ${accepted.clientName}.`
+                  : "Invite accepted.",
+              );
+            }
+          } catch (err) {
+            if (!cancelled) {
+              setTeamError(
+                err instanceof ApiError
+                  ? err.message
+                  : "Could not accept invite",
+              );
+            }
+          } finally {
+            params.delete("invite");
+            const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+            window.history.replaceState({}, "", next);
+          }
+        }
+
+        const acct = await getAccount();
+        if (cancelled) return;
+        setAccount(acct);
+        setClientName(acct.clientName || null);
+        if (acct.role) setTeamRole(acct.role);
+        if (typeof acct.memberLimit === "number") setMemberLimit(acct.memberLimit);
+        if (typeof acct.memberCount === "number") setMemberCount(acct.memberCount);
+
+        if (!acct.linked) {
+          setItems([]);
+          setClientName(null);
+          setNextCursor(undefined);
+          setMembers([]);
+          setInvites([]);
+          setMailbox({ connected: false });
+          return;
+        }
+
+        setClientName(acct.clientName || null);
+        if (acct.role) setTeamRole(acct.role);
+
+        try {
+          const team = await getTeam();
+          if (cancelled) return;
+          setMembers(team.members);
+          setInvites(team.invites);
+          setTeamRole(team.role);
+          setMemberLimit(team.memberLimit);
+          setMemberCount(team.memberCount);
+        } catch {
+          if (!cancelled) {
+            setMembers([]);
+            setInvites([]);
+          }
+        }
+
+        try {
+          const box = await getMailbox();
+          if (cancelled) return;
+          setMailbox(box);
+        } catch {
+          if (!cancelled) setMailbox({ connected: false });
+        }
+
+        try {
+          const subs = await listSubmissions({
+            limit: 50,
+            ...(appliedFilters.status
+              ? { status: appliedFilters.status }
+              : {}),
+            ...(appliedFilters.tag ? { tag: appliedFilters.tag } : {}),
+            ...(appliedFilters.assignedTo
+              ? { assignedTo: appliedFilters.assignedTo }
+              : {}),
+            ...(appliedFilters.q.trim() ? { q: appliedFilters.q.trim() } : {}),
+          });
+          if (cancelled) return;
+          setItems(subs.items);
+          setNextCursor(subs.nextCursor);
+          setSelectedId(subs.items[0]?.submissionId ?? null);
+        } catch (err) {
+          if (cancelled) return;
+          if (err instanceof ApiError && err.status === 403) {
+            setItems([]);
+            setListError(null);
+          } else {
+            setListError(
+              err instanceof ApiError
+                ? err.message
+                : "Failed to load submissions",
+            );
+          }
+        }
+      } catch (err) {
+        if (cancelled) return;
+        const message =
+          err instanceof ApiError ? err.message : "Failed to load account";
+        setListError(message);
+      } finally {
+        if (!cancelled) {
+          setListBusy(false);
+          setReady(true);
+        }
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.status, appliedFilters]);
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor) return;
+    setListBusy(true);
+    setListError(null);
+    try {
+      const data = await listSubmissions({
+        limit: 50,
+        cursor: nextCursor,
+        ...(appliedFilters.status ? { status: appliedFilters.status } : {}),
+        ...(appliedFilters.tag ? { tag: appliedFilters.tag } : {}),
+        ...(appliedFilters.assignedTo
+          ? { assignedTo: appliedFilters.assignedTo }
+          : {}),
+        ...(appliedFilters.q.trim() ? { q: appliedFilters.q.trim() } : {}),
+      });
+      setItems((prev) => [...prev, ...data.items]);
+      setNextCursor(data.nextCursor);
+    } catch (err) {
+      setListError(err instanceof ApiError ? err.message : "Failed to load more");
+    } finally {
+      setListBusy(false);
+    }
+  }, [nextCursor, appliedFilters]);
+
+  const replaceItem = useCallback((updated: Submission) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.submissionId === updated.submissionId ? updated : item,
+      ),
+    );
+  }, []);
+
+  const onLeadUpdate = useCallback(
+    async (patch: {
+      status?: LeadStatus;
+      tags?: LeadTag[];
+      assignedTo?: string | null;
+    }) => {
+      if (!selectedId) return;
+      setCrmBusy(true);
+      setListError(null);
+      try {
+        const updated = await updateSubmission(selectedId, patch);
+        replaceItem(updated);
+      } catch (err) {
+        setListError(
+          err instanceof ApiError ? err.message : "Failed to update lead",
+        );
+      } finally {
+        setCrmBusy(false);
+      }
+    },
+    [selectedId, replaceItem],
+  );
+
+  const onLeadNote = useCallback(
+    async (body: string) => {
+      if (!selectedId) return;
+      setCrmBusy(true);
+      setListError(null);
+      try {
+        const updated = await addSubmissionNote(selectedId, body);
+        replaceItem(updated);
+      } catch (err) {
+        setListError(
+          err instanceof ApiError ? err.message : "Failed to add note",
+        );
+      } finally {
+        setCrmBusy(false);
+      }
+    },
+    [selectedId, replaceItem],
+  );
+
+  useEffect(() => {
+    if (!selectedId || !account?.linked) {
+      setLeadMessages([]);
+      setMessageError(null);
+      return;
+    }
+    let cancelled = false;
+    async function loadMessages() {
+      setMessageError(null);
+      try {
+        const res = await listLeadMessages(selectedId!);
+        if (!cancelled) setLeadMessages(res.items);
+      } catch (err) {
+        if (!cancelled) {
+          setLeadMessages([]);
+          setMessageError(
+            err instanceof ApiError
+              ? err.message
+              : "Failed to load messages",
+          );
+        }
+      }
+    }
+    void loadMessages();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, account?.linked]);
+
+  const onSendLeadMessage = useCallback(
+    async (body: string) => {
+      if (!selectedId) return;
+      setCrmBusy(true);
+      setMessageError(null);
+      try {
+        const message = await sendLeadMessage(selectedId, { body });
+        setLeadMessages((prev) => [...prev, message]);
+      } catch (err) {
+        setMessageError(
+          err instanceof ApiError ? err.message : "Failed to send reply",
+        );
+      } finally {
+        setCrmBusy(false);
+      }
+    },
+    [selectedId],
+  );
+
+  const onMailboxConnect = useCallback(async (provider: MailboxProvider) => {
+    setMailboxBusy(true);
+    setMailboxError(null);
+    setMailboxNotice(null);
+    try {
+      const { authUrl } = await connectMailbox(provider);
+      window.location.assign(authUrl);
+    } catch (err) {
+      setMailboxError(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to start mailbox connect",
+      );
+      setMailboxBusy(false);
+    }
+  }, []);
+
+  const onMailboxDisconnect = useCallback(async () => {
+    setMailboxBusy(true);
+    setMailboxError(null);
+    setMailboxNotice(null);
+    try {
+      await disconnectMailbox();
+      setMailbox({ connected: false });
+      setMailboxNotice("Mailbox disconnected.");
+    } catch (err) {
+      setMailboxError(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to disconnect mailbox",
+      );
+    } finally {
+      setMailboxBusy(false);
+    }
+  }, []);
+
+  const onMailboxSync = useCallback(async () => {
+    setMailboxBusy(true);
+    setMailboxError(null);
+    setMailboxNotice(null);
+    try {
+      const result = await syncMailbox();
+      const box = await getMailbox();
+      setMailbox(box);
+      setMailboxNotice(
+        result.imported > 0
+          ? `Synced ${result.imported} new message${result.imported === 1 ? "" : "s"}.`
+          : "Sync complete. No new replies.",
+      );
+    } catch (err) {
+      setMailboxError(
+        err instanceof ApiError ? err.message : "Failed to sync mailbox",
+      );
+    } finally {
+      setMailboxBusy(false);
+    }
+  }, []);
+
+  const refreshTeam = useCallback(async () => {
+    const team = await getTeam();
+    setMembers(team.members);
+    setInvites(team.invites);
+    setTeamRole(team.role);
+    setMemberLimit(team.memberLimit);
+    setMemberCount(team.memberCount);
+  }, []);
+
+  const onInvite = useCallback(
+    async (input: CreateTeamInviteInput) => {
+      setTeamBusy(true);
+      setTeamError(null);
+      try {
+        await createTeamInvite(input);
+        await refreshTeam();
+        setTeamNotice(`Invite sent to ${input.email}.`);
+      } catch (err) {
+        setTeamError(
+          err instanceof ApiError ? err.message : "Failed to send invite",
+        );
+      } finally {
+        setTeamBusy(false);
+      }
+    },
+    [refreshTeam],
+  );
+
+  const onRevokeInvite = useCallback(
+    async (email: string) => {
+      setTeamBusy(true);
+      setTeamError(null);
+      try {
+        await deleteTeamInvite(email);
+        await refreshTeam();
+      } catch (err) {
+        setTeamError(
+          err instanceof ApiError ? err.message : "Failed to revoke invite",
+        );
+      } finally {
+        setTeamBusy(false);
+      }
+    },
+    [refreshTeam],
+  );
+
+  const onRemoveMember = useCallback(
+    async (email: string) => {
+      setTeamBusy(true);
+      setTeamError(null);
+      try {
+        await deleteTeamMember(email);
+        await refreshTeam();
+      } catch (err) {
+        setTeamError(
+          err instanceof ApiError ? err.message : "Failed to remove member",
+        );
+      } finally {
+        setTeamBusy(false);
+      }
+    },
+    [refreshTeam],
+  );
+
+  const onUpdateMember = useCallback(
+    async (email: string, patch: UpdateTeamMemberInput) => {
+      setTeamBusy(true);
+      setTeamError(null);
+      try {
+        await updateTeamMember(email, patch);
+        await refreshTeam();
+      } catch (err) {
+        setTeamError(
+          err instanceof ApiError ? err.message : "Failed to update member",
+        );
+      } finally {
+        setTeamBusy(false);
+      }
+    },
+    [refreshTeam],
+  );
+
+  const onProvisionAccount = useCallback(async () => {
+    const name = businessName.trim();
+    if (!name) {
+      setBillingError("Enter a business name");
+      return;
+    }
+    setBillingBusy(true);
+    setBillingError(null);
+    try {
+      const result = await provisionAccount(name);
+      if (result.apiKey) setIssuedApiKey(result.apiKey);
+      setAccount({
+        linked: true,
+        email: result.email,
+        clientId: result.clientId,
+        clientName: result.clientName,
+        role: result.role ?? "owner",
+        tier: result.tier,
+        active: result.active,
+        hasBilling: result.hasBilling,
+        hasApiKey: Boolean(result.apiKey) || result.hasApiKey,
+        emailsUsed: result.emailsUsed,
+        emailLimit: result.emailLimit,
+        usageMonth: result.usageMonth,
+        memberLimit: result.memberLimit ?? 1,
+        memberCount: result.memberCount ?? 1,
+      });
+      setMemberLimit(result.memberLimit ?? 1);
+      setMemberCount(result.memberCount ?? 1);
+      setClientName(result.clientName || name);
+      setBusinessName("");
+    } catch (err) {
+      setBillingError(
+        err instanceof ApiError ? err.message : "Could not create Form API account",
+      );
+    } finally {
+      setBillingBusy(false);
+    }
+  }, [businessName]);
+
+  const onCreateApiKey = useCallback(async () => {
+    setApiKeyBusy(true);
+    setApiKeyError(null);
+    try {
+      const result = await createApiKey();
+      if (result.apiKey) setIssuedApiKey(result.apiKey);
+      setAccount((prev) => (prev ? { ...prev, hasApiKey: true } : prev));
+    } catch (err) {
+      setApiKeyError(
+        err instanceof ApiError ? err.message : "Could not create API key",
+      );
+    } finally {
+      setApiKeyBusy(false);
+    }
+  }, []);
+
+  const onDeleteApiKey = useCallback(async () => {
+    if (
+      !window.confirm(
+        "Delete your API key? Form submissions using it will stop working until you create a new key.",
+      )
+    ) {
+      return;
+    }
+    setApiKeyBusy(true);
+    setApiKeyError(null);
+    try {
+      await deleteApiKey();
+      setIssuedApiKey(null);
+      setAccount((prev) => (prev ? { ...prev, hasApiKey: false } : prev));
+    } catch (err) {
+      setApiKeyError(
+        err instanceof ApiError ? err.message : "Could not delete API key",
+      );
+    } finally {
+      setApiKeyBusy(false);
+    }
+  }, []);
+
+  const onUpgrade = useCallback(async (plan: "basic" | "premium") => {
+    setBillingBusy(true);
+    setBillingError(null);
+    try {
+      const url = await startCheckout(plan);
+      window.location.href = url;
+    } catch (err) {
+      setBillingError(err instanceof ApiError ? err.message : "Checkout failed");
+      setBillingBusy(false);
+    }
+  }, []);
+
+  const onManageBilling = useCallback(async () => {
+    setBillingBusy(true);
+    setBillingError(null);
+    try {
+      const url = await openBillingPortal();
+      window.location.href = url;
+    } catch (err) {
+      setBillingError(
+        err instanceof ApiError ? err.message : "Could not open billing portal",
+      );
+      setBillingBusy(false);
+    }
+  }, []);
+
+  const applyFilters = useCallback(() => {
+    setAppliedFilters(filters);
+  }, [filters]);
+
+  const selected = items.find((s) => s.submissionId === selectedId) ?? null;
+
+  const value = useMemo<PortalContextValue>(
+    () => ({
+      ready,
+      items,
+      clientName,
+      account,
+      nextCursor,
+      listError,
+      listBusy,
+      crmBusy,
+      billingBusy,
+      billingError,
+      billingNotice,
+      businessName,
+      setBusinessName,
+      issuedApiKey,
+      apiKeyBusy,
+      apiKeyError,
+      selectedId,
+      setSelectedId,
+      selected,
+      filters,
+      setFilters,
+      applyFilters,
+      members,
+      invites,
+      teamRole,
+      memberLimit,
+      memberCount,
+      teamBusy,
+      teamError,
+      teamNotice,
+      mailbox,
+      mailboxBusy,
+      mailboxError,
+      mailboxNotice,
+      leadMessages,
+      messageError,
+      loadMore,
+      onLeadUpdate,
+      onLeadNote,
+      onSendLeadMessage,
+      onMailboxConnect,
+      onMailboxDisconnect,
+      onMailboxSync,
+      onInvite,
+      onRevokeInvite,
+      onRemoveMember,
+      onUpdateMember,
+      onProvisionAccount,
+      onCreateApiKey,
+      onDeleteApiKey,
+      onUpgrade,
+      onManageBilling,
+    }),
+    [
+      ready,
+      items,
+      clientName,
+      account,
+      nextCursor,
+      listError,
+      listBusy,
+      crmBusy,
+      billingBusy,
+      billingError,
+      billingNotice,
+      businessName,
+      issuedApiKey,
+      apiKeyBusy,
+      apiKeyError,
+      selectedId,
+      selected,
+      filters,
+      applyFilters,
+      members,
+      invites,
+      teamRole,
+      memberLimit,
+      memberCount,
+      teamBusy,
+      teamError,
+      teamNotice,
+      mailbox,
+      mailboxBusy,
+      mailboxError,
+      mailboxNotice,
+      leadMessages,
+      messageError,
+      loadMore,
+      onLeadUpdate,
+      onLeadNote,
+      onSendLeadMessage,
+      onMailboxConnect,
+      onMailboxDisconnect,
+      onMailboxSync,
+      onInvite,
+      onRevokeInvite,
+      onRemoveMember,
+      onUpdateMember,
+      onProvisionAccount,
+      onCreateApiKey,
+      onDeleteApiKey,
+      onUpgrade,
+      onManageBilling,
+    ],
+  );
+
+  return (
+    <PortalContext.Provider value={value}>{children}</PortalContext.Provider>
+  );
+}
+
+export function usePortal(): PortalContextValue {
+  const ctx = useContext(PortalContext);
+  if (!ctx) throw new Error("usePortal must be used within PortalProvider");
+  return ctx;
+}

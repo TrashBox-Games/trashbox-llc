@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PortalProvider } from "@/lib/portal";
 import { PortalApp } from "./PortalPage";
 import { PlatformNav } from "./PlatformNav";
 
@@ -13,34 +14,30 @@ vi.mock("@/lib/auth", () => ({
   useAuth: vi.fn(),
 }));
 
-vi.mock("@/lib/api", () => ({
-  ApiError: class ApiError extends Error {
-    status: number;
-    constructor(status: number, message: string) {
-      super(message);
-      this.status = status;
-    }
-  },
-  getAccount: vi.fn(),
-  getMailbox: vi.fn().mockResolvedValue({ connected: false }),
-  getTeam: vi.fn().mockResolvedValue({
-    clientId: "c1",
-    clientName: "Test",
-    role: "owner",
-    members: [],
-    invites: [],
-    memberLimit: 1,
-    memberCount: 1,
-  }),
-  listSubmissions: vi.fn(),
-  listLeadMessages: vi.fn().mockResolvedValue({ submissionId: "", items: [] }),
-  provisionAccount: vi.fn(),
-  createApiKey: vi.fn(),
-  deleteApiKey: vi.fn(),
-  startCheckout: vi.fn(),
-  openBillingPortal: vi.fn(),
-  leadStatusOf: (s: { status?: string }) => s.status ?? "new",
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    getAccount: vi.fn(),
+    getMailbox: vi.fn().mockResolvedValue({ connected: false }),
+    getTeam: vi.fn().mockResolvedValue({
+      clientId: "c1",
+      clientName: "Test",
+      role: "owner",
+      members: [],
+      invites: [],
+      memberLimit: 1,
+      memberCount: 1,
+    }),
+    listSubmissions: vi.fn(),
+    listLeadMessages: vi.fn().mockResolvedValue({ submissionId: "", items: [] }),
+    provisionAccount: vi.fn(),
+    createApiKey: vi.fn(),
+    deleteApiKey: vi.fn(),
+    startCheckout: vi.fn(),
+    openBillingPortal: vi.fn(),
+  };
+});
 
 vi.mock("@/components/atoms/FadeIn", () => ({
   FadeIn: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -54,6 +51,14 @@ import {
   listSubmissions,
 } from "@/lib/api";
 
+function renderPortalApp(tab: "inbox" | "api-key" | "membership" | "team" | "settings") {
+  return render(
+    <PortalProvider>
+      <PortalApp tab={tab} />
+    </PortalProvider>,
+  );
+}
+
 describe("PlatformNav", () => {
   it("links Features under /platform and Login to portal", () => {
     render(<PlatformNav />);
@@ -66,6 +71,66 @@ describe("PlatformNav", () => {
       "href",
       expect.stringMatching(/\/platform\/features\/?$/),
     );
+  });
+});
+
+describe("PortalProvider session", () => {
+  beforeEach(() => {
+    vi.mocked(useAuth).mockReturnValue({
+      configured: true,
+      status: "signedIn",
+      email: "owner@example.com",
+      signInWithPassword: vi.fn(),
+      signUpWithPassword: vi.fn(),
+      confirmSignUpCode: vi.fn(),
+      resendCode: vi.fn(),
+      signOutUser: vi.fn(),
+    } as ReturnType<typeof useAuth>);
+
+    vi.mocked(getAccount).mockResolvedValue({
+      linked: true,
+      email: "owner@example.com",
+      clientName: "Acme",
+      tier: "basic",
+      active: true,
+      hasBilling: false,
+      hasApiKey: true,
+      role: "owner",
+    });
+    vi.mocked(listSubmissions).mockResolvedValue({
+      clientId: "c1",
+      clientName: "Acme",
+      items: [],
+    });
+    vi.mocked(getAccount).mockClear();
+    vi.mocked(listSubmissions).mockClear();
+  });
+
+  it("keeps account data across tab changes without re-fetching", async () => {
+    const { rerender } = render(
+      <PortalProvider>
+        <PortalApp tab="api-key" />
+      </PortalProvider>,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: /key active/i }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getAccount).toHaveBeenCalledTimes(1);
+    });
+
+    rerender(
+      <PortalProvider>
+        <PortalApp tab="team" />
+      </PortalProvider>,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: /team members/i }),
+    ).toBeInTheDocument();
+    expect(getAccount).toHaveBeenCalledTimes(1);
+    expect(listSubmissions).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -106,7 +171,7 @@ describe("PortalApp API key tab", () => {
     });
 
     const user = userEvent.setup();
-    render(<PortalApp tab="api-key" />);
+    renderPortalApp("api-key");
 
     expect(
       await screen.findByRole("heading", { name: /no key issued/i }),
@@ -136,7 +201,7 @@ describe("PortalApp API key tab", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
 
     const user = userEvent.setup();
-    render(<PortalApp tab="api-key" />);
+    renderPortalApp("api-key");
 
     expect(
       await screen.findByRole("heading", { name: /key active/i }),
