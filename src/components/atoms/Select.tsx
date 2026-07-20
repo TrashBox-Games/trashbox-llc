@@ -137,11 +137,11 @@ export function Select({
         }}
         onKeyDown={onTriggerKeyDown}
         className={cn(
-          "flex w-full items-center justify-between gap-2 border-0 border-b border-outline-variant bg-transparent py-2 text-left text-sm text-white focus:border-primary focus:outline-none",
+          "flex w-full items-center justify-between gap-2 border-0 border-b border-outline-variant bg-transparent py-2 pl-1 text-left text-sm text-white focus:border-primary focus:outline-none",
           disabled && "cursor-not-allowed opacity-40",
         )}
       >
-        <span className="flex min-w-0 items-center gap-2 truncate">
+        <span className="flex min-w-0 items-center gap-2">
           {selected?.indicatorClassName && (
             <span
               aria-hidden="true"
@@ -184,7 +184,7 @@ export function Select({
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => choose(option.value)}
                 className={cn(
-                  "flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-on-surface",
+                  "flex cursor-pointer items-center gap-2 py-2 pl-4 pr-3 text-sm text-on-surface",
                   isActive && "bg-surface-bright text-white",
                   isSelected && "font-medium text-white",
                 )}

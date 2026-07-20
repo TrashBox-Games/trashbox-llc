@@ -74,4 +74,41 @@ describe("Select", () => {
     await user.click(screen.getByRole("button", { name: /assignee/i }));
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
+
+  it("keeps status indicator glow visible (no overflow clip on trigger row)", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <Select
+        aria-label="Status"
+        value="new"
+        options={[
+          {
+            value: "new",
+            label: "New",
+            indicatorClassName:
+              "bg-white shadow-[0_0_8px_2px_rgba(255,255,255,0.65)]",
+          },
+          {
+            value: "contacted",
+            label: "Contacted",
+            indicatorClassName:
+              "bg-[#7EB6D4] shadow-[0_0_8px_2px_rgba(126,182,212,0.65)]",
+          },
+        ]}
+        onChange={vi.fn()}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /status/i });
+    const triggerRow = trigger.querySelector("span.flex");
+    expect(triggerRow).not.toBeNull();
+    // truncate => overflow:hidden clips the status-dot glow on the left edge
+    expect(triggerRow?.className).not.toMatch(/\btruncate\b/);
+    expect(trigger.className).toMatch(/\bpl-/);
+
+    await user.click(trigger);
+    const option = screen.getByRole("option", { name: /contacted/i });
+    expect(option.className).toMatch(/\bpl-/);
+  });
 });
