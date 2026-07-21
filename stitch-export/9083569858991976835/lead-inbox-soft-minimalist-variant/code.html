@@ -1,0 +1,475 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{try{try{try{
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#c6c6c7",
+                    "primary": "#ffffff",
+                    "background": "#131313",
+                    "on-secondary-container": "#e3e2e2",
+                    "error": "#ffb4ab",
+                    "surface-bright": "#3a3939",
+                    "on-background": "#e5e2e1",
+                    "on-primary-fixed-variant": "#e2e2e2",
+                    "surface-container-highest": "#353534",
+                    "on-error": "#690005",
+                    "tertiary-fixed": "#5e5e5e",
+                    "inverse-primary": "#5d5f5f",
+                    "on-error-container": "#ffdad6",
+                    "on-surface": "#e5e2e1",
+                    "on-primary-container": "#000000",
+                    "surface-variant": "#353534",
+                    "surface": "#131313",
+                    "inverse-surface": "#e5e2e1",
+                    "secondary": "#c7c6c6",
+                    "primary-fixed-dim": "#454747",
+                    "surface-container-low": "#1c1b1b",
+                    "on-secondary-fixed": "#1a1c1c",
+                    "tertiary-fixed-dim": "#474747",
+                    "on-primary-fixed": "#ffffff",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-tertiary": "#1b1b1b",
+                    "tertiary": "#e2e2e2",
+                    "secondary-fixed": "#c7c6c6",
+                    "tertiary-container": "#919191",
+                    "secondary-fixed-dim": "#ababab",
+                    "on-secondary": "#1a1c1c",
+                    "outline-variant": "#474747",
+                    "on-tertiary-fixed-variant": "#e2e2e2",
+                    "on-primary": "#1a1c1c",
+                    "inverse-on-surface": "#313030",
+                    "surface-container": "#201f1f",
+                    "secondary-container": "#464747",
+                    "on-surface-variant": "#c6c6c6",
+                    "surface-dim": "#131313",
+                    "on-secondary-fixed-variant": "#3a3c3c",
+                    "primary-fixed": "#5d5f5f",
+                    "surface-container-high": "#2a2a2a",
+                    "outline": "#919191",
+                    "primary-container": "#d4d4d4",
+                    "on-tertiary-fixed": "#ffffff",
+                    "on-tertiary-container": "#000000",
+                    "error-container": "#93000a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk", "sans-serif"],
+                    "display": ["Space Grotesk", "sans-serif"],
+                    "body": ["Manrope", "sans-serif"],
+                    "label": ["Space Grotesk", "sans-serif"]
+            }
+          }
+        }
+      }
+    }catch(_e){}}catch(_e){}}catch(_e){}}catch(_e){}</script></head><body class="min-h-screen flex flex-col bg-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl bg-gradient-to-b from-black/20 to-transparent">
+<div class="flex justify-between items-center px-8 py-6 max-w-screen-2xl mx-auto">
+<div class="font-['Space_Grotesk'] text-xl font-bold tracking-tighter text-white flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">widgets</span>
+                trashbox llc
+            </div>
+<div class="hidden md:flex gap-8 font-['Space_Grotesk'] tracking-tight font-medium uppercase text-xs">
+<a class="text-white bg-surface-container-highest/20 px-3 py-1.5 rounded" href="#">Inbox</a>
+<a class="text-neutral-500 hover:text-neutral-200 transition-colors hover:opacity-80 transition-opacity duration-300 px-3 py-1.5" href="#">Settings</a>
+<a class="text-neutral-500 hover:text-neutral-200 transition-colors hover:opacity-80 transition-opacity duration-300 px-3 py-1.5" href="#">Membership</a>
+</div>
+<div class="flex gap-4 items-center">
+<a class="font-['Space_Grotesk'] tracking-tight font-medium uppercase text-xs text-neutral-500 hover:text-neutral-200" href="#">Platform</a>
+<a class="font-['Space_Grotesk'] tracking-tight font-medium uppercase text-xs text-neutral-500 hover:text-neutral-200" href="#">Sign Out</a>
+</div>
+</div>
+</nav>
+<!-- Main Canvas -->
+<main class="flex-grow pt-32 pb-24 px-8 max-w-screen-2xl mx-auto w-full flex flex-col">
+<!-- Header Section -->
+<header class="mb-12">
+<h2 class="font-label text-xs uppercase tracking-[0.2em] text-outline mb-2">Inbox</h2>
+<h1 class="font-display text-display-lg text-primary tracking-tighter leading-none mb-8">Lead <span class="text-surface-variant">Inbox.</span></h1>
+<div class="flex flex-col md:flex-row gap-8 text-sm">
+<div>
+<span class="block font-label text-[10px] uppercase text-outline mb-1">Signed In</span>
+<span class="text-primary font-medium">ezekielbleh@gmail.com</span>
+<div class="text-outline-variant text-xs mt-1">Client: Trashbox LLC</div>
+<div class="text-outline-variant text-[10px] mt-1 font-mono">PLAN: <span class="text-on-surface">BASIC</span> · USAGE: <span class="text-on-surface">9 / 1,000</span> EMAILS</div>
+</div>
+</div>
+</header>
+<!-- Filters -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 bg-surface-container-low p-6 rounded shadow-sm">
+<div>
+<label class="block font-label text-[10px] uppercase text-outline mb-2 pl-3">Search</label>
+<div class="bg-surface-container rounded px-3 py-1.5 shadow-inner">
+<input class="w-full py-1.5 px-0 text-sm text-primary placeholder:text-outline-variant bg-transparent border-none focus:ring-0" placeholder="Name, email, or message" type="text">
+</div>
+</div>
+<div>
+<label class="block font-label text-[10px] uppercase text-outline mb-2 pl-3">Assigned To</label>
+<div class="bg-surface-container rounded px-3 py-1.5 shadow-inner">
+<select class="w-full py-1.5 px-0 text-sm text-primary appearance-none bg-transparent border-none focus:ring-0">
+<option>Anyone</option>
+<option>Unassigned</option>
+<option>Ezekiel</option>
+</select>
+</div>
+</div>
+<div>
+<label class="block font-label text-[10px] uppercase text-outline mb-2 pl-3">Status</label>
+<div class="bg-surface-container rounded px-3 py-1.5 shadow-inner">
+<select class="w-full py-1.5 px-0 text-sm text-primary appearance-none bg-transparent border-none focus:ring-0">
+<option>All statuses</option>
+<option>New</option>
+<option>Contacted</option>
+</select>
+</div>
+</div>
+<div>
+<label class="block font-label text-[10px] uppercase text-outline mb-2 pl-3">Tag</label>
+<div class="bg-surface-container rounded px-3 py-1.5 shadow-inner">
+<select class="w-full py-1.5 px-0 text-sm text-primary appearance-none bg-transparent border-none focus:ring-0">
+<option>All tags</option>
+<option>Support</option>
+<option>Sales</option>
+</select>
+</div>
+</div>
+<div class="md:col-span-4 flex justify-start mt-2">
+<button class="bg-surface-container-highest text-primary font-label text-xs uppercase tracking-wider px-6 py-3 rounded hover:bg-surface-variant transition-colors shadow-sm">Apply Filters</button>
+</div>
+</section>
+
+<!-- Recent Activity Horizontal List -->
+<section class="mb-12">
+<label class="block font-label text-[10px] uppercase text-outline mb-4">Recent Activity</label>
+<div class="flex gap-4 overflow-x-auto pb-4 snap-x">
+<!-- Lead Card: Active -->
+<div class="min-w-[300px] max-w-[350px] shrink-0 bg-surface-container-high p-5 rounded cursor-pointer shadow-md relative overflow-hidden group snap-start">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex justify-between items-start mb-2 relative z-10">
+<div>
+<h3 class="font-bold text-primary text-base">Setup Test</h3>
+<div class="text-xs text-outline mt-0.5">setup@trashbox.io</div>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-label text-[9px] uppercase tracking-wider text-outline">New</span>
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+</div>
+</div>
+<div class="text-sm text-on-surface mb-3 line-clamp-2 relative z-10">
+                        Contact form wiring check
+                    </div>
+<div class="font-mono text-[10px] text-outline-variant uppercase relative z-10">
+                        Jul 15, 2026, 9:56 PM
+                    </div>
+</div>
+<!-- Lead Card -->
+<div class="min-w-[300px] max-w-[350px] shrink-0 bg-surface-container-low p-5 rounded cursor-pointer hover:bg-surface-container transition-colors snap-start">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-bold text-primary text-base">Your Mom Gay</h3>
+<div class="text-xs text-outline mt-0.5">niceemail@gmail.com</div>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-label text-[9px] uppercase tracking-wider text-outline">New</span>
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+</div>
+</div>
+<div class="text-sm text-on-surface mb-3 line-clamp-2">
+                        [AI Integration] YADAYDAYDADAD
+                        <br><span class="text-xs text-outline-variant">ASSIGNED: EZEKIELBLEH@GMAIL.COM</span>
+</div>
+<div class="font-mono text-[10px] text-outline-variant uppercase">
+                        Jul 15, 2026, 10:03 PM
+                    </div>
+</div>
+<!-- Lead Card -->
+<div class="min-w-[300px] max-w-[350px] shrink-0 bg-surface-container-low p-5 rounded cursor-pointer hover:bg-surface-container transition-colors snap-start">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-bold text-primary text-base">Sound Bars Effect</h3>
+<div class="text-xs text-outline mt-0.5">ezekielbleh@gmail.com</div>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-label text-[9px] uppercase tracking-wider text-outline">Contacted</span>
+<div class="w-1.5 h-1.5 rounded-full bg-secondary-fixed-dim"></div>
+</div>
+</div>
+<div class="text-sm text-on-surface mb-3 line-clamp-2">
+                        awdawdawdawd
+                        <br><span class="text-xs text-outline-variant">2 REPLIES</span>
+</div>
+<div class="font-mono text-[10px] text-outline-variant uppercase">
+                        Jul 15, 2026, 10:02 PM
+                    </div>
+</div>
+<!-- Lead Card -->
+<div class="min-w-[300px] max-w-[350px] shrink-0 bg-surface-container-low p-5 rounded cursor-pointer hover:bg-surface-container transition-colors snap-start">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-bold text-primary text-base">Nice</h3>
+<div class="text-xs text-outline mt-0.5">lolololo@gmail.com</div>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-label text-[9px] uppercase tracking-wider text-outline">New</span>
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+</div>
+</div>
+<div class="text-sm text-on-surface mb-3 line-clamp-2">
+                        Spammmmminggggg
+                    </div>
+<div class="font-mono text-[10px] text-outline-variant uppercase">
+                        Jul 15, 2026, 10:01 PM
+                    </div>
+</div>
+</div>
+</section>
+
+<!-- Detail View Stack-->
+<div class="flex flex-col gap-8 flex-grow min-h-[800px]">
+<!-- Detail View -->
+<div class="w-full bg-surface-container-low rounded p-10 flex flex-col shadow-sm">
+<!-- Detail Header -->
+<div class="mb-10 pb-8"><div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+  <!-- Left Column: Title & Metadata -->
+  <div class="md:col-span-8 space-y-8">
+    <div>
+      <h2 class="font-display text-4xl font-bold text-primary tracking-tighter mb-1">Setup Test</h2>
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 bg-surface-container-highest text-primary text-[10px] font-label uppercase tracking-widest rounded">New Lead</span>
+        <span class="font-mono text-[10px] text-outline-variant uppercase">ID: #TR-9956</span>
+      </div>
+    </div>
+
+    <div class="space-y-3 pt-4 border-t border-outline-variant/10">
+      <div class="flex items-center gap-4">
+        <span class="w-12 font-label text-[10px] uppercase text-outline">From</span>
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-primary">ST</div>
+          <span class="text-sm text-primary">setup@trashbox.io</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="w-12 font-label text-[10px] uppercase text-outline">To</span>
+        <div class="text-sm text-on-surface">ezekielbleh@gmail.com <span class="text-outline-variant">(Trashbox LLC)</span></div>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="w-12 font-label text-[10px] uppercase text-outline">Subject</span>
+        <div class="text-sm font-medium text-primary">Contact form wiring check</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Controls & Tags -->
+  <div class="md:col-span-4 flex flex-col gap-6 pl-6">
+    <div class="flex justify-between items-start">
+      <div class="text-left">
+        <div class="font-mono text-[10px] text-outline-variant uppercase mb-1">Received</div>
+        <div class="text-sm text-primary font-medium">Jul 15, 2026, 9:56 PM</div>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block font-label text-[10px] uppercase text-outline mb-1 pl-2">Status</label>
+        <div class="relative bg-surface-container rounded px-2 shadow-inner">
+          <select class="w-full py-2 text-xs text-primary appearance-none bg-transparent border-none focus:ring-0">
+            <option>New</option>
+            <option>Contacted</option>
+            <option>Closed</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-2 top-2 text-outline-variant text-xs pointer-events-none">expand_more</span>
+        </div>
+      </div>
+      <div>
+        <label class="block font-label text-[10px] uppercase text-outline mb-1 pl-2">Assigned To</label>
+        <div class="relative bg-surface-container rounded px-2 shadow-inner">
+          <select class="w-full py-2 text-xs text-primary appearance-none bg-transparent border-none focus:ring-0">
+            <option>Unassigned</option>
+            <option>Ezekiel</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-2 top-2 text-outline-variant text-xs pointer-events-none">expand_more</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <label class="block font-label text-[10px] uppercase text-outline pl-2">Tags</label>
+        <button class="text-outline-variant hover:text-primary transition-colors">
+          <span class="material-symbols-outlined text-sm">add</span>
+        </button>
+      </div>
+      <div class="flex gap-1.5 flex-wrap">
+        <span class="px-2 py-1 rounded text-[9px] font-label uppercase tracking-wider bg-surface-container text-on-surface cursor-pointer hover:bg-surface-variant transition-colors shadow-sm">Website Quote</span>
+        <span class="px-2 py-1 rounded text-[9px] font-label uppercase tracking-wider bg-surface-container text-on-surface cursor-pointer hover:bg-surface-variant transition-colors shadow-sm">Support</span>
+        <span class="px-2 py-1 rounded text-[9px] font-label uppercase tracking-wider bg-surface-container text-on-surface cursor-pointer hover:bg-surface-variant transition-colors shadow-sm">Sales</span>
+        <span class="px-2 py-1 rounded text-[9px] font-label uppercase tracking-wider bg-surface-container text-on-surface cursor-pointer hover:bg-surface-variant transition-colors shadow-sm">VIP</span>
+      </div>
+    </div>
+  </div>
+</div></div>
+<!-- Controls-->
+
+<!-- Tags -->
+
+
+
+<!-- Thread -->
+<div class="mb-10">
+<label class="block font-label text-[10px] uppercase text-outline mb-4">Email Thread</label>
+<div class="relative pl-6 space-y-6"><!-- Timeline Node 1 (Active/Expanded) -->
+<div class="relative group">
+  <div class="absolute -left-[29px] top-1.5 w-2 h-2 rounded-full bg-primary ring-4 ring-surface-container-low shadow-sm"></div>
+  <button class="w-full text-left bg-surface-container p-4 rounded shadow-sm hover:bg-surface-variant transition-colors" onclick="toggleTimelineContent(this)">
+    <div class="flex justify-between items-start mb-1">
+      <div class="font-label text-[9px] uppercase tracking-wider text-primary">Form Submission - setup@trashbox.io</div>
+      <div class="font-mono text-[9px] text-outline-variant uppercase">Jul 15, 2026</div>
+    </div>
+    <div class="text-primary text-sm font-medium flex justify-between items-center">
+      <span class="">Contact form wiring check</span>
+      <span class="material-symbols-outlined text-primary text-sm transition-transform duration-300 rotate-180" style="transform: rotate(180deg);">expand_more</span>
+    </div>
+  </button>
+  <div class="timeline-content mt-3 p-4 bg-surface-container/50 rounded text-sm text-on-surface transition-all duration-300 overflow-hidden"><div class="space-y-6">
+  <div class="grid grid-cols-1 gap-2 pb-4 border-b border-outline-variant/10">
+    <div class="flex gap-4">
+      <span class="w-12 font-label text-[10px] uppercase text-outline">From</span>
+      <span class="text-primary font-medium">setup@trashbox.io</span>
+    </div>
+    <div class="flex gap-4">
+      <span class="w-12 font-label text-[10px] uppercase text-outline">To</span>
+      <span class="text-on-surface">ezekielbleh@gmail.com</span>
+    </div>
+    <div class="flex gap-4">
+      <span class="w-12 font-label text-[10px] uppercase text-outline">Date</span>
+      <span class="text-on-surface">July 15, 2026 at 9:56 PM</span>
+    </div>
+    <div class="flex gap-4">
+      <span class="w-12 font-label text-[10px] uppercase text-outline">Subject</span>
+      <span class="text-primary font-bold">Contact form wiring check</span>
+    </div>
+  </div>
+  <div class="py-4 font-body leading-relaxed text-on-surface space-y-4">
+    <p class="">Hello Team,</p>
+    <p class="">Checking the wiring... We need to ensure that all lead data is being captured correctly in the Trashbox LLC dashboard. This is a critical test for the new integration pipeline.</p>
+    <p class="">Please confirm receipt and let me know if the metadata fields are populating as expected.</p>
+    <p class="">Best regards,<br>System Automator</p>
+  </div>
+  <div class="pt-4 border-t border-outline-variant/10 flex flex-wrap gap-x-6 gap-y-2">
+    <div class="flex items-center gap-2">
+      <span class="font-label text-[9px] uppercase text-outline-variant">Source:</span>
+      <span class="font-mono text-[10px] text-outline">Web-Form-V2</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="font-label text-[9px] uppercase text-outline-variant">IP:</span>
+      <span class="font-mono text-[10px] text-outline">192.168.1.104</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="font-label text-[9px] uppercase text-outline-variant">Device:</span>
+      <span class="font-mono text-[10px] text-outline">Chrome / MacOS</span>
+    </div>
+  </div>
+</div></div>
+</div>
+
+<!-- Timeline Node 2 (Collapsed)-->
+<div class="relative group"><div class="absolute -left-[29px] top-1.5 w-2 h-2 rounded-full bg-secondary-fixed-dim ring-4 ring-surface-container-low shadow-sm"></div><button class="w-full text-left bg-surface-container-lowest p-4 rounded hover:bg-surface-container transition-colors shadow-sm" onclick="toggleTimelineContent(this)"><div class="flex justify-between items-start mb-1"><div class="font-label text-[9px] uppercase tracking-wider text-outline-variant">Internal Note - Agent</div><div class="font-mono text-[9px] text-outline-variant uppercase">Jul 15, 2026</div></div><div class="text-primary text-sm font-medium flex justify-between items-center"><span class="">Contacted lead via follow-up email</span><span class="material-symbols-outlined text-outline-variant text-sm transition-transform duration-300">expand_more</span></div></button><div class="timeline-content hidden mt-3 p-4 bg-surface-container/50 rounded text-sm text-on-surface transition-all duration-300 overflow-hidden"><div class="py-2">Contacted lead via follow-up email. Waiting for response regarding integration specifics.</div></div></div><div class="relative group"><div class="absolute -left-[29px] top-1.5 w-2 h-2 rounded-full bg-secondary-fixed-dim ring-4 ring-surface-container-low shadow-sm"></div><button class="w-full text-left bg-surface-container-lowest p-4 rounded hover:bg-surface-container transition-colors shadow-sm" onclick="toggleTimelineContent(this)"><div class="flex justify-between items-start mb-1"><div class="font-label text-[9px] uppercase tracking-wider text-outline-variant">Email Reply - ezekielbleh@gmail.com</div><div class="font-mono text-[9px] text-outline-variant uppercase">Jul 16, 2026</div></div><div class="text-primary text-sm font-medium flex justify-between items-center"><span class="">Re: Contact form wiring check</span><span class="material-symbols-outlined text-outline-variant text-sm transition-transform duration-300">expand_more</span></div></button><div class="timeline-content hidden mt-3 p-4 bg-surface-container/50 rounded text-sm text-on-surface transition-all duration-300 overflow-hidden"><div class="space-y-4"><div class="grid grid-cols-1 gap-1 pb-3 border-b border-outline-variant/10"><div class="flex gap-4"><span class="w-12 font-label text-[10px] uppercase text-outline">From</span><span class="text-primary font-medium">ezekielbleh@gmail.com</span></div><div class="flex gap-4"><span class="w-12 font-label text-[10px] uppercase text-outline">To</span><span class="text-on-surface">setup@trashbox.io</span></div><div class="flex gap-4"><span class="w-12 font-label text-[10px] uppercase text-outline">Date</span><span class="text-on-surface">July 16, 2026 at 10:15 AM</span></div></div><div class="py-2 leading-relaxed">Hi Team, confirmed receipt. The metadata looks correct on our end. Proceeding with the next phase of testing.</div></div></div></div></div>
+<script>
+    function toggleTimelineContent(btn) {
+        const content = btn.nextElementSibling;
+        const icon = btn.querySelector('.material-symbols-outlined');
+        if (content.classList.contains('hidden')) {
+            content.classList.remove('hidden');
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            content.classList.add('hidden');
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+</script>
+
+<div class="mt-8 rounded-lg overflow-hidden bg-surface-container-low shadow-md">
+<!-- Reply Type Tabs -->
+<div class="flex bg-surface-container p-1 gap-1">
+<button class="px-6 py-2.5 text-[10px] font-label uppercase tracking-widest text-primary bg-surface-container-highest rounded shadow-sm">Reply</button>
+<button class="px-6 py-2.5 text-[10px] font-label uppercase tracking-widest text-outline-variant hover:text-primary transition-colors rounded hover:bg-surface-variant/50">Reply All</button>
+<button class="px-6 py-2.5 text-[10px] font-label uppercase tracking-widest text-outline-variant hover:text-primary transition-colors rounded hover:bg-surface-variant/50">Forward</button>
+</div>
+<!-- Recipient Fields -->
+<div class="p-4 space-y-3 bg-surface-container-lowest/50">
+<div class="flex items-center gap-4">
+<span class="w-8 font-label text-[10px] uppercase text-outline">To</span>
+<div class="flex-grow flex flex-wrap gap-2 items-center">
+<span class="px-2 py-1 bg-surface-container rounded text-xs text-primary flex items-center gap-1.5 shadow-sm">
+          setup@trashbox.io
+          <span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-error">close</span>
+</span>
+<input class="bg-transparent border-none focus:ring-0 text-xs text-primary p-0 flex-grow" placeholder="Add recipients..." type="text">
+</div>
+<div class="flex gap-3">
+<button class="text-[10px] font-label uppercase text-outline-variant hover:text-primary">Cc</button>
+<button class="text-[10px] font-label uppercase text-outline-variant hover:text-primary">Bcc</button>
+</div>
+</div>
+</div>
+<!-- Enhanced Toolbar -->
+<div class="bg-surface-container/80 px-4 py-2 flex items-center justify-between">
+<div class="flex items-center gap-1">
+<div class="flex items-center gap-1 pr-3 mr-3">
+<button class="p-1.5 hover:bg-surface-variant rounded text-outline-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">format_bold</span></button>
+<button class="p-1.5 hover:bg-surface-variant rounded text-outline-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">format_italic</span></button>
+<button class="p-1.5 hover:bg-surface-variant rounded text-outline-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">format_underlined</span></button>
+</div>
+<div class="flex items-center gap-1 pr-3 mr-3">
+<button class="p-1.5 hover:bg-surface-variant rounded text-outline-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">format_list_bulleted</span></button>
+<button class="p-1.5 hover:bg-surface-variant rounded text-outline-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">format_list_numbered</span></button>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1.5 hover:bg-surface-variant rounded text-outline-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">link</span></button>
+<button class="p-1.5 hover:bg-surface-variant rounded text-outline-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">code_blocks</span></button>
+<button class="p-1.5 hover:bg-surface-variant rounded text-outline-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">image</span></button>
+<button class="p-1.5 hover:bg-surface-variant rounded text-outline-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">attach_file</span></button>
+</div>
+</div>
+</div>
+<!-- Editor Area -->
+<div class="p-6 min-h-[250px] bg-surface-container-lowest/30 relative">
+<div class="text-sm text-primary/40 font-body italic">Type your reply here... Use @ to mention team members.</div>
+<!-- Dropzone Hint -->
+<div class="absolute bottom-4 left-6 right-6 bg-surface-container/30 rounded-lg p-4 flex items-center justify-center gap-3 group hover:bg-surface-container/50 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary">cloud_upload</span>
+<span class="text-[10px] font-label uppercase tracking-widest text-outline-variant group-hover:text-primary">Drag &amp; drop files or paste images</span>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="px-6 py-4 bg-surface-container/80 flex justify-between items-center">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-label uppercase text-outline-variant">Replying as:</span>
+<span class="text-[10px] font-medium text-primary">ezekielbleh@gmail.com</span>
+</div>
+<span class="text-[10px] text-outline-variant/50 font-mono">Cmd + Enter to send</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2.5 text-outline-variant hover:text-error transition-colors rounded hover:bg-error/10">
+<span class="material-symbols-outlined text-xl">delete</span>
+</button>
+<button class="bg-surface-container-highest text-primary font-label text-xs uppercase tracking-widest px-8 py-2.5 rounded flex items-center gap-2 hover:bg-surface-variant transition-colors shadow-sm">
+<span class="">Send Message</span>
+<span class="material-symbols-outlined text-sm">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Notes -->
+</div></div></main>
+
+</body></html>
