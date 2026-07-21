@@ -465,7 +465,7 @@ export async function listLeadMessages(
 
 export async function sendLeadMessage(
   submissionId: string,
-  input: { body: string; subject?: string },
+  input: { body: string; bodyHtml?: string; subject?: string },
 ): Promise<LeadMessage> {
   return (await authFetch(
     `/submissions/${encodeURIComponent(submissionId)}/messages`,

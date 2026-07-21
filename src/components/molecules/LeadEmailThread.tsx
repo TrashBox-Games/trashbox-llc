@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type KeyboardEvent, type ReactNode } from "react";
+import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import {
+  RichTextEditor,
+  type RichTextValue,
+} from "@/components/molecules/RichTextEditor";
 import type { LeadMessage } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
+import { cn } from "@/lib/utils";
 
 const labelClass =
   "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
@@ -18,15 +24,105 @@ function formatWhen(iso: string) {
   }
 }
 
+function formatDay(iso: string) {
+  try {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
+      new Date(iso),
+    );
+  } catch {
+    return iso;
+  }
+}
+
+interface TimelineNodeProps {
+  eyebrow: string;
+  title: string;
+  day: string;
+  accent: "primary" | "muted";
+  defaultOpen?: boolean;
+  children: ReactNode;
+}
+
+function TimelineNode({
+  eyebrow,
+  title,
+  day,
+  accent,
+  defaultOpen = false,
+  children,
+}: TimelineNodeProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <li className="relative">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute -left-[25px] top-2 size-2 rounded-full ring-4 ring-surface-container-low",
+          accent === "primary" ? "bg-primary" : "bg-secondary-fixed-dim",
+        )}
+      />
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "w-full rounded p-4 text-left transition-colors",
+          open
+            ? "bg-surface-container hover:bg-surface-variant"
+            : "bg-surface-container-lowest hover:bg-surface-container",
+        )}
+      >
+        <div className="mb-1 flex items-start justify-between gap-4">
+          <span className="font-label text-[9px] uppercase tracking-widest text-outline">
+            {eyebrow}
+          </span>
+          <span className="font-mono text-[9px] uppercase text-outline-variant">
+            {day}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-sm font-medium text-white">{title}</span>
+          <MaterialIcon
+            name="expand_more"
+            className={cn(
+              "text-sm text-outline transition-transform",
+              open && "rotate-180",
+            )}
+          />
+        </div>
+      </button>
+      {open && (
+        <div className="mt-3 rounded bg-surface-container/50 p-4 text-sm text-on-surface">
+          {children}
+        </div>
+      )}
+    </li>
+  );
+}
+
+function MetaRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex gap-4">
+      <span className="w-12 shrink-0 font-label text-[10px] uppercase text-outline">
+        {label}
+      </span>
+      <span className="min-w-0 text-on-surface">{value}</span>
+    </div>
+  );
+}
+
 export interface LeadEmailThreadProps {
   formMessage: string;
   formFrom: string;
   formAt: string;
   messages: LeadMessage[];
   mailboxConnected: boolean;
+  /** Address the reply is sent from (connected mailbox). */
+  fromAddress?: string;
   busy?: boolean;
   error?: string | null;
-  onSend: (body: string) => Promise<void>;
+  onSend: (text: string, html?: string) => Promise<void>;
 }
 
 export function LeadEmailThread({
@@ -35,93 +131,132 @@ export function LeadEmailThread({
   formAt,
   messages,
   mailboxConnected,
+  fromAddress,
   busy = false,
   error,
   onSend,
 }: LeadEmailThreadProps) {
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState<RichTextValue>({ html: "", text: "" });
+  const [editorKey, setEditorKey] = useState(0);
+  const hasContent = draft.text.trim().length > 0;
+
+  async function submit() {
+    if (!hasContent || busy) return;
+    const html = draft.html.trim();
+    await onSend(draft.text, html ? html : undefined);
+    setDraft({ html: "", text: "" });
+    setEditorKey((k) => k + 1);
+  }
+
+  function onEditorKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+      void submit();
+    }
+  }
 
   return (
     <div className="mt-10 border-t border-outline-variant/10 pt-6">
       <p className={labelClass}>Email thread</p>
 
-      <ul className="mt-4 space-y-4">
-        <li className="border-l-2 border-outline-variant/40 pl-4">
-          <p className="font-label text-[10px] uppercase tracking-widest text-outline">
-            Form submission · {formFrom}
-          </p>
-          <p className="mt-2 whitespace-pre-wrap text-sm text-white">
-            {formMessage}
-          </p>
-          <p className="mt-1 font-label text-[10px] uppercase tracking-widest text-outline">
-            {formatWhen(formAt)}
-          </p>
-        </li>
+      <ol className="relative ml-1 space-y-4 border-l border-outline-variant/20 pl-6">
+        <TimelineNode
+          eyebrow={`Form submission · ${formFrom}`}
+          title={formMessage.split("\n")[0] || "Form submission"}
+          day={formatDay(formAt)}
+          accent="primary"
+          defaultOpen
+        >
+          <div className="space-y-4">
+            <div className="grid gap-2 border-b border-outline-variant/10 pb-4">
+              <MetaRow label="From" value={formFrom} />
+              <MetaRow label="Date" value={formatWhen(formAt)} />
+            </div>
+            <p className="whitespace-pre-wrap leading-relaxed text-on-surface">
+              {formMessage}
+            </p>
+          </div>
+        </TimelineNode>
 
-        {messages.map((message) => (
-          <li
-            key={message.messageId}
-            className={[
-              "border-l-2 pl-4",
-              message.direction === "outbound"
-                ? "border-primary"
-                : "border-outline-variant/40",
-            ].join(" ")}
-          >
-            <p className="font-label text-[10px] uppercase tracking-widest text-outline">
-              {message.direction === "outbound" ? "Sent" : "Received"} ·{" "}
-              {message.from}
-              {message.sentBy ? ` · ${message.sentBy}` : ""}
-            </p>
-            {message.subject && (
-              <p className="mt-1 text-xs text-on-surface-variant">
-                {message.subject}
-              </p>
-            )}
-            <p className="mt-2 whitespace-pre-wrap text-sm text-white">
-              {message.bodyText}
-            </p>
-            <p className="mt-1 font-label text-[10px] uppercase tracking-widest text-outline">
-              {formatWhen(message.createdAt)}
-            </p>
-          </li>
-        ))}
-      </ul>
+        {messages.map((message) => {
+          const outbound = message.direction === "outbound";
+          return (
+            <TimelineNode
+              key={message.messageId}
+              eyebrow={`${outbound ? "Sent" : "Received"} · ${message.from}${
+                message.sentBy ? ` · ${message.sentBy}` : ""
+              }`}
+              title={message.subject || (outbound ? "Reply sent" : "Reply received")}
+              day={formatDay(message.createdAt)}
+              accent={outbound ? "primary" : "muted"}
+            >
+              <div className="space-y-4">
+                <div className="grid gap-1 border-b border-outline-variant/10 pb-3">
+                  <MetaRow label="From" value={message.from} />
+                  <MetaRow label="To" value={message.to} />
+                  <MetaRow label="Date" value={formatWhen(message.createdAt)} />
+                </div>
+                <p className="whitespace-pre-wrap leading-relaxed text-on-surface">
+                  {message.bodyText}
+                </p>
+              </div>
+            </TimelineNode>
+          );
+        })}
+      </ol>
 
-      {error && (
-        <p className="mt-4 text-sm text-error">{error}</p>
-      )}
+      {error && <p className="mt-4 text-sm text-error">{error}</p>}
 
       {mailboxConnected ? (
-        <form
-          className="mt-6 space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const body = draft.trim();
-            if (!body) return;
-            void onSend(body).then(() => setDraft(""));
-          }}
-        >
-          <label className={labelClass} htmlFor="lead-reply">
-            Reply
-          </label>
-          <textarea
-            id="lead-reply"
-            rows={4}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            className="w-full border border-outline-variant/20 bg-transparent p-3 text-sm text-white placeholder:text-outline focus:border-primary focus:outline-none"
-            placeholder="Write a reply…"
+        <div className="mt-8 overflow-hidden rounded-lg border border-outline-variant/10 bg-surface-container-low shadow-md">
+          <div className="flex gap-1 bg-surface-container p-1">
+            <span className="rounded bg-surface-container-highest px-6 py-2.5 font-label text-[10px] uppercase tracking-widest text-white shadow-sm">
+              Reply
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4 bg-surface-container-lowest/50 px-4 py-3">
+            <span className="w-8 shrink-0 font-label text-[10px] uppercase text-outline">
+              To
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded bg-surface-container px-2 py-1 text-xs text-white shadow-sm">
+              {formFrom}
+            </span>
+          </div>
+
+          <RichTextEditor
+            key={editorKey}
+            ariaLabel="Reply"
+            placeholder="Type your reply here…"
             disabled={busy}
+            onChange={setDraft}
+            onKeyDown={onEditorKeyDown}
+            className="rounded-none border-0 bg-transparent"
           />
-          <button
-            type="submit"
-            disabled={busy || !draft.trim()}
-            className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-          >
-            Send reply
-          </button>
-        </form>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-container/80 px-4 py-3">
+            <div className="flex items-center gap-3">
+              {fromAddress && (
+                <span className="font-label text-[10px] uppercase text-outline-variant">
+                  Replying as{" "}
+                  <span className="font-medium text-white">{fromAddress}</span>
+                </span>
+              )}
+              <span className="font-mono text-[10px] text-outline-variant/60">
+                Cmd + Enter to send
+              </span>
+            </div>
+            <button
+              type="button"
+              disabled={busy || !hasContent}
+              onClick={() => void submit()}
+              className="flex items-center gap-2 rounded bg-surface-container-highest px-6 py-2.5 font-label text-xs uppercase tracking-widest text-white shadow-sm transition-colors hover:bg-surface-variant disabled:opacity-40"
+            >
+              Send message
+              <MaterialIcon name="send" className="text-sm" />
+            </button>
+          </div>
+        </div>
       ) : (
         <p className="mt-6 text-sm text-on-surface-variant">
           Connect a business mailbox in{" "}

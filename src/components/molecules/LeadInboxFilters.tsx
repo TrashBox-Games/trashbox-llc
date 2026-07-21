@@ -39,7 +39,7 @@ export function LeadInboxFilters({
 }: LeadInboxFiltersProps) {
   return (
     <form
-      className="grid grid-cols-1 gap-4 border-b border-outline-variant/10 pb-6 md:grid-cols-4"
+      className="grid grid-cols-1 gap-6 rounded bg-surface-container-low p-6 shadow-sm md:grid-cols-4"
       onSubmit={(e) => {
         e.preventDefault();
         onApply();
@@ -119,7 +119,7 @@ export function LeadInboxFilters({
       <div className="md:col-span-4">
         <button
           type="submit"
-          className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary"
+          className="rounded bg-surface-container-highest px-6 py-3 font-label text-xs uppercase tracking-widest text-white shadow-sm transition-colors hover:bg-surface-variant"
         >
           Apply filters
         </button>

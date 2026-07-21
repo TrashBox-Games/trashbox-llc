@@ -45,12 +45,14 @@ export const Disconnected: Story = {};
 export const ConnectedEmpty: Story = {
   args: {
     mailboxConnected: true,
+    fromAddress: "sales@example.com",
   },
 };
 
 export const WithOutboundReply: Story = {
   args: {
     mailboxConnected: true,
+    fromAddress: "sales@example.com",
     messages: [outboundReply],
   },
 };

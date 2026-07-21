@@ -121,7 +121,7 @@ export interface PortalContextValue {
     assignedTo?: string | null;
   }) => Promise<void>;
   onLeadNote: (body: string) => Promise<void>;
-  onSendLeadMessage: (body: string) => Promise<void>;
+  onSendLeadMessage: (body: string, bodyHtml?: string) => Promise<void>;
   onMailboxConnect: (provider: MailboxProvider) => Promise<void>;
   onMailboxDisconnect: () => Promise<void>;
   onMailboxSync: () => Promise<void>;
@@ -457,12 +457,15 @@ export function PortalProvider({ children }: { children: ReactNode }) {
   }, [selectedId, account?.linked]);
 
   const onSendLeadMessage = useCallback(
-    async (body: string) => {
+    async (body: string, bodyHtml?: string) => {
       if (!selectedId) return;
       setCrmBusy(true);
       setMessageError(null);
       try {
-        const message = await sendLeadMessage(selectedId, { body });
+        const message = await sendLeadMessage(selectedId, {
+          body,
+          ...(bodyHtml ? { bodyHtml } : {}),
+        });
         setLeadMessages((prev) => [...prev, message]);
         setItems((items) =>
           items.map((item) =>

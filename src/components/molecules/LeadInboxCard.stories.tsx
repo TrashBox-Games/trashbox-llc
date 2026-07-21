@@ -62,3 +62,16 @@ export const Won: Story = {
     assignedTo: "sales@example.com",
   },
 };
+
+export const Activity: Story = {
+  args: {
+    variant: "activity",
+  },
+};
+
+export const ActivityActive: Story = {
+  args: {
+    variant: "activity",
+    active: true,
+  },
+};

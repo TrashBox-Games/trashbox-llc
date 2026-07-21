@@ -35,6 +35,11 @@ export interface LeadInboxCardProps {
   /** Number of email replies on the thread (not including the form submission). */
   replyCount?: number;
   assignedTo?: string | null;
+  /**
+   * "list" is the vertical master-list card (default). "activity" is the
+   * compact horizontal card used in the Recent Activity rail.
+   */
+  variant?: "list" | "activity";
   onSelect: () => void;
 }
 
@@ -47,8 +52,52 @@ export function LeadInboxCard({
   active = false,
   replyCount = 0,
   assignedTo,
+  variant = "list",
   onSelect,
 }: LeadInboxCardProps): JSX.Element {
+  if (variant === "activity") {
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={active}
+        className={cn(
+          "flex h-full w-[300px] shrink-0 snap-start flex-col rounded p-5 text-left transition-colors",
+          active
+            ? "bg-surface-container-high shadow-md ring-1 ring-white/20"
+            : "bg-surface-container-low hover:bg-surface-container",
+        )}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate font-headline text-base font-bold text-white">
+              {senderName}
+            </p>
+            <p className="mt-0.5 truncate text-xs text-outline">
+              {senderEmail}
+            </p>
+          </div>
+          <LeadStatusBadge status={status} />
+        </div>
+        <p className="mt-2 line-clamp-2 text-sm text-on-surface">{message}</p>
+        {assignedTo && (
+          <p className="mt-2 truncate font-label text-[10px] uppercase tracking-widest text-outline-variant">
+            Assigned: {assignedTo}
+          </p>
+        )}
+        <p className="mt-3 font-mono text-[10px] uppercase text-outline-variant">
+          {formatWhen(submittedAt)}
+          {replyCount > 0 && (
+            <>
+              {" · "}
+              {replyCount} {replyCount === 1 ? "reply" : "replies"}
+            </>
+          )}
+        </p>
+      </button>
+    );
+  }
+
   const depth = inboxCardStackDepth(replyCount);
   const behind = depth - 1;
 

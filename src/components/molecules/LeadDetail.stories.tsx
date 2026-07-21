@@ -90,6 +90,7 @@ export const WithNotesAndTags: Story = {
 export const WithEmailThread: Story = {
   args: {
     mailboxConnected: true,
+    fromAddress: "sales@example.com",
     messages: [outboundReply],
     onSendMessage: fn().mockResolvedValue(undefined),
   },

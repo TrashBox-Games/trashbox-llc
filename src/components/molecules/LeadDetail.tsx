@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Select } from "@/components/atoms/Select";
 import { LeadEmailThread } from "@/components/molecules/LeadEmailThread";
 import {
@@ -34,11 +34,37 @@ function formatWhen(iso: string) {
   }
 }
 
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function subjectOf(submission: Submission): string {
+  const firstLine = submission.message.split("\n")[0]?.trim();
+  if (firstLine) return firstLine.slice(0, 90);
+  return `New lead from ${submission.senderName}`;
+}
+
+function MetaRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-center gap-4">
+      <span className="w-14 shrink-0 font-label text-[10px] uppercase text-outline">
+        {label}
+      </span>
+      <div className="min-w-0 text-sm text-on-surface">{value}</div>
+    </div>
+  );
+}
+
 interface LeadDetailProps {
   submission: Submission;
   members: TeamMember[];
   busy?: boolean;
   mailboxConnected?: boolean;
+  /** Connected mailbox address; used as the reply-from and "To" recipient. */
+  fromAddress?: string;
   messages?: LeadMessage[];
   messageError?: string | null;
   onUpdate: (patch: {
@@ -47,7 +73,7 @@ interface LeadDetailProps {
     assignedTo?: string | null;
   }) => Promise<void>;
   onAddNote: (body: string) => Promise<void>;
-  onSendMessage?: (body: string) => Promise<void>;
+  onSendMessage?: (body: string, bodyHtml?: string) => Promise<void>;
 }
 
 export function LeadDetail({
@@ -55,6 +81,7 @@ export function LeadDetail({
   members,
   busy = false,
   mailboxConnected = false,
+  fromAddress,
   messages = [],
   messageError = null,
   onUpdate,
@@ -75,80 +102,126 @@ export function LeadDetail({
 
   return (
     <div>
-      <p className="font-label text-[10px] uppercase tracking-widest text-outline">
-        Lead
-      </p>
-      <h2 className="mt-3 font-headline text-3xl font-bold text-white">
-        {submission.senderName}
-      </h2>
-      <p className="mt-2 text-sm text-outline">{submission.senderEmail}</p>
-      <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
-        {formatWhen(submission.submittedAt)}
-      </p>
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
+        <div className="space-y-8 md:col-span-8">
+          <div>
+            <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+              Lead
+            </p>
+            <h2 className="mt-2 font-headline text-3xl font-bold tracking-tighter text-white">
+              {submission.senderName}
+            </h2>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="rounded bg-surface-container-highest px-2 py-0.5 font-label text-[10px] uppercase tracking-widest text-white">
+                {LEAD_STATUS_LABELS[status]}
+              </span>
+              <span className="font-mono text-[10px] uppercase text-outline-variant">
+                ID: #{submission.submissionId.slice(0, 8)}
+              </span>
+            </div>
+          </div>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <div>
-          <label className={labelClass} htmlFor="detail-status">
-            Status
-          </label>
-          <Select
-            id="detail-status"
-            value={status}
-            disabled={busy}
-            onChange={(next) => void onUpdate({ status: next as LeadStatus })}
-            options={LEAD_STATUSES.map((s) => ({
-              value: s,
-              label: LEAD_STATUS_LABELS[s],
-              indicatorClassName: LEAD_STATUS_DOT_CLASS[s],
-            }))}
-          />
+          <div className="space-y-3 border-t border-outline-variant/10 pt-4">
+            <MetaRow
+              label="From"
+              value={
+                <span className="flex items-center gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="flex size-6 items-center justify-center rounded-full bg-surface-container-highest text-[10px] font-bold text-white"
+                  >
+                    {initialsOf(submission.senderName)}
+                  </span>
+                  <span className="text-white">{submission.senderEmail}</span>
+                </span>
+              }
+            />
+            {fromAddress && <MetaRow label="To" value={fromAddress} />}
+            <MetaRow
+              label="Subject"
+              value={
+                <span className="font-medium text-white">
+                  {subjectOf(submission)}
+                </span>
+              }
+            />
+          </div>
         </div>
-        <div>
-          <label className={labelClass} htmlFor="detail-assignee">
-            Assigned to
-          </label>
-          <Select
-            id="detail-assignee"
-            value={submission.assignedTo ?? ""}
-            disabled={busy}
-            onChange={(next) =>
-              void onUpdate({ assignedTo: next ? next : null })
-            }
-            options={[
-              { value: "", label: "Unassigned" },
-              ...members.map((member) => ({
-                value: member.email,
-                label: member.name?.trim()
-                  ? `${member.name.trim()} (${member.email})`
-                  : member.email,
-              })),
-            ]}
-          />
-        </div>
-      </div>
 
-      <div className="mt-6">
-        <p className={labelClass}>Tags</p>
-        <div className="flex flex-wrap gap-2">
-          {LEAD_TAGS.map((tag) => {
-            const active = tags.includes(tag);
-            return (
-              <button
-                key={tag}
-                type="button"
-                disabled={busy}
-                onClick={() => void toggleTag(tag)}
-                className={cn(
-                  "border px-3 py-1 font-label text-[10px] uppercase tracking-widest transition-colors",
-                  active
-                    ? "border-white bg-white text-background"
-                    : "border-outline-variant/40 text-outline hover:border-white hover:text-white",
-                )}
-              >
-                {LEAD_TAG_LABELS[tag]}
-              </button>
-            );
-          })}
+        <div className="space-y-6 md:col-span-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase text-outline-variant">
+              Received
+            </p>
+            <p className="mt-1 text-sm font-medium text-white">
+              {formatWhen(submission.submittedAt)}
+            </p>
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor="detail-status">
+              Status
+            </label>
+            <Select
+              id="detail-status"
+              value={status}
+              disabled={busy}
+              onChange={(next) => void onUpdate({ status: next as LeadStatus })}
+              options={LEAD_STATUSES.map((s) => ({
+                value: s,
+                label: LEAD_STATUS_LABELS[s],
+                indicatorClassName: LEAD_STATUS_DOT_CLASS[s],
+              }))}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor="detail-assignee">
+              Assigned to
+            </label>
+            <Select
+              id="detail-assignee"
+              value={submission.assignedTo ?? ""}
+              disabled={busy}
+              onChange={(next) =>
+                void onUpdate({ assignedTo: next ? next : null })
+              }
+              options={[
+                { value: "", label: "Unassigned" },
+                ...members.map((member) => ({
+                  value: member.email,
+                  label: member.name?.trim()
+                    ? `${member.name.trim()} (${member.email})`
+                    : member.email,
+                })),
+              ]}
+            />
+          </div>
+
+          <div>
+            <p className={labelClass}>Tags</p>
+            <div className="flex flex-wrap gap-1.5">
+              {LEAD_TAGS.map((tag) => {
+                const active = tags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void toggleTag(tag)}
+                    className={cn(
+                      "rounded border px-2 py-1 font-label text-[9px] uppercase tracking-wider transition-colors",
+                      active
+                        ? "border-white bg-white text-background"
+                        : "border-outline-variant/40 text-outline hover:border-white hover:text-white",
+                    )}
+                  >
+                    {LEAD_TAG_LABELS[tag]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -176,6 +249,7 @@ export function LeadDetail({
           formAt={submission.submittedAt}
           messages={messages}
           mailboxConnected={mailboxConnected}
+          fromAddress={fromAddress}
           busy={busy}
           error={messageError}
           onSend={onSendMessage}

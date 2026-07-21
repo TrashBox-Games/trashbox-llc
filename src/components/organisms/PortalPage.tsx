@@ -465,35 +465,44 @@ export function PortalApp({ tab }: PortalAppProps) {
           )}
 
           {portal.items.length > 0 && (
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-              <ul className="space-y-4 lg:col-span-5">
-                {portal.items.map((item) => {
-                  const active = item.submissionId === portal.selectedId;
-                  return (
-                    <li key={item.submissionId}>
-                      <LeadInboxCard
-                        senderName={item.senderName}
-                        senderEmail={item.senderEmail}
-                        message={item.message}
-                        submittedAt={item.submittedAt}
-                        status={leadStatusOf(item)}
-                        active={active}
-                        replyCount={item.messageCount ?? 0}
-                        assignedTo={item.assignedTo}
-                        onSelect={() => portal.setSelectedId(item.submissionId)}
-                      />
-                    </li>
-                  );
-                })}
-              </ul>
+            <div className="space-y-8">
+              <section>
+                <p className="mb-4 font-label text-[10px] uppercase tracking-widest text-outline">
+                  Recent activity
+                </p>
+                <ul className="flex snap-x gap-4 overflow-x-auto pb-4">
+                  {portal.items.map((item) => {
+                    const active = item.submissionId === portal.selectedId;
+                    return (
+                      <li key={item.submissionId} className="flex">
+                        <LeadInboxCard
+                          variant="activity"
+                          senderName={item.senderName}
+                          senderEmail={item.senderEmail}
+                          message={item.message}
+                          submittedAt={item.submittedAt}
+                          status={leadStatusOf(item)}
+                          active={active}
+                          replyCount={item.messageCount ?? 0}
+                          assignedTo={item.assignedTo}
+                          onSelect={() =>
+                            portal.setSelectedId(item.submissionId)
+                          }
+                        />
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
 
-              <div className="bg-surface-container-low p-8 lg:col-span-7">
+              <div className="rounded bg-surface-container-low p-6 md:p-10">
                 {portal.selected ? (
                   <LeadDetail
                     submission={portal.selected}
                     members={portal.members}
                     busy={portal.crmBusy}
                     mailboxConnected={Boolean(portal.mailbox?.connected)}
+                    fromAddress={portal.mailbox?.email}
                     messages={portal.leadMessages}
                     messageError={portal.messageError}
                     onUpdate={portal.onLeadUpdate}
