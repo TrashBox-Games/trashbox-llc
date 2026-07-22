@@ -12,11 +12,19 @@ import type {
 } from "@/lib/api";
 import { hasPermission, teamMemberDisplayName } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const inputClass =
-  "w-full border-0 border-b border-outline-variant bg-transparent py-4 text-white placeholder:text-outline-variant/50 focus:border-primary focus:ring-0 focus:outline-none";
-const labelClass =
-  "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
+const DEFAULT_NONE = "__none__";
 
 export interface TeamPanelProps {
   role: TeamRole;
@@ -280,61 +288,73 @@ export function TeamPanel({
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     {canToggleNotifications(member) && (
-                      <label className="flex items-center gap-2 text-xs text-on-surface-variant">
-                        <input
-                          type="checkbox"
+                      <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+                        <Checkbox
+                          id={`alerts-${member.email}`}
                           checked={member.emailNotifications}
                           disabled={busy}
-                          onChange={(e) =>
+                          onCheckedChange={(checked) =>
                             void onUpdateMember(member.email, {
-                              emailNotifications: e.target.checked,
+                              emailNotifications: checked === true,
                             })
                           }
                         />
-                        Email alerts
-                      </label>
+                        <Label
+                          htmlFor={`alerts-${member.email}`}
+                          className="mb-0 text-xs font-body tracking-normal text-on-surface-variant normal-case"
+                        >
+                          Email alerts
+                        </Label>
+                      </div>
                     )}
                     {canEditProfile(member) && !editing && (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         disabled={busy}
-                        className="font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white disabled:opacity-40"
                         onClick={() => startEdit(member)}
                       >
                         Edit profile
-                      </button>
+                      </Button>
                     )}
                     {canAssignRole(member) && assignableRoles.length > 0 && (
-                      <label className="flex items-center gap-2 text-xs text-on-surface-variant">
+                      <div className="flex items-center gap-2 text-xs text-on-surface-variant">
                         <span className="sr-only">Role</span>
-                        <select
-                          aria-label={`Role for ${teamMemberDisplayName(member)}`}
+                        <Select
                           value={memberRoleId}
                           disabled={busy}
-                          className="border-0 border-b border-outline-variant bg-transparent py-1 text-xs uppercase tracking-widest text-white focus:border-primary focus:outline-none"
-                          onChange={(e) =>
+                          onValueChange={(value) =>
                             void onUpdateMember(member.email, {
-                              roleId: e.target.value,
+                              roleId: value,
                             })
                           }
                         >
-                          {assignableRoles.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                          <SelectTrigger
+                            size="sm"
+                            aria-label={`Role for ${teamMemberDisplayName(member)}`}
+                            className="w-auto min-w-[6rem]"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {assignableRoles.map((r) => (
+                              <SelectItem key={r.id} value={r.id}>
+                                {r.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
                     {canRemove(member) && !isSelf && (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         disabled={busy}
-                        className="font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white disabled:opacity-40"
                         onClick={() => void onRemoveMember(member.email)}
                       >
                         Remove
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -348,26 +368,20 @@ export function TeamPanel({
                     }}
                   >
                     <div>
-                      <label className={labelClass} htmlFor={`first-${member.email}`}>
-                        First Name
-                      </label>
-                      <input
+                      <Label htmlFor={`first-${member.email}`}>First Name</Label>
+                      <Input
                         id={`first-${member.email}`}
                         value={editFirst}
                         onChange={(e) => setEditFirst(e.target.value)}
-                        className={inputClass}
                         disabled={busy}
                       />
                     </div>
                     <div>
-                      <label className={labelClass} htmlFor={`last-${member.email}`}>
-                        Last Name
-                      </label>
-                      <input
+                      <Label htmlFor={`last-${member.email}`}>Last Name</Label>
+                      <Input
                         id={`last-${member.email}`}
                         value={editLast}
                         onChange={(e) => setEditLast(e.target.value)}
-                        className={inputClass}
                         disabled={busy}
                       />
                     </div>
@@ -381,7 +395,7 @@ export function TeamPanel({
                         ) : (
                           <>
                             <div>
-                              <p className={labelClass}>Allowed Sender Display Names</p>
+                              <Label>Allowed Sender Display Names</Label>
                               {senderDisplayNames.length === 0 ? (
                                 <p className="text-sm text-on-surface-variant">
                                   Create names in{" "}
@@ -397,76 +411,81 @@ export function TeamPanel({
                                 <ul className="mt-2 space-y-2">
                                   {senderDisplayNames.map((identity) => (
                                     <li key={identity.id}>
-                                      <label className="flex cursor-pointer items-center gap-3 text-sm text-white">
-                                        <input
-                                          type="checkbox"
+                                      <div className="flex cursor-pointer items-center gap-3 text-sm text-white">
+                                        <Checkbox
+                                          id={`allowed-${member.email}-${identity.id}`}
                                           checked={editAllowedIds.includes(
                                             identity.id,
                                           )}
                                           disabled={busy}
-                                          onChange={() =>
+                                          onCheckedChange={() =>
                                             toggleAllowed(identity.id)
                                           }
                                         />
-                                        {identity.name}
-                                      </label>
+                                        <Label
+                                          htmlFor={`allowed-${member.email}-${identity.id}`}
+                                          className="mb-0 cursor-pointer text-sm font-body tracking-normal text-white normal-case"
+                                        >
+                                          {identity.name}
+                                        </Label>
+                                      </div>
                                     </li>
                                   ))}
                                 </ul>
                               )}
                             </div>
                             <div>
-                              <label
-                                className={labelClass}
-                                htmlFor={`default-${member.email}`}
-                              >
+                              <Label htmlFor={`default-${member.email}`}>
                                 Default Sender Display Name
-                              </label>
-                              <select
-                                id={`default-${member.email}`}
-                                value={editDefaultId}
+                              </Label>
+                              <Select
+                                value={editDefaultId || DEFAULT_NONE}
                                 disabled={busy || editAllowedIds.length === 0}
-                                onChange={(e) =>
-                                  setEditDefaultId(e.target.value)
+                                onValueChange={(value) =>
+                                  setEditDefaultId(
+                                    value === DEFAULT_NONE ? "" : value,
+                                  )
                                 }
-                                className="w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white focus:border-primary focus:outline-none"
                               >
-                                {editAllowedIds.length === 0 && (
-                                  <option value="">None Assigned</option>
-                                )}
-                                {editAllowedIds.map((id) => {
-                                  const name =
-                                    senderDisplayNames.find(
-                                      (item) => item.id === id,
-                                    )?.name ?? id;
-                                  return (
-                                    <option key={id} value={id}>
-                                      {name}
-                                    </option>
-                                  );
-                                })}
-                              </select>
+                                <SelectTrigger id={`default-${member.email}`}>
+                                  <SelectValue placeholder="None Assigned" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {editAllowedIds.length === 0 && (
+                                    <SelectItem value={DEFAULT_NONE}>
+                                      None Assigned
+                                    </SelectItem>
+                                  )}
+                                  {editAllowedIds.map((id) => {
+                                    const name =
+                                      senderDisplayNames.find(
+                                        (item) => item.id === id,
+                                      )?.name ?? id;
+                                    return (
+                                      <SelectItem key={id} value={id}>
+                                        {name}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectContent>
+                              </Select>
                             </div>
                           </>
                         )}
                       </div>
                     )}
                     <div className="flex gap-3 md:col-span-2">
-                      <button
-                        type="submit"
-                        disabled={busy}
-                        className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-                      >
+                      <Button type="submit" disabled={busy}>
                         Save
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="link"
                         disabled={busy}
                         onClick={() => setEditingEmail(null)}
-                        className="font-headline text-xs uppercase tracking-widest text-outline hover:text-white"
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 )}
@@ -494,86 +513,81 @@ export function TeamPanel({
                 onSubmit={(e) => void onSubmit(e)}
               >
                 <div>
-                  <label className={labelClass} htmlFor="invite-email">
-                    Email
-                  </label>
-                  <input
+                  <Label htmlFor="invite-email">Email</Label>
+                  <Input
                     id="invite-email"
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={inputClass}
                     placeholder="teammate@company.com"
                     disabled={busy}
                   />
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className={labelClass} htmlFor="invite-first">
-                      First Name
-                    </label>
-                    <input
+                    <Label htmlFor="invite-first">First Name</Label>
+                    <Input
                       id="invite-first"
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className={inputClass}
                       placeholder="Ada"
                       disabled={busy}
                     />
                   </div>
                   <div>
-                    <label className={labelClass} htmlFor="invite-last">
-                      Last Name
-                    </label>
-                    <input
+                    <Label htmlFor="invite-last">Last Name</Label>
+                    <Input
                       id="invite-last"
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className={inputClass}
                       placeholder="Lovelace"
                       disabled={busy}
                     />
                   </div>
                 </div>
-                <label className="flex items-center gap-2 text-sm text-on-surface-variant">
-                  <input
-                    type="checkbox"
+                <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                  <Checkbox
+                    id="invite-email-notifications"
                     checked={emailNotifications}
-                    onChange={(e) => setEmailNotifications(e.target.checked)}
+                    onCheckedChange={(checked) =>
+                      setEmailNotifications(checked === true)
+                    }
                     disabled={busy}
                   />
-                  Receive form email notifications
-                </label>
+                  <Label
+                    htmlFor="invite-email-notifications"
+                    className="mb-0 text-sm font-body tracking-normal text-on-surface-variant normal-case"
+                  >
+                    Receive form email notifications
+                  </Label>
+                </div>
                 {assignableRoles.length > 0 && (
                   <div>
-                    <label className={labelClass} htmlFor="invite-role">
-                      Role
-                    </label>
-                    <select
-                      id="invite-role"
+                    <Label htmlFor="invite-role">Role</Label>
+                    <Select
                       value={inviteRoleId}
-                      onChange={(e) => setInviteRoleId(e.target.value)}
+                      onValueChange={setInviteRoleId}
                       disabled={busy}
-                      className="w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white focus:border-primary focus:outline-none"
                     >
-                      {assignableRoles.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger id="invite-role">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {assignableRoles.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
-                <button
-                  type="submit"
-                  disabled={busy || !email.trim()}
-                  className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-                >
+                <Button type="submit" disabled={busy || !email.trim()}>
                   {busy ? "Sending…" : "Send Invite"}
-                </button>
+                </Button>
               </form>
             )}
           </section>
@@ -608,14 +622,14 @@ export function TeamPanel({
                         · invited by {invite.invitedBy}
                       </p>
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
                       disabled={busy}
-                      className="font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white disabled:opacity-40"
                       onClick={() => void onRevokeInvite(invite.email)}
                     >
                       Revoke
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>

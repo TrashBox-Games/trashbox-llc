@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { Button } from "@/components/ui/button";
 
 export function NotFoundContent() {
   return (
@@ -38,20 +39,30 @@ export function NotFoundContent() {
 
           <div className="flex w-full flex-col items-start gap-12 md:w-auto md:items-end">
             <div className="flex w-full flex-col gap-4 md:w-64">
-              <Link
-                href="/"
-                className="group flex items-center justify-between rounded-sm bg-primary px-6 py-5 font-label text-sm font-bold tracking-widest text-on-primary uppercase transition-all duration-300 hover:scale-[0.98] active:scale-95"
+              <Button
+                asChild
+                size="lg"
+                className="group justify-between hover:scale-[0.98] active:scale-95"
               >
-                <span>Back to Safety</span>
-                <MaterialIcon name="arrow_forward" className="transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
-                href="/apps"
-                className="group flex items-center justify-between rounded-sm border border-outline-variant/20 px-6 py-5 font-label text-sm tracking-widest text-primary uppercase transition-all duration-300 hover:bg-surface-container-low"
+                <Link href="/">
+                  <span>Back to Safety</span>
+                  <MaterialIcon
+                    name="arrow_forward"
+                    className="transition-transform group-hover:translate-x-1"
+                  />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="group justify-between hover:bg-surface-container-low"
               >
-                <span>View Apps</span>
-                <MaterialIcon name="inventory_2" className="opacity-40" />
-              </Link>
+                <Link href="/apps">
+                  <span>View Apps</span>
+                  <MaterialIcon name="inventory_2" className="opacity-40" />
+                </Link>
+              </Button>
             </div>
 
             <nav className="flex flex-col items-start gap-3 md:items-end">

@@ -7,6 +7,7 @@ import {
   RichTextEditor,
   type RichTextValue,
 } from "@/components/molecules/RichTextEditor";
+import { Button } from "@/components/ui/button";
 import type { FromIdentityOption, LeadMessage } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
 import { cn } from "@/lib/utils";
@@ -63,12 +64,13 @@ function TimelineNode({
           accent === "primary" ? "bg-primary" : "bg-secondary-fixed-dim",
         )}
       />
-      <button
+      <Button
         type="button"
+        variant="ghost"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "w-full rounded p-4 text-left transition-colors",
+          "h-auto w-full flex-col items-stretch justify-start whitespace-normal rounded p-4 text-left font-normal normal-case tracking-normal text-inherit",
           open
             ? "bg-surface-container hover:bg-surface-variant"
             : "bg-surface-container-lowest hover:bg-surface-container",
@@ -92,7 +94,7 @@ function TimelineNode({
             )}
           />
         </div>
-      </button>
+      </Button>
       {open && (
         <div className="mt-3 rounded bg-surface-container/50 p-4 text-sm text-on-surface">
           {children}
@@ -287,15 +289,16 @@ export function LeadEmailThread({
                 Cmd + Enter to send
               </span>
             </div>
-            <button
+            <Button
               type="button"
+              variant="secondary"
               disabled={sendDisabled}
               onClick={() => void submit()}
-              className="flex items-center gap-2 rounded bg-surface-container-highest px-6 py-2.5 font-label text-xs uppercase tracking-widest text-white shadow-sm transition-colors hover:bg-surface-variant disabled:opacity-40"
+              className="rounded bg-surface-container-highest font-label font-medium text-white shadow-sm hover:bg-surface-variant"
             >
               Send message
               <MaterialIcon name="send" className="text-sm" />
-            </button>
+            </Button>
           </div>
         </div>
       ) : (

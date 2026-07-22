@@ -8,6 +8,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface SelectOption {
@@ -124,9 +125,11 @@ export function Select({
 
   return (
     <div ref={rootRef} className={cn("relative", className)}>
-      <button
+      <Button
         id={id}
         type="button"
+        variant="ghost"
+        size="default"
         disabled={disabled}
         aria-label={ariaLabel}
         aria-haspopup="listbox"
@@ -137,7 +140,7 @@ export function Select({
         }}
         onKeyDown={onTriggerKeyDown}
         className={cn(
-          "flex w-full items-center justify-between gap-2 border-0 border-b border-outline-variant bg-transparent py-2 pl-1 text-left text-sm text-white focus:border-primary focus:outline-none",
+          "h-auto w-full justify-between gap-2 rounded-none border-0 border-b border-outline-variant bg-transparent py-2 pl-1 font-body text-sm font-normal tracking-normal text-white normal-case hover:bg-transparent hover:text-white focus-visible:border-primary focus-visible:ring-0",
           disabled && "cursor-not-allowed opacity-40",
         )}
       >
@@ -160,7 +163,7 @@ export function Select({
             open && "rotate-180",
           )}
         />
-      </button>
+      </Button>
 
       {open && (
         <ul

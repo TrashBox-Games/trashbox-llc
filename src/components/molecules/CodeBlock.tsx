@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface CodeBlockProps {
@@ -36,18 +37,19 @@ export function CodeBlock({ code, language, className }: CodeBlockProps) {
         <span className="font-label text-[10px] uppercase tracking-widest text-outline">
           {language ?? "code"}
         </span>
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => void onCopy()}
           aria-label={copied ? "Copied" : "Copy"}
-          className="inline-flex items-center gap-1.5 font-headline text-[10px] font-bold uppercase tracking-widest text-white/60 transition-colors hover:text-white"
+          className="h-auto gap-1.5 px-0 py-0 text-[10px] font-bold"
         >
           <MaterialIcon
             name={copied ? "check" : "content_copy"}
             className="text-sm"
           />
           {copied ? "Copied" : "Copy"}
-        </button>
+        </Button>
       </div>
       <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-on-surface-variant md:text-sm">
         <code>{code}</code>

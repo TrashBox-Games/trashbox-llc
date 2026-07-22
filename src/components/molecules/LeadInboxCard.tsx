@@ -2,6 +2,7 @@
 
 import type { CSSProperties, JSX } from "react";
 import { LeadStatusBadge } from "@/components/atoms/LeadStatusBadge";
+import { Button } from "@/components/ui/button";
 import type { LeadStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -57,14 +58,15 @@ export function LeadInboxCard({
 }: LeadInboxCardProps): JSX.Element {
   if (variant === "activity") {
     return (
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={onSelect}
         aria-pressed={active}
         className={cn(
-          "flex h-full w-[300px] shrink-0 snap-start flex-col rounded p-5 text-left transition-colors",
+          "h-auto w-[300px] shrink-0 snap-start flex-col items-stretch justify-start whitespace-normal rounded p-5 text-left font-normal normal-case tracking-normal text-inherit",
           active
-            ? "bg-surface-container-high shadow-md ring-1 ring-white/20"
+            ? "bg-surface-container-high shadow-md ring-1 ring-white/20 hover:bg-surface-container-high"
             : "bg-surface-container-low hover:bg-surface-container",
         )}
       >
@@ -94,7 +96,7 @@ export function LeadInboxCard({
             </>
           )}
         </p>
-      </button>
+      </Button>
     );
   }
 
@@ -111,15 +113,16 @@ export function LeadInboxCard({
       data-testid={behind > 0 ? "inbox-card-stack" : undefined}
       data-stack-behind={behind > 0 ? behind : undefined}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={onSelect}
         data-stack-depth={depth}
         aria-pressed={active}
         className={cn(
-          "relative z-10 w-full border-y border-r border-l-2 px-5 py-4 text-left transition-colors",
+          "relative z-10 h-auto w-full flex-col items-stretch justify-start whitespace-normal border-y border-r border-l-2 px-5 py-4 text-left font-normal normal-case tracking-normal text-inherit",
           active
-            ? "border-y-outline/45 border-r-outline/45 border-l-white bg-surface-container-high"
+            ? "border-y-outline/45 border-r-outline/45 border-l-white bg-surface-container-high hover:bg-surface-container-high"
             : "border-y-outline-variant/20 border-r-outline-variant/20 border-l-transparent bg-surface-container-low hover:bg-surface-container-high",
           behind === 1 &&
             "[box-shadow:var(--stack-1-fill),var(--stack-1-edge)]",
@@ -163,7 +166,7 @@ export function LeadInboxCard({
             </>
           )}
         </p>
-      </button>
+      </Button>
     </div>
   );
 }

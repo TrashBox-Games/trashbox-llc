@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Skeleton } from "@/components/atoms/Skeleton";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { PLATFORM_PATHS, PORTAL_PATHS } from "@/lib/sites";
@@ -111,25 +112,24 @@ export function PortalHeader() {
             {authLoading ? (
               <Skeleton className="h-8 w-20" />
             ) : signedIn ? (
-              <button
+              <Button
                 type="button"
-                className="font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white"
+                variant="ghost"
                 onClick={() => void auth.signOutUser()}
               >
                 Sign out
-              </button>
+              </Button>
             ) : (
-              <Link
-                href={PORTAL_PATHS.login}
-                className="bg-primary px-4 py-2 font-headline text-xs font-bold uppercase tracking-widest text-on-primary"
-              >
-                Login
-              </Link>
+              <Button asChild>
+                <Link href={PORTAL_PATHS.login}>Login</Link>
+              </Button>
             )}
             {signedIn && (
-              <button
+              <Button
                 type="button"
-                className="font-headline text-xs font-bold uppercase text-white md:hidden"
+                variant="ghost"
+                size="icon"
+                className="text-white md:hidden"
                 aria-expanded={open}
                 aria-label={open ? "Close menu" : "Open menu"}
                 onClick={() => setOpen((v) => !v)}
@@ -138,7 +138,7 @@ export function PortalHeader() {
                   name={open ? "close" : "menu"}
                   className="text-[1.5rem]!"
                 />
-              </button>
+              </Button>
             )}
           </div>
         </div>

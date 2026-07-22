@@ -1,14 +1,13 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import type {
   MailboxProvider,
   MailboxStatusResponse,
 } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
-
-const labelClass =
-  "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
 
 export interface MailboxSettingsProps {
   canManage?: boolean;
@@ -36,7 +35,7 @@ export function MailboxSettings({
   return (
     <div className="space-y-8 border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
       <div>
-        <p className={labelClass}>Business Mailbox</p>
+        <Label>Business Mailbox</Label>
         <p className="mt-2 max-w-2xl text-sm text-on-surface-variant">
           Connect Google Workspace or Microsoft 365 so your team can reply to
           leads from the portal. One shared mailbox per business. Configure From
@@ -65,7 +64,7 @@ export function MailboxSettings({
       {connected ? (
         <div className="space-y-4">
           <div>
-            <p className={labelClass}>Connected As</p>
+            <Label>Connected As</Label>
             <p className="text-lg text-white">{mailbox?.email}</p>
             <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
               {mailbox?.provider === "gmail"
@@ -86,22 +85,21 @@ export function MailboxSettings({
 
           {canManage && (
             <div className="flex flex-wrap gap-3">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 disabled={busy}
                 onClick={() => void onSync()}
-                className="border border-outline-variant/40 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
               >
                 Sync Now
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 disabled={busy}
                 onClick={() => void onDisconnect()}
-                className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
               >
                 Disconnect
-              </button>
+              </Button>
             </div>
           )}
 
@@ -121,22 +119,21 @@ export function MailboxSettings({
           </p>
           {canManage && (
             <div className="flex flex-wrap gap-3">
-              <button
+              <Button
                 type="button"
                 disabled={busy}
                 onClick={() => void onConnect("gmail")}
-                className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
               >
                 Connect Google Workspace
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
                 disabled={busy}
                 onClick={() => void onConnect("microsoft")}
-                className="border border-outline-variant/40 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
               >
                 Connect Microsoft 365
-              </button>
+              </Button>
             </div>
           )}
         </div>

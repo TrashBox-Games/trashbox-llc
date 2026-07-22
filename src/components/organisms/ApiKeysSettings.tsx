@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
+import { Button } from "@/components/ui/button";
 import {
   ApiError,
   createApiKey,
@@ -129,15 +130,16 @@ export function ApiKeysSettings() {
           <p className="mt-3 text-sm text-on-surface-variant">
             Save this key for your website forms. It cannot be retrieved again.
           </p>
-          <button
+          <Button
             type="button"
-            className="mt-4 font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white"
+            variant="ghost"
+            className="mt-4 h-auto px-0 py-0"
             onClick={() => {
               void navigator.clipboard.writeText(issuedApiKey);
             }}
           >
             Copy key
-          </button>
+          </Button>
         </section>
       )}
 
@@ -154,9 +156,8 @@ export function ApiKeysSettings() {
             : "Create a key to accept form submissions from your sites. The raw key is only shown once."}
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <button
+          <Button
             type="button"
-            className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
             disabled={busy}
             onClick={() => void onCreateApiKey()}
           >
@@ -165,16 +166,16 @@ export function ApiKeysSettings() {
               : account?.hasApiKey
                 ? "Rotate key"
                 : "Create key"}
-          </button>
+          </Button>
           {account?.hasApiKey && (
-            <button
+            <Button
               type="button"
-              className="border border-outline-variant/30 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
+              variant="outline"
               disabled={busy}
               onClick={() => void onDeleteApiKey()}
             >
               {busy ? "Working…" : "Delete key"}
-            </button>
+            </Button>
           )}
         </div>
         {error && <p className="mt-4 text-sm text-red-300">{error}</p>}

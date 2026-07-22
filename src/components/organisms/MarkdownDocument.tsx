@@ -1,6 +1,7 @@
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 type MarkdownDocumentProps = {
@@ -131,19 +132,17 @@ const mdComponents: Components = {
       {children}
     </pre>
   ),
-  input: ({ type, checked, ...props }) => {
+  input: ({ type, checked }) => {
     if (type === "checkbox") {
       return (
-        <input
-          type="checkbox"
-          checked={checked}
-          readOnly
-          className="mr-2 mt-0.5 h-4 w-4 shrink-0 rounded border-outline-variant accent-primary"
-          {...props}
+        <Checkbox
+          checked={!!checked}
+          disabled
+          className="mr-2 mt-0.5 disabled:opacity-100"
         />
       );
     }
-    return <input type={type} {...props} />;
+    return null;
   },
 };
 

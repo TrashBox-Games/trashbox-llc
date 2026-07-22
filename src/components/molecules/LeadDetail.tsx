@@ -3,6 +3,8 @@
 import { useState, type ReactNode } from "react";
 import { Select } from "@/components/atoms/Select";
 import { LeadEmailThread } from "@/components/molecules/LeadEmailThread";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   LEAD_STATUSES,
   LEAD_STATUS_DOT_CLASS,
@@ -217,20 +219,22 @@ export function LeadDetail({
               {LEAD_TAGS.map((tag) => {
                 const active = tags.includes(tag);
                 return (
-                  <button
+                  <Button
                     key={tag}
                     type="button"
+                    variant="outline"
+                    size="xs"
                     disabled={busy}
                     onClick={() => void toggleTag(tag)}
                     className={cn(
-                      "rounded border px-2 py-1 font-label text-[9px] uppercase tracking-wider transition-colors",
+                      "rounded font-label text-[9px] font-medium tracking-wider",
                       active
-                        ? "border-white bg-white text-background"
+                        ? "border-white bg-white text-background hover:bg-white hover:text-background"
                         : "border-outline-variant/40 text-outline hover:border-white hover:text-white",
                     )}
                   >
                     {LEAD_TAG_LABELS[tag]}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -297,22 +301,18 @@ export function LeadDetail({
           <label className={labelClass} htmlFor="lead-note">
             Add note
           </label>
-          <textarea
+          <Textarea
             id="lead-note"
             rows={3}
             value={noteDraft}
             onChange={(e) => setNoteDraft(e.target.value)}
-            className="w-full border border-outline-variant/20 bg-transparent p-3 text-sm text-white placeholder:text-outline focus:border-primary focus:outline-none"
+            className="min-h-0 border border-outline-variant/20 px-3 py-3 placeholder:text-outline focus-visible:border-primary"
             placeholder="Add a note…"
             disabled={busy}
           />
-          <button
-            type="submit"
-            disabled={busy || !noteDraft.trim()}
-            className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-          >
+          <Button type="submit" disabled={busy || !noteDraft.trim()}>
             Save note
-          </button>
+          </Button>
         </form>
       </div>
     </div>

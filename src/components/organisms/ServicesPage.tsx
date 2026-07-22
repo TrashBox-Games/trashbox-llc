@@ -3,6 +3,7 @@
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Reveal } from "@/components/atoms/Reveal";
+import { Button } from "@/components/ui/button";
 import { ContactForm } from "@/components/organisms/ContactForm";
 import { useHashScroll } from "@/hooks/use-hash-scroll";
 
@@ -70,16 +71,17 @@ export function ServicesPage() {
             </p>
           </div>
           <div className="mt-8">
-            <button
+            <Button
               type="button"
-              className="group flex items-center gap-2 font-label text-xs tracking-widest text-primary uppercase"
+              variant="ghost"
+              className="group gap-2 text-primary"
             >
               Explore Stack
               <MaterialIcon
                 name="arrow_forward"
                 className="transition-transform group-hover:translate-x-1"
               />
-            </button>
+            </Button>
           </div>
         </Reveal>
 

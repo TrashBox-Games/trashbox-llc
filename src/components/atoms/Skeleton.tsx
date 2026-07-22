@@ -1,18 +1,11 @@
+import { Skeleton as UiSkeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type SkeletonProps = {
   className?: string;
 };
 
-/** Pulse placeholder for loading states. */
+/** Pulse placeholder for loading states. Thin atom wrapper over shadcn Skeleton. */
 export function Skeleton({ className }: SkeletonProps) {
-  return (
-    <div
-      aria-hidden
-      className={cn(
-        "animate-pulse rounded-sm bg-surface-container-high/80",
-        className,
-      )}
-    />
-  );
+  return <UiSkeleton className={cn(className)} />;
 }

@@ -1,16 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type {
   MailboxStatusResponse,
   PatchMailboxInput,
 } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
-
-const labelClass =
-  "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
-const inputClass =
-  "w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white placeholder:text-outline focus:border-primary focus:outline-none";
 
 export interface SendingPreferencesSettingsProps {
   canManage?: boolean;
@@ -37,7 +35,7 @@ export function SendingPreferencesSettings({
   return (
     <div className="space-y-8 border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
       <div>
-        <p className={labelClass}>Sender Display Names</p>
+        <Label>Sender Display Names</Label>
         <p className="mt-2 max-w-2xl text-sm text-on-surface-variant">
           Create the Sender Display Names your team can use when replying to
           leads (for example Sales Team or Support). These are not separate
@@ -72,7 +70,7 @@ export function SendingPreferencesSettings({
 
       {canManage ? (
         <div>
-          <p className={labelClass}>Catalog</p>
+          <Label>Catalog</Label>
           <ul className="mt-4 space-y-2">
             {identities.length === 0 && (
               <li className="text-sm text-on-surface-variant">
@@ -86,15 +84,16 @@ export function SendingPreferencesSettings({
               >
                 {editingId === identity.id ? (
                   <>
-                    <input
+                    <Input
                       aria-label={`Rename ${identity.name}`}
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
-                      className={`${inputClass} max-w-xs`}
+                      className="max-w-xs py-2"
                       disabled={busy}
                     />
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
                       disabled={busy || !editingName.trim()}
                       onClick={() =>
                         void onPatch({
@@ -106,38 +105,41 @@ export function SendingPreferencesSettings({
                           setEditingName("");
                         })
                       }
-                      className="font-label text-[10px] uppercase tracking-widest text-white"
+                      className="h-auto px-0 py-0 font-label text-[10px] text-white"
                     >
                       Save
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="link"
                       disabled={busy}
                       onClick={() => {
                         setEditingId(null);
                         setEditingName("");
                       }}
-                      className="font-label text-[10px] uppercase tracking-widest text-outline"
+                      className="h-auto px-0 py-0 font-label text-[10px]"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </>
                 ) : (
                   <>
                     <span className="text-sm text-white">{identity.name}</span>
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
                       disabled={busy}
                       onClick={() => {
                         setEditingId(identity.id);
                         setEditingName(identity.name);
                       }}
-                      className="font-label text-[10px] uppercase tracking-widest text-outline hover:text-white"
+                      className="h-auto px-0 py-0 font-label text-[10px]"
                     >
                       Rename
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="ghost"
                       disabled={busy}
                       onClick={() =>
                         void onPatch({
@@ -145,10 +147,10 @@ export function SendingPreferencesSettings({
                           id: identity.id,
                         })
                       }
-                      className="font-label text-[10px] uppercase tracking-widest text-error"
+                      className="h-auto px-0 py-0 font-label text-[10px] text-error hover:text-error"
                     >
                       Remove
-                    </button>
+                    </Button>
                   </>
                 )}
               </li>
@@ -166,26 +168,20 @@ export function SendingPreferencesSettings({
             }}
           >
             <div className="min-w-[12rem] flex-1">
-              <label className={labelClass} htmlFor="new-sender-name">
-                New Sender Display Name
-              </label>
-              <input
+              <Label htmlFor="new-sender-name">New Sender Display Name</Label>
+              <Input
                 id="new-sender-name"
                 value={nameDraft}
                 onChange={(e) => setNameDraft(e.target.value)}
-                className={inputClass}
+                className="py-2"
                 placeholder="Sales Team"
                 disabled={busy}
                 maxLength={100}
               />
             </div>
-            <button
-              type="submit"
-              disabled={busy || !nameDraft.trim()}
-              className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-            >
+            <Button type="submit" disabled={busy || !nameDraft.trim()}>
               Add Name
-            </button>
+            </Button>
           </form>
         </div>
       ) : (

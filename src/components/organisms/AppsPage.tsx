@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Reveal } from "@/components/atoms/Reveal";
+import { Button } from "@/components/ui/button";
 
 const cards = [
   {
@@ -69,15 +70,27 @@ export function AppsPage() {
           </div>
           <div className="flex items-center gap-4 font-headline text-xs tracking-widest text-outline uppercase">
             <span>Filter:</span>
-            <button type="button" className="border-b border-primary pb-1 text-primary">
+            <Button
+              type="button"
+              variant="ghost"
+              className="border-b border-primary pb-1 text-primary hover:text-primary"
+            >
               All Projects
-            </button>
-            <button type="button" className="transition-colors hover:text-primary">
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-outline hover:text-primary"
+            >
               iOS
-            </button>
-            <button type="button" className="transition-colors hover:text-primary">
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-outline hover:text-primary"
+            >
               Android
-            </button>
+            </Button>
           </div>
         </FadeIn>
       </header>
@@ -144,18 +157,12 @@ export function AppsPage() {
           We partner with select founders to translate complex ideas into kinetic mobile experiences.
         </p>
         <div className="flex flex-col justify-center gap-4 md:flex-row">
-          <Link
-            href="/services#contact"
-            className="bg-primary px-12 py-4 font-headline text-sm font-bold tracking-widest text-on-primary uppercase transition-transform active:scale-95"
-          >
-            Start a Project
-          </Link>
-          <Link
-            href="/services"
-            className="border border-outline-variant px-12 py-4 font-headline text-sm font-bold tracking-widest text-primary uppercase transition-colors hover:bg-white/5"
-          >
-            View Services
-          </Link>
+          <Button asChild size="lg" className="active:scale-95">
+            <Link href="/services#contact">Start a Project</Link>
+          </Button>
+          <Button asChild variant="outline" size="lg">
+            <Link href="/services">View Services</Link>
+          </Button>
         </div>
       </Reveal>
     </div>

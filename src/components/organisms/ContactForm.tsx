@@ -3,14 +3,34 @@
 import { type FormEvent, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { Reveal } from "@/components/atoms/Reveal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { submitContactForm } from "@/lib/contact-form";
 
-const fieldClass =
-  "w-full border-0 border-b border-outline-variant bg-transparent py-4 text-white placeholder:text-outline-variant/50 focus:border-primary focus:ring-0 focus:outline-none";
+const SERVICE_NONE = "__none__";
+
+const SERVICE_OPTIONS = [
+  "App Design",
+  "Full-Stack Development",
+  "AI Integration",
+  "General Inquiry",
+] as const;
 
 export function ContactForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [service, setService] = useState(SERVICE_NONE);
+
+  const serviceValue = service === SERVICE_NONE ? "" : service;
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,7 +40,7 @@ export function ContactForm() {
     const data = new FormData(form);
     const name = String(data.get("name") || "").trim();
     const email = String(data.get("email") || "").trim();
-    const service = String(data.get("service") || "").trim();
+    const selectedService = String(data.get("service") || "").trim();
     const message = String(data.get("message") || "").trim();
     const honeypot = String(data.get("_honeypot") || "");
 
@@ -39,13 +59,14 @@ export function ContactForm() {
     const result = await submitContactForm({
       name,
       email,
-      message: service ? `[${service}]\n\n${message}` : message,
-      metadata: service ? { service } : undefined,
+      message: selectedService ? `[${selectedService}]\n\n${message}` : message,
+      metadata: selectedService ? { service: selectedService } : undefined,
     });
 
     if (result.success) {
       setStatus("sent");
       form.reset();
+      setService(SERVICE_NONE);
     } else {
       setStatus("error");
       setErrorMessage(result.message);
@@ -75,58 +96,56 @@ export function ContactForm() {
           />
           <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
             <div>
-              <label className="mb-2 block font-label text-[10px] tracking-widest text-outline uppercase">
-                Client Identity
-              </label>
-              <input
+              <Label htmlFor="contact-name">Client Identity</Label>
+              <Input
+                id="contact-name"
                 name="name"
                 placeholder="Your Name"
                 type="text"
                 required
-                className={fieldClass}
               />
             </div>
             <div>
-              <label className="mb-2 block font-label text-[10px] tracking-widest text-outline uppercase">
-                Transmission Endpoint
-              </label>
-              <input
+              <Label htmlFor="contact-email">Transmission Endpoint</Label>
+              <Input
+                id="contact-email"
                 name="email"
                 placeholder="Email Address"
                 type="email"
                 required
-                className={fieldClass}
               />
             </div>
           </div>
           <div>
-            <label className="mb-2 block font-label text-[10px] tracking-widest text-outline uppercase">
-              Project Objective
-            </label>
-            <select
-              name="service"
-              className="w-full appearance-none border-0 border-b border-outline-variant bg-transparent py-4 text-white focus:border-primary focus:ring-0 focus:outline-none"
-              defaultValue=""
+            <Label htmlFor="contact-service">Project Objective</Label>
+            <input type="hidden" name="service" value={serviceValue} />
+            <Select
+              value={service}
+              onValueChange={setService}
             >
-              <option value="" disabled className="bg-surface-container">
-                Select Service Area
-              </option>
-              <option className="bg-surface-container">App Design</option>
-              <option className="bg-surface-container">Full-Stack Development</option>
-              <option className="bg-surface-container">AI Integration</option>
-              <option className="bg-surface-container">General Inquiry</option>
-            </select>
+              <SelectTrigger id="contact-service" aria-label="Project Objective" className="py-4">
+                <SelectValue placeholder="Select Service Area" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={SERVICE_NONE} disabled className="hidden">
+                  Select Service Area
+                </SelectItem>
+                {SERVICE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
-            <label className="mb-2 block font-label text-[10px] tracking-widest text-outline uppercase">
-              Manifesto / Brief
-            </label>
-            <textarea
+            <Label htmlFor="contact-message">Manifesto / Brief</Label>
+            <Textarea
+              id="contact-message"
               name="message"
               placeholder="Tell us about the monolith you want to build..."
               rows={4}
               required
-              className={`${fieldClass} resize-none`}
             />
           </div>
           {status === "sent" && (
@@ -138,13 +157,9 @@ export function ContactForm() {
             <p className="text-sm text-red-300">{errorMessage}</p>
           )}
           <div className="pt-8">
-            <button
-              type="submit"
-              disabled={status === "sending"}
-              className="w-full bg-primary py-6 font-headline font-bold tracking-[0.3em] text-on-primary uppercase transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
-            >
+            <Button type="submit" size="xl" disabled={status === "sending"}>
               {status === "sending" ? "Sending…" : "Send Transmission"}
-            </button>
+            </Button>
           </div>
         </form>
       </FadeIn>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { Button } from "@/components/ui/button";
 import {
   PORTAL_SETTINGS_NAV,
   getSettingsSection,
@@ -59,15 +60,16 @@ export function SettingsSidebar() {
 
         return (
           <div key={group.id}>
-            <button
+            <Button
               type="button"
+              variant="ghost"
               aria-expanded={open}
               aria-controls={panelId}
               onClick={() => toggleGroup(group.id)}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium transition-colors duration-150",
+                "h-auto w-full justify-start gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium normal-case tracking-normal",
                 open || activeGroupId === group.id
-                  ? "text-white"
+                  ? "text-white hover:text-white"
                   : "text-on-surface-variant hover:bg-surface-container-high hover:text-white",
               )}
             >
@@ -83,7 +85,7 @@ export function SettingsSidebar() {
                   open && "rotate-180",
                 )}
               />
-            </button>
+            </Button>
 
             <div
               id={panelId}

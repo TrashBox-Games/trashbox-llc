@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { gsap } from "@/lib/gsap-client";
 
@@ -102,15 +103,14 @@ export function SiteHeader() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/services#contact"
-              className="hidden bg-primary px-5 py-2 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80 active:scale-95 md:inline-block"
-            >
-              Contact
-            </Link>
-            <button
+            <Button asChild className="hidden active:scale-95 md:inline-flex">
+              <Link href="/services#contact">Contact</Link>
+            </Button>
+            <Button
               type="button"
-              className="font-headline text-xs font-bold uppercase text-white md:hidden"
+              variant="ghost"
+              size="icon"
+              className="text-white md:hidden"
               aria-expanded={open}
               aria-label={open ? "Close menu" : "Open menu"}
               onClick={() => setOpen((v) => !v)}
@@ -119,7 +119,7 @@ export function SiteHeader() {
                 name={open ? "close" : "menu"}
                 className="text-[1.5rem]!"
               />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -144,13 +144,11 @@ export function SiteHeader() {
             >
               About
             </Link>
-            <Link
-              href="/services#contact"
-              className="mt-4 bg-primary px-6 py-3 text-center font-headline text-xs font-bold uppercase tracking-widest text-on-primary"
-              onClick={() => setOpen(false)}
-            >
-              Contact
-            </Link>
+            <Button asChild className="mt-4">
+              <Link href="/services#contact" onClick={() => setOpen(false)}>
+                Contact
+              </Link>
+            </Button>
           </div>
         </div>
       )}

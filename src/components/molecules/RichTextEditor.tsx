@@ -7,6 +7,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface RichTextValue {
@@ -112,19 +113,21 @@ export function RichTextEditor({
             )}
           >
             {group.map((button) => (
-              <button
+              <Button
                 key={button.command}
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 aria-label={button.label}
                 title={button.label}
                 disabled={disabled}
                 // Keep the editor selection when clicking a toolbar button.
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => runCommand(button)}
-                className="rounded p-1.5 text-outline transition-colors hover:bg-surface-variant hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded text-outline hover:bg-surface-variant hover:text-white"
               >
                 <MaterialIcon name={button.icon} className="text-lg" />
-              </button>
+              </Button>
             ))}
           </div>
         ))}

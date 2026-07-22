@@ -1,6 +1,8 @@
 "use client";
 
 import { Select } from "@/components/atoms/Select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   LEAD_STATUSES,
   LEAD_STATUS_DOT_CLASS,
@@ -13,8 +15,6 @@ import {
   type TeamMember,
 } from "@/lib/api";
 
-const inputClass =
-  "w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white placeholder:text-outline focus:border-primary focus:outline-none";
 const labelClass =
   "mb-1 block font-label text-[10px] uppercase tracking-widest text-outline";
 
@@ -50,12 +50,12 @@ export function LeadInboxFilters({
         <label className={labelClass} htmlFor="lead-search">
           Search
         </label>
-        <input
+        <Input
           id="lead-search"
           type="search"
           value={value.q}
           onChange={(e) => onChange({ ...value, q: e.target.value })}
-          className={`${inputClass} search-clear-muted`}
+          className="search-clear-muted py-2 placeholder:text-outline"
           placeholder="Name, email, or message"
         />
       </div>
@@ -122,12 +122,13 @@ export function LeadInboxFilters({
         />
       </div>
       <div className="md:col-span-4">
-        <button
+        <Button
           type="submit"
-          className="rounded bg-surface-container-highest px-6 py-3 font-label text-xs uppercase tracking-widest text-white shadow-sm transition-colors hover:bg-surface-variant"
+          variant="secondary"
+          className="rounded bg-surface-container-highest font-label font-medium text-white shadow-sm hover:bg-surface-variant"
         >
           Apply filters
-        </button>
+        </Button>
       </div>
     </form>
   );

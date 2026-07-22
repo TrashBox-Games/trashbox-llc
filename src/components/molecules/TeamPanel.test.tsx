@@ -1,8 +1,17 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ClientRole, TeamMember } from "@/lib/api";
 import { TeamPanel } from "./TeamPanel";
+
+/** Drive Radix Select via its hidden native <select> (jsdom cannot open the portal). */
+function selectOption(combobox: HTMLElement, value: string) {
+  const native = combobox.parentElement?.querySelector("select");
+  if (!native) {
+    throw new Error("Expected Radix Select to render a native <select>");
+  }
+  fireEvent.change(native, { target: { value } });
+}
 
 const systemRoles: ClientRole[] = [
   {
@@ -102,7 +111,7 @@ describe("TeamPanel", () => {
     await user.type(screen.getByLabelText(/^email$/i), "new@example.com");
     await user.type(screen.getByLabelText(/first name/i), "New");
     await user.type(screen.getByLabelText(/last name/i), "Hire");
-    await user.selectOptions(screen.getByLabelText(/^role$/i), "admin");
+    selectOption(screen.getByRole("combobox", { name: /^role$/i }), "admin");
     await user.click(screen.getByRole("button", { name: /send invite/i }));
 
     expect(onInvite).toHaveBeenCalledWith({
@@ -130,8 +139,8 @@ describe("TeamPanel", () => {
     const editButtons = screen.getAllByRole("button", { name: /edit profile/i });
     await user.click(editButtons[1]!);
     await user.click(screen.getByRole("checkbox", { name: /Support/i }));
-    await user.selectOptions(
-      screen.getByLabelText(/Default Sender Display Name/i),
+    selectOption(
+      screen.getByRole("combobox", { name: /Default Sender Display Name/i }),
       "s2",
     );
     await user.click(screen.getByRole("button", { name: /^save$/i }));

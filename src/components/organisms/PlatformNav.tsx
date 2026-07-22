@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PLATFORM_BASE, PLATFORM_PATHS, PORTAL_PATHS } from "@/lib/sites";
 
@@ -47,12 +48,9 @@ export function PlatformNav() {
           </Link>
         ))}
       </nav>
-      <Link
-        href={PORTAL_PATHS.login}
-        className="bg-primary px-5 py-2.5 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80"
-      >
-        Login
-      </Link>
+      <Button asChild>
+        <Link href={PORTAL_PATHS.login}>Login</Link>
+      </Button>
     </div>
   );
 }

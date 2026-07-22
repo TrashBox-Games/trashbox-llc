@@ -6,19 +6,16 @@ import { LeadDetail } from "@/components/molecules/LeadDetail";
 import { LeadInboxCard } from "@/components/molecules/LeadInboxCard";
 import { LeadInboxFilters } from "@/components/molecules/LeadInboxFilters";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { leadStatusOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usePortal, type PortalTab } from "@/lib/portal";
 import { PORTAL_PATHS } from "@/lib/sites";
+import { cn } from "@/lib/utils";
 
 type AuthMode = "signIn" | "signUp" | "confirm";
-
-const inputClass =
-  "w-full border-0 border-b border-outline-variant bg-transparent py-4 text-white placeholder:text-outline-variant/50 focus:border-primary focus:ring-0 focus:outline-none";
-const labelClass =
-  "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
-const btnClass =
-  "w-full bg-primary px-6 py-4 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80 disabled:opacity-40";
 
 function redirect(path: string) {
   window.location.assign(path);
@@ -106,45 +103,41 @@ export function PortalLoginPage() {
                 ["confirm", "Confirm"],
               ] as const
             ).map(([id, label]) => (
-              <button
+              <Button
                 key={id}
                 type="button"
-                className={[
-                  "font-label text-[10px] uppercase tracking-widest transition-colors",
+                variant="ghost"
+                className={cn(
+                  "h-auto px-0 py-0 font-label text-[10px] tracking-widest",
                   mode === id ? "text-white" : "text-outline hover:text-white",
-                ].join(" ")}
+                )}
                 onClick={() => {
                   setMode(id);
                   setAuthError(null);
                 }}
               >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
 
           <div>
-            <label className={labelClass} htmlFor="portal-email">
-              Email
-            </label>
-            <input
+            <Label htmlFor="portal-email">Email</Label>
+            <Input
               id="portal-email"
               type="email"
               autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
               placeholder="owner@business.com"
             />
           </div>
 
           {mode !== "confirm" && (
             <div>
-              <label className={labelClass} htmlFor="portal-password">
-                Password
-              </label>
-              <input
+              <Label htmlFor="portal-password">Password</Label>
+              <Input
                 id="portal-password"
                 type="password"
                 autoComplete={mode === "signIn" ? "current-password" : "new-password"}
@@ -152,7 +145,6 @@ export function PortalLoginPage() {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={inputClass}
                 placeholder="••••••••"
               />
             </div>
@@ -160,10 +152,8 @@ export function PortalLoginPage() {
 
           {mode === "signUp" && (
             <div>
-              <label className={labelClass} htmlFor="portal-confirm-password">
-                Confirm password
-              </label>
-              <input
+              <Label htmlFor="portal-confirm-password">Confirm password</Label>
+              <Input
                 id="portal-confirm-password"
                 type="password"
                 autoComplete="new-password"
@@ -171,7 +161,6 @@ export function PortalLoginPage() {
                 minLength={8}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className={inputClass}
                 placeholder="••••••••"
               />
             </div>
@@ -179,21 +168,19 @@ export function PortalLoginPage() {
 
           {mode === "confirm" && (
             <div>
-              <label className={labelClass} htmlFor="portal-code">
-                Verification code
-              </label>
-              <input
+              <Label htmlFor="portal-code">Verification code</Label>
+              <Input
                 id="portal-code"
                 type="text"
                 required
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className={inputClass}
                 placeholder="123456"
               />
-              <button
+              <Button
                 type="button"
-                className="mt-4 font-label text-[10px] uppercase tracking-widest text-outline hover:text-white"
+                variant="link"
+                className="mt-4 h-auto px-0 py-0 font-label text-[10px]"
                 onClick={async () => {
                   setAuthError(null);
                   try {
@@ -206,13 +193,13 @@ export function PortalLoginPage() {
                 }}
               >
                 Resend code
-              </button>
+              </Button>
             </div>
           )}
 
           {authError && <p className="text-sm text-red-300">{authError}</p>}
 
-          <button type="submit" className={btnClass} disabled={authBusy}>
+          <Button type="submit" size="lg" className="w-full" disabled={authBusy}>
             {authBusy
               ? "Working…"
               : mode === "signIn"
@@ -220,7 +207,7 @@ export function PortalLoginPage() {
                 : mode === "signUp"
                   ? "Create account"
                   : "Confirm & sign in"}
-          </button>
+          </Button>
         </form>
       </FadeIn>
       )}
@@ -333,28 +320,24 @@ export function PortalApp({ tab }: PortalAppProps) {
             (no payment required). You can add a paid plan anytime after.
           </p>
           <div className="mt-8 max-w-md">
-            <label className={labelClass} htmlFor="business-name">
-              Business name
-            </label>
-            <input
+            <Label htmlFor="business-name">Business name</Label>
+            <Input
               id="business-name"
               type="text"
               required
               value={portal.businessName}
               onChange={(e) => portal.setBusinessName(e.target.value)}
-              className={inputClass}
               placeholder="Acme Inspections"
             />
           </div>
           <div className="mt-6">
-            <button
+            <Button
               type="button"
-              className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
               disabled={portal.billingBusy || !portal.businessName.trim()}
               onClick={() => void portal.onProvisionAccount()}
             >
               {portal.billingBusy ? "Creating…" : "Create account"}
-            </button>
+            </Button>
           </div>
           {portal.billingError && (
             <p className="mt-4 text-sm text-red-300">{portal.billingError}</p>
@@ -386,43 +369,41 @@ export function PortalApp({ tab }: PortalAppProps) {
           <div className="mt-6 flex flex-wrap gap-3">
             {!portal.account.hasBilling && (
               <>
-                <button
+                <Button
                   type="button"
-                  className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
                   disabled={portal.billingBusy}
                   onClick={() => void portal.onUpgrade("premium")}
                 >
                   {portal.billingBusy ? "Redirecting…" : "Add Premium plan"}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="border border-outline-variant/30 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
+                  variant="outline"
                   disabled={portal.billingBusy}
                   onClick={() => void portal.onUpgrade("basic")}
                 >
                   {portal.billingBusy ? "Redirecting…" : "Add Basic plan"}
-                </button>
+                </Button>
               </>
             )}
             {portal.account.hasBilling && portal.account.tier !== "premium" && (
-              <button
+              <Button
                 type="button"
-                className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
                 disabled={portal.billingBusy}
                 onClick={() => void portal.onUpgrade("premium")}
               >
                 {portal.billingBusy ? "Redirecting…" : "Upgrade to Premium"}
-              </button>
+              </Button>
             )}
             {portal.account.hasBilling && (
-              <button
+              <Button
                 type="button"
-                className="border border-outline-variant/30 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
+                variant="outline"
                 disabled={portal.billingBusy}
                 onClick={() => void portal.onManageBilling()}
               >
                 {portal.billingBusy ? "Redirecting…" : "Manage subscription"}
-              </button>
+              </Button>
             )}
           </div>
           {portal.billingError && (
@@ -518,14 +499,15 @@ export function PortalApp({ tab }: PortalAppProps) {
           )}
 
           {portal.nextCursor && (
-            <button
+            <Button
               type="button"
-              className={btnClass + " max-w-xs"}
+              size="lg"
+              className="max-w-xs"
               disabled={portal.listBusy}
               onClick={() => void portal.loadMore()}
             >
               {portal.listBusy ? "Loading…" : "Load more"}
-            </button>
+            </Button>
           )}
         </>
       )}

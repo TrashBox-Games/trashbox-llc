@@ -149,8 +149,13 @@ describe("RolesPermissionsSettings", () => {
     const checkboxes = screen.getAllByRole("checkbox", {
       name: /Manage API Keys/i,
     });
-    expect(checkboxes.every((box) => (box as HTMLInputElement).disabled)).toBe(
-      true,
-    );
+    expect(
+      checkboxes.every(
+        (box) =>
+          box.hasAttribute("disabled") ||
+          box.getAttribute("aria-disabled") === "true" ||
+          box.getAttribute("data-disabled") !== null,
+      ),
+    ).toBe(true);
   });
 });

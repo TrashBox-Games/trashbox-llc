@@ -1,6 +1,10 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   PERMISSION_LABELS,
   PERMISSIONS,
@@ -9,11 +13,6 @@ import {
   type Permission,
   type UpdateTeamRoleInput,
 } from "@/lib/api";
-
-const labelClass =
-  "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
-const inputClass =
-  "w-full border-0 border-b border-outline-variant bg-transparent py-4 text-white placeholder:text-outline-variant/50 focus:border-primary focus:ring-0 focus:outline-none";
 
 export interface RolesPermissionsSettingsProps {
   roles: ClientRole[];
@@ -91,33 +90,43 @@ export function RolesPermissionsSettings({
                 </p>
               </div>
               {canManage && !role.system && (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   disabled={busy}
                   aria-label={`Delete ${role.name}`}
-                  className="font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white disabled:opacity-40"
                   onClick={() => void onDeleteRole(role.id)}
                 >
                   Delete
-                </button>
+                </Button>
               )}
             </div>
 
             <ul className="mt-6 space-y-3">
-              {PERMISSIONS.map((permission) => (
-                <li key={permission}>
-                  <label className="flex cursor-pointer items-center gap-3 text-sm text-white">
-                    <input
-                      type="checkbox"
-                      aria-label={PERMISSION_LABELS[permission]}
-                      checked={role.permissions.includes(permission)}
-                      disabled={!canManage || busy}
-                      onChange={() => togglePermission(role, permission)}
-                    />
-                    {PERMISSION_LABELS[permission]}
-                  </label>
-                </li>
-              ))}
+              {PERMISSIONS.map((permission) => {
+                const checkboxId = `perm-${role.id}-${permission}`;
+                return (
+                  <li key={permission}>
+                    <div className="flex cursor-pointer items-center gap-3 text-sm text-white">
+                      <Checkbox
+                        id={checkboxId}
+                        aria-label={PERMISSION_LABELS[permission]}
+                        checked={role.permissions.includes(permission)}
+                        disabled={!canManage || busy}
+                        onCheckedChange={() =>
+                          togglePermission(role, permission)
+                        }
+                      />
+                      <Label
+                        htmlFor={checkboxId}
+                        className="mb-0 cursor-pointer text-sm font-body tracking-normal text-white normal-case"
+                      >
+                        {PERMISSION_LABELS[permission]}
+                      </Label>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}
@@ -125,32 +134,25 @@ export function RolesPermissionsSettings({
 
       {canManage && (
         <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
-          <p className={labelClass}>Create Custom Role</p>
+          <Label>Create Custom Role</Label>
           <form
             className="mt-4 flex max-w-md flex-wrap items-end gap-3"
             onSubmit={(e) => void onSubmitCreate(e)}
           >
             <div className="min-w-[12rem] flex-1">
-              <label className={labelClass} htmlFor="new-role-name">
-                New Role Name
-              </label>
-              <input
+              <Label htmlFor="new-role-name">New Role Name</Label>
+              <Input
                 id="new-role-name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                className={inputClass}
                 placeholder="Support"
                 disabled={busy}
                 maxLength={80}
               />
             </div>
-            <button
-              type="submit"
-              disabled={busy || !newName.trim()}
-              className="bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-            >
+            <Button type="submit" disabled={busy || !newName.trim()}>
               Create Role
-            </button>
+            </Button>
           </form>
         </section>
       )}
