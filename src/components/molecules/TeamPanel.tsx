@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 import type {
+  ClientRole,
   CreateTeamInviteInput,
   FromIdentity,
   TeamInvite,
@@ -9,7 +10,7 @@ import type {
   TeamRole,
   UpdateTeamMemberInput,
 } from "@/lib/api";
-import { teamMemberDisplayName } from "@/lib/api";
+import { hasPermission, teamMemberDisplayName } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
 
 const inputClass =
@@ -22,6 +23,8 @@ export interface TeamPanelProps {
   currentUserEmail?: string;
   members: TeamMember[];
   invites: TeamInvite[];
+  roles?: ClientRole[];
+  canManageTeamMembers?: boolean;
   senderDisplayNames?: FromIdentity[];
   memberLimit: number;
   memberCount: number;
@@ -38,8 +41,33 @@ export interface TeamPanelProps {
   ) => Promise<void>;
 }
 
-function canManageTeam(role: TeamRole): boolean {
-  return role === "owner" || role === "admin";
+function resolveMemberRoleId(member: TeamMember): string | null {
+  if (member.role === "owner") return null;
+  if (member.roleId?.trim()) return member.roleId.trim();
+  if (member.role === "admin" || member.role === "member") return member.role;
+  return "member";
+}
+
+function roleLabel(
+  member: TeamMember,
+  roles: ClientRole[],
+): string {
+  if (member.role === "owner") return "Owner";
+  const roleId = resolveMemberRoleId(member);
+  const found = roleId ? roles.find((r) => r.id === roleId) : undefined;
+  return found?.name ?? member.role;
+}
+
+function memberAllowsAllSenderNames(
+  member: TeamMember,
+  roles: ClientRole[],
+): boolean {
+  if (member.role === "owner") return true;
+  const roleId = resolveMemberRoleId(member);
+  if (!roleId) return false;
+  const found = roles.find((r) => r.id === roleId);
+  if (!found) return roleId === "admin";
+  return hasPermission(found.permissions, "allow_all_sender_display_names");
 }
 
 export function TeamPanel({
@@ -47,6 +75,8 @@ export function TeamPanel({
   currentUserEmail,
   members,
   invites,
+  roles = [],
+  canManageTeamMembers,
   senderDisplayNames = [],
   memberLimit,
   memberCount,
@@ -63,16 +93,20 @@ export function TeamPanel({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [inviteAsAdmin, setInviteAsAdmin] = useState(false);
+  const [inviteRoleId, setInviteRoleId] = useState(
+    () => roles.find((r) => r.id === "member")?.id ?? roles[0]?.id ?? "member",
+  );
   const [editingEmail, setEditingEmail] = useState<string | null>(null);
   const [editFirst, setEditFirst] = useState("");
   const [editLast, setEditLast] = useState("");
   const [editAllowedIds, setEditAllowedIds] = useState<string[]>([]);
   const [editDefaultId, setEditDefaultId] = useState("");
   const isOwner = role === "owner";
-  const canManage = canManageTeam(role);
+  const canManage =
+    canManageTeamMembers ?? (role === "owner" || role === "admin");
   const atCap = memberCount >= memberLimit;
   const selfEmail = currentUserEmail?.toLowerCase();
+  const assignableRoles = roles.filter((r) => r.id !== "owner");
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -83,19 +117,26 @@ export function TeamPanel({
       ...(firstName.trim() ? { firstName: firstName.trim() } : {}),
       ...(lastName.trim() ? { lastName: lastName.trim() } : {}),
       emailNotifications,
-      ...(isOwner && inviteAsAdmin ? { role: "admin" as const } : {}),
+      ...(inviteRoleId ? { roleId: inviteRoleId } : {}),
     });
     setEmail("");
     setFirstName("");
     setLastName("");
     setEmailNotifications(true);
-    setInviteAsAdmin(false);
+    setInviteRoleId(
+      roles.find((r) => r.id === "member")?.id ?? roles[0]?.id ?? "member",
+    );
   }
 
   function canRemove(member: TeamMember): boolean {
     if (!canManage) return false;
     if (member.role === "owner") return false;
-    if (member.role === "admin" && !isOwner) return false;
+    if (
+      (member.role === "admin" || member.roleId === "admin") &&
+      !isOwner
+    ) {
+      return false;
+    }
     return true;
   }
 
@@ -103,13 +144,35 @@ export function TeamPanel({
     const isSelf = selfEmail === member.email.toLowerCase();
     if (isSelf) return true;
     if (!canManage) return false;
-    if (member.role === "admin" && !isOwner) return false;
+    if (
+      (member.role === "admin" || member.roleId === "admin") &&
+      !isOwner
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  function canAssignRole(member: TeamMember): boolean {
+    if (!canManage) return false;
+    if (member.role === "owner") return false;
+    if (
+      (member.role === "admin" || member.roleId === "admin") &&
+      !isOwner
+    ) {
+      return false;
+    }
     return true;
   }
 
   function canAssignSenderNames(member: TeamMember): boolean {
     if (!canManage) return false;
-    if (member.role === "admin" && !isOwner) return false;
+    if (
+      (member.role === "admin" || member.roleId === "admin") &&
+      !isOwner
+    ) {
+      return false;
+    }
     return true;
   }
 
@@ -143,7 +206,10 @@ export function TeamPanel({
       firstName: editFirst.trim() || null,
       lastName: editLast.trim() || null,
     };
-    if (canAssignSenderNames(member)) {
+    if (
+      canAssignSenderNames(member) &&
+      !memberAllowsAllSenderNames(member, roles)
+    ) {
       patch.allowedFromIdentityIds = editAllowedIds;
       patch.defaultFromIdentityId =
         editDefaultId && editAllowedIds.includes(editDefaultId)
@@ -184,6 +250,8 @@ export function TeamPanel({
             const isSelf = selfEmail === member.email.toLowerCase();
             const editing = editingEmail === member.email;
             const defaultName = defaultLabel(member);
+            const allowsAll = memberAllowsAllSenderNames(member, roles);
+            const memberRoleId = resolveMemberRoleId(member) ?? "";
             return (
               <li
                 key={member.email}
@@ -198,9 +266,16 @@ export function TeamPanel({
                       </p>
                     )}
                     <p className="mt-1 font-label text-[10px] uppercase tracking-widest text-outline">
-                      {member.role}
+                      {member.role === "owner" ? (
+                        <span className="text-primary">Owner</span>
+                      ) : (
+                        roleLabel(member, roles)
+                      )}
                       {member.emailNotifications ? " · emails on" : " · emails off"}
                       {defaultName ? ` · default: ${defaultName}` : ""}
+                      {allowsAll && member.role !== "owner"
+                        ? " · all sender names"
+                        : ""}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
@@ -229,29 +304,27 @@ export function TeamPanel({
                         Edit profile
                       </button>
                     )}
-                    {isOwner && member.role === "member" && (
-                      <button
-                        type="button"
-                        disabled={busy}
-                        className="font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white disabled:opacity-40"
-                        onClick={() =>
-                          void onUpdateMember(member.email, { role: "admin" })
-                        }
-                      >
-                        Make admin
-                      </button>
-                    )}
-                    {isOwner && member.role === "admin" && (
-                      <button
-                        type="button"
-                        disabled={busy}
-                        className="font-headline text-xs uppercase tracking-widest text-white/60 hover:text-white disabled:opacity-40"
-                        onClick={() =>
-                          void onUpdateMember(member.email, { role: "member" })
-                        }
-                      >
-                        Remove admin
-                      </button>
+                    {canAssignRole(member) && assignableRoles.length > 0 && (
+                      <label className="flex items-center gap-2 text-xs text-on-surface-variant">
+                        <span className="sr-only">Role</span>
+                        <select
+                          aria-label={`Role for ${teamMemberDisplayName(member)}`}
+                          value={memberRoleId}
+                          disabled={busy}
+                          className="border-0 border-b border-outline-variant bg-transparent py-1 text-xs uppercase tracking-widest text-white focus:border-primary focus:outline-none"
+                          onChange={(e) =>
+                            void onUpdateMember(member.email, {
+                              roleId: e.target.value,
+                            })
+                          }
+                        >
+                          {assignableRoles.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                     )}
                     {canRemove(member) && !isSelf && (
                       <button
@@ -300,66 +373,82 @@ export function TeamPanel({
                     </div>
                     {canAssignSenderNames(member) && (
                       <div className="md:col-span-2 space-y-4">
-                        <div>
-                          <p className={labelClass}>Allowed Sender Display Names</p>
-                          {senderDisplayNames.length === 0 ? (
-                            <p className="text-sm text-on-surface-variant">
-                              Create names in{" "}
-                              <a
-                                href={settingsSectionPath("sending-preferences")}
-                                className="text-white underline"
+                        {allowsAll ? (
+                          <p className="text-sm text-on-surface-variant">
+                            This member&apos;s role allows all Sender Display
+                            Names. No allow-list is needed.
+                          </p>
+                        ) : (
+                          <>
+                            <div>
+                              <p className={labelClass}>Allowed Sender Display Names</p>
+                              {senderDisplayNames.length === 0 ? (
+                                <p className="text-sm text-on-surface-variant">
+                                  Create names in{" "}
+                                  <a
+                                    href={settingsSectionPath("sending-preferences")}
+                                    className="text-white underline"
+                                  >
+                                    Sending Preferences
+                                  </a>{" "}
+                                  first.
+                                </p>
+                              ) : (
+                                <ul className="mt-2 space-y-2">
+                                  {senderDisplayNames.map((identity) => (
+                                    <li key={identity.id}>
+                                      <label className="flex cursor-pointer items-center gap-3 text-sm text-white">
+                                        <input
+                                          type="checkbox"
+                                          checked={editAllowedIds.includes(
+                                            identity.id,
+                                          )}
+                                          disabled={busy}
+                                          onChange={() =>
+                                            toggleAllowed(identity.id)
+                                          }
+                                        />
+                                        {identity.name}
+                                      </label>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                            <div>
+                              <label
+                                className={labelClass}
+                                htmlFor={`default-${member.email}`}
                               >
-                                Sending Preferences
-                              </a>{" "}
-                              first.
-                            </p>
-                          ) : (
-                            <ul className="mt-2 space-y-2">
-                              {senderDisplayNames.map((identity) => (
-                                <li key={identity.id}>
-                                  <label className="flex cursor-pointer items-center gap-3 text-sm text-white">
-                                    <input
-                                      type="checkbox"
-                                      checked={editAllowedIds.includes(identity.id)}
-                                      disabled={busy}
-                                      onChange={() => toggleAllowed(identity.id)}
-                                    />
-                                    {identity.name}
-                                  </label>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                        <div>
-                          <label
-                            className={labelClass}
-                            htmlFor={`default-${member.email}`}
-                          >
-                            Default Sender Display Name
-                          </label>
-                          <select
-                            id={`default-${member.email}`}
-                            value={editDefaultId}
-                            disabled={busy || editAllowedIds.length === 0}
-                            onChange={(e) => setEditDefaultId(e.target.value)}
-                            className="w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white focus:border-primary focus:outline-none"
-                          >
-                            {editAllowedIds.length === 0 && (
-                              <option value="">None Assigned</option>
-                            )}
-                            {editAllowedIds.map((id) => {
-                              const name =
-                                senderDisplayNames.find((item) => item.id === id)
-                                  ?.name ?? id;
-                              return (
-                                <option key={id} value={id}>
-                                  {name}
-                                </option>
-                              );
-                            })}
-                          </select>
-                        </div>
+                                Default Sender Display Name
+                              </label>
+                              <select
+                                id={`default-${member.email}`}
+                                value={editDefaultId}
+                                disabled={busy || editAllowedIds.length === 0}
+                                onChange={(e) =>
+                                  setEditDefaultId(e.target.value)
+                                }
+                                className="w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white focus:border-primary focus:outline-none"
+                              >
+                                {editAllowedIds.length === 0 && (
+                                  <option value="">None Assigned</option>
+                                )}
+                                {editAllowedIds.map((id) => {
+                                  const name =
+                                    senderDisplayNames.find(
+                                      (item) => item.id === id,
+                                    )?.name ?? id;
+                                  return (
+                                    <option key={id} value={id}>
+                                      {name}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                     <div className="flex gap-3 md:col-span-2">
@@ -458,16 +547,25 @@ export function TeamPanel({
                   />
                   Receive form email notifications
                 </label>
-                {isOwner && (
-                  <label className="flex items-center gap-2 text-sm text-on-surface-variant">
-                    <input
-                      type="checkbox"
-                      checked={inviteAsAdmin}
-                      onChange={(e) => setInviteAsAdmin(e.target.checked)}
+                {assignableRoles.length > 0 && (
+                  <div>
+                    <label className={labelClass} htmlFor="invite-role">
+                      Role
+                    </label>
+                    <select
+                      id="invite-role"
+                      value={inviteRoleId}
+                      onChange={(e) => setInviteRoleId(e.target.value)}
                       disabled={busy}
-                    />
-                    Invite as admin
-                  </label>
+                      className="w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white focus:border-primary focus:outline-none"
+                    >
+                      {assignableRoles.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 )}
                 <button
                   type="submit"
@@ -503,7 +601,11 @@ export function TeamPanel({
                         </p>
                       )}
                       <p className="mt-1 font-label text-[10px] uppercase tracking-widest text-outline">
-                        {invite.role} · invited by {invite.invitedBy}
+                        {invite.roleId
+                          ? roles.find((r) => r.id === invite.roleId)?.name ??
+                            invite.role
+                          : invite.role}{" "}
+                        · invited by {invite.invitedBy}
                       </p>
                     </div>
                     <button

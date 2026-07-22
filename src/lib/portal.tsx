@@ -29,15 +29,18 @@ import {
   updateMailboxSettings,
   updateSubmission,
   type AccountResponse,
+  type ClientRole,
   type LeadMessage,
   type LeadStatus,
   type LeadTag,
   type MailboxProvider,
   type MailboxStatusResponse,
   type PatchMailboxInput,
+  type Permission,
   type Submission,
   type TeamMember,
   type TeamRole,
+  hasPermission as permissionsInclude,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PORTAL_PATHS } from "@/lib/sites";
@@ -110,6 +113,10 @@ export interface PortalContextValue {
   applyFilters: () => void;
   members: TeamMember[];
   teamRole: TeamRole;
+  permissions: Permission[];
+  roles: ClientRole[];
+  isOwner: boolean;
+  hasPermission: (permission: Permission) => boolean;
   mailbox: MailboxStatusResponse | null;
   mailboxBusy: boolean;
   mailboxError: string | null;
@@ -159,6 +166,8 @@ export function PortalProvider({ children }: { children: ReactNode }) {
     useState<LeadInboxFiltersValue>(emptyFilters);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [teamRole, setTeamRole] = useState<TeamRole>("member");
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [roles, setRoles] = useState<ClientRole[]>([]);
   const [mailbox, setMailbox] = useState<MailboxStatusResponse | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
   const [mailboxError, setMailboxError] = useState<string | null>(null);
@@ -218,6 +227,8 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       setBillingError(null);
       setSelectedId(null);
       setMembers([]);
+      setPermissions([]);
+      setRoles([]);
       setReady(false);
       return;
     }
@@ -270,6 +281,8 @@ export function PortalProvider({ children }: { children: ReactNode }) {
           setClientName(null);
           setNextCursor(undefined);
           setMembers([]);
+          setPermissions([]);
+          setRoles([]);
           setMailbox({ connected: false });
           return;
         }
@@ -282,8 +295,14 @@ export function PortalProvider({ children }: { children: ReactNode }) {
           if (cancelled) return;
           setMembers(team.members);
           setTeamRole(team.role);
+          setPermissions(team.permissions ?? []);
+          setRoles(team.roles ?? []);
         } catch {
-          if (!cancelled) setMembers([]);
+          if (!cancelled) {
+            setMembers([]);
+            setPermissions([]);
+            setRoles([]);
+          }
         }
 
         try {
@@ -654,6 +673,12 @@ export function PortalProvider({ children }: { children: ReactNode }) {
   }, [filters]);
 
   const selected = items.find((s) => s.submissionId === selectedId) ?? null;
+  const isOwner = teamRole === "owner";
+  const checkPermission = useCallback(
+    (permission: Permission) =>
+      isOwner || permissionsInclude(permissions, permission),
+    [isOwner, permissions],
+  );
 
   const value = useMemo<PortalContextValue>(
     () => ({
@@ -678,6 +703,10 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       applyFilters,
       members,
       teamRole,
+      permissions,
+      roles,
+      isOwner,
+      hasPermission: checkPermission,
       mailbox,
       mailboxBusy,
       mailboxError,
@@ -715,6 +744,10 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       applyFilters,
       members,
       teamRole,
+      permissions,
+      roles,
+      isOwner,
+      checkPermission,
       mailbox,
       mailboxBusy,
       mailboxError,

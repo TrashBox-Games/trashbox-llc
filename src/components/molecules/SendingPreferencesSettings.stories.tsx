@@ -29,7 +29,7 @@ const meta = {
     ),
   ],
   args: {
-    role: "owner",
+    canManage: true,
     mailbox,
     onPatch: fn().mockResolvedValue(undefined),
   },
@@ -38,11 +38,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const OwnerCatalog: Story = {};
+export const ManagerCatalog: Story = {};
 
-export const MemberReadOnly: Story = {
+export const ReadOnlyCatalog: Story = {
   args: {
-    role: "member",
+    canManage: false,
   },
 };
 

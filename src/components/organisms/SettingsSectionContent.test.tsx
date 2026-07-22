@@ -18,6 +18,37 @@ vi.mock("@/lib/api", async (importOriginal) => {
       clientId: "c1",
       clientName: "Acme",
       role: "owner",
+      permissions: [
+        "manage_sender_display_names",
+        "allow_all_sender_display_names",
+        "manage_team_members",
+        "manage_roles_and_permissions",
+        "manage_api_keys",
+      ],
+      roles: [
+        {
+          id: "admin",
+          name: "Admin",
+          system: true,
+          permissions: [
+            "manage_sender_display_names",
+            "allow_all_sender_display_names",
+            "manage_team_members",
+            "manage_roles_and_permissions",
+            "manage_api_keys",
+          ],
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          id: "member",
+          name: "Member",
+          system: true,
+          permissions: [],
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ],
       members: [
         {
           email: "owner@example.com",
@@ -105,5 +136,18 @@ describe("SettingsSectionContent", () => {
     expect(
       await screen.findByText(/Create the Sender Display Names/i),
     ).toBeInTheDocument();
+  });
+
+  it("renders Roles & Permissions in the roles-permissions section", async () => {
+    render(
+      <PortalProvider>
+        <SettingsSectionContent sectionId="roles-permissions" />
+      </PortalProvider>,
+    );
+
+    expect(
+      await screen.findByText(/Owner has all permissions/i),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Admin")).toBeInTheDocument();
   });
 });

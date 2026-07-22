@@ -7,20 +7,27 @@ import {
   createApiKey,
   deleteApiKey,
   getAccount,
+  getTeam,
+  hasPermission,
   type AccountResponse,
 } from "@/lib/api";
 import { PORTAL_ISSUED_API_KEY_STORAGE } from "@/lib/portal";
 
 export function ApiKeysSettings() {
   const [account, setAccount] = useState<AccountResponse | null>(null);
+  const [canManage, setCanManage] = useState(false);
   const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadAccount = useCallback(async () => {
-    const acct = await getAccount();
+    const [acct, team] = await Promise.all([getAccount(), getTeam()]);
     setAccount(acct);
+    setCanManage(
+      team.role === "owner" ||
+        hasPermission(team.permissions, "manage_api_keys"),
+    );
   }, []);
 
   useEffect(() => {
@@ -103,10 +110,10 @@ export function ApiKeysSettings() {
     );
   }
 
-  if (account?.role === "member") {
+  if (!canManage) {
     return (
       <p className="text-on-surface-variant">
-        Only owners and admins can manage API keys.
+        You need Manage API Keys permission to manage API keys.
       </p>
     );
   }

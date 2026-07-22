@@ -14,11 +14,17 @@ import {
   addSubmissionNote,
   createApiKey,
   createTeamInvite,
+  createTeamRole,
   deleteApiKey,
+  deleteTeamRole,
   getAccount,
   getTeam,
+  getTeamRoles,
+  hasPermission,
   listSubmissions,
+  PERMISSION_LABELS,
   updateSubmission,
+  updateTeamRole,
 } from "./api";
 
 function sessionWithEmailToken() {
@@ -204,6 +210,25 @@ describe("CRM submissions API", () => {
   });
 });
 
+describe("permissions helpers", () => {
+  it("hasPermission checks the caller's permission list", () => {
+    expect(
+      hasPermission(["manage_api_keys"], "manage_api_keys"),
+    ).toBe(true);
+    expect(
+      hasPermission(["manage_api_keys"], "manage_team_members"),
+    ).toBe(false);
+    expect(hasPermission(undefined, "manage_api_keys")).toBe(false);
+  });
+
+  it("PERMISSION_LABELS are Title Case", () => {
+    expect(PERMISSION_LABELS.manage_team_members).toBe("Manage Team Members");
+    expect(PERMISSION_LABELS.manage_roles_and_permissions).toBe(
+      "Manage Roles And Permissions",
+    );
+  });
+});
+
 describe("team API", () => {
   beforeEach(() => {
     vi.mocked(fetchAuthSession).mockResolvedValue(
@@ -220,6 +245,17 @@ describe("team API", () => {
           clientId: "c1",
           clientName: "Acme",
           role: "owner",
+          permissions: ["manage_api_keys", "manage_team_members"],
+          roles: [
+            {
+              id: "admin",
+              name: "Admin",
+              system: true,
+              permissions: ["manage_api_keys"],
+              createdAt: "2026-01-01",
+              updatedAt: "2026-01-01",
+            },
+          ],
           members: [
             {
               email: "owner@example.com",
@@ -238,9 +274,118 @@ describe("team API", () => {
     const team = await getTeam();
     expect(team.role).toBe("owner");
     expect(team.memberLimit).toBe(5);
+    expect(team.permissions).toContain("manage_api_keys");
+    expect(team.roles).toHaveLength(1);
     expect(fetch).toHaveBeenCalledWith(
       "https://api.trashbox.io/team",
       expect.any(Object),
+    );
+  });
+
+  it("getTeamRoles fetches role catalog", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          roles: [
+            {
+              id: "member",
+              name: "Member",
+              system: true,
+              permissions: [],
+              createdAt: "2026-01-01",
+              updatedAt: "2026-01-01",
+            },
+          ],
+          permissions: ["manage_roles_and_permissions"],
+        }),
+      }),
+    );
+
+    const result = await getTeamRoles();
+    expect(result.roles[0]?.id).toBe("member");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.trashbox.io/team/roles",
+      expect.any(Object),
+    );
+  });
+
+  it("createTeamRole POSTs name and permissions", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          role: {
+            id: "r1",
+            name: "Support",
+            system: false,
+            permissions: ["manage_team_members"],
+            createdAt: "2026-01-01",
+            updatedAt: "2026-01-01",
+          },
+        }),
+      }),
+    );
+
+    await createTeamRole({
+      name: "Support",
+      permissions: ["manage_team_members"],
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.trashbox.io/team/roles",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          name: "Support",
+          permissions: ["manage_team_members"],
+        }),
+      }),
+    );
+  });
+
+  it("updateTeamRole PATCHes role", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          role: {
+            id: "r1",
+            name: "Support Lead",
+            system: false,
+            permissions: [],
+            createdAt: "2026-01-01",
+            updatedAt: "2026-01-02",
+          },
+        }),
+      }),
+    );
+
+    await updateTeamRole("r1", { name: "Support Lead", permissions: [] });
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.trashbox.io/team/roles/r1",
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({ name: "Support Lead", permissions: [] }),
+      }),
+    );
+  });
+
+  it("deleteTeamRole DELETEs role", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      }),
+    );
+
+    await deleteTeamRole("r1");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.trashbox.io/team/roles/r1",
+      expect.objectContaining({ method: "DELETE" }),
     );
   });
 
@@ -253,6 +398,7 @@ describe("team API", () => {
           invite: {
             email: "teammate@example.com",
             role: "member",
+            roleId: "member",
             invitedBy: "owner@example.com",
             createdAt: "2026-07-16",
             expiresAt: "2026-07-23",
@@ -267,6 +413,7 @@ describe("team API", () => {
       email: "teammate@example.com",
       name: "Teammate",
       emailNotifications: true,
+      roleId: "member",
     });
     expect(fetch).toHaveBeenCalledWith(
       "https://api.trashbox.io/team/invites",
@@ -276,6 +423,7 @@ describe("team API", () => {
           email: "teammate@example.com",
           name: "Teammate",
           emailNotifications: true,
+          roleId: "member",
         }),
       }),
     );
@@ -290,6 +438,7 @@ describe("team API", () => {
           member: {
             email: "teammate@example.com",
             role: "admin",
+            roleId: "admin",
             joinedAt: "2026-01-01",
             emailNotifications: false,
             name: "Teammate",
@@ -300,7 +449,7 @@ describe("team API", () => {
 
     const { updateTeamMember } = await import("./api");
     await updateTeamMember("teammate@example.com", {
-      role: "admin",
+      roleId: "admin",
       emailNotifications: false,
     });
     expect(fetch).toHaveBeenCalledWith(
@@ -308,7 +457,7 @@ describe("team API", () => {
       expect.objectContaining({
         method: "PATCH",
         body: JSON.stringify({
-          role: "admin",
+          roleId: "admin",
           emailNotifications: false,
         }),
       }),

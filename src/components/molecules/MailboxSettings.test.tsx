@@ -4,13 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import { MailboxSettings } from "./MailboxSettings";
 
 describe("MailboxSettings", () => {
-  it("shows connect buttons for owners when disconnected", async () => {
+  it("shows connect buttons when canManage and disconnected", async () => {
     const user = userEvent.setup();
     const onConnect = vi.fn().mockResolvedValue(undefined);
 
     render(
       <MailboxSettings
-        role="owner"
+        canManage
         mailbox={{ connected: false }}
         onConnect={onConnect}
         onDisconnect={vi.fn()}
@@ -29,10 +29,10 @@ describe("MailboxSettings", () => {
     expect(onConnect).toHaveBeenCalledWith("microsoft");
   });
 
-  it("hides connect for members when disconnected", () => {
+  it("hides connect without manage permission when disconnected", () => {
     render(
       <MailboxSettings
-        role="member"
+        canManage={false}
         mailbox={{ connected: false }}
         onConnect={vi.fn()}
         onDisconnect={vi.fn()}
@@ -43,17 +43,19 @@ describe("MailboxSettings", () => {
     expect(
       screen.queryByRole("button", { name: /connect google workspace/i }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText(/ask an owner or admin/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Manage Email Sender Display Names/i),
+    ).toBeInTheDocument();
   });
 
-  it("shows disconnect and sync when connected for admin", async () => {
+  it("shows disconnect and sync when connected and canManage", async () => {
     const user = userEvent.setup();
     const onDisconnect = vi.fn().mockResolvedValue(undefined);
     const onSync = vi.fn().mockResolvedValue(undefined);
 
     render(
       <MailboxSettings
-        role="admin"
+        canManage
         mailbox={{
           connected: true,
           provider: "gmail",
@@ -77,7 +79,7 @@ describe("MailboxSettings", () => {
   it("links to Sending Preferences for From identity settings", () => {
     render(
       <MailboxSettings
-        role="owner"
+        canManage
         mailbox={{ connected: false }}
         onConnect={vi.fn()}
         onDisconnect={vi.fn()}

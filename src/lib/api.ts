@@ -46,6 +46,41 @@ export const LEAD_TAG_LABELS: Record<LeadTag, string> = {
 
 export type TeamRole = "owner" | "admin" | "member";
 
+export const PERMISSIONS = [
+  "manage_sender_display_names",
+  "allow_all_sender_display_names",
+  "manage_team_members",
+  "manage_roles_and_permissions",
+  "manage_api_keys",
+] as const;
+
+export type Permission = (typeof PERMISSIONS)[number];
+
+export const PERMISSION_LABELS: Record<Permission, string> = {
+  manage_sender_display_names: "Manage Email Sender Display Names",
+  allow_all_sender_display_names: "Allow All Sender Display Names",
+  manage_team_members: "Manage Team Members",
+  manage_roles_and_permissions: "Manage Roles And Permissions",
+  manage_api_keys: "Manage API Keys",
+};
+
+export interface ClientRole {
+  id: string;
+  name: string;
+  system?: boolean;
+  permissions: Permission[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Whether the caller's effective permission list includes `permission`. */
+export function hasPermission(
+  permissions: readonly Permission[] | undefined | null,
+  permission: Permission,
+): boolean {
+  return (permissions ?? []).includes(permission);
+}
+
 export interface SubmissionNote {
   id: string;
   body: string;
@@ -115,6 +150,7 @@ export interface FromIdentityOption {
 export interface TeamMember {
   email: string;
   role: TeamRole;
+  roleId?: string;
   joinedAt: string;
   name?: string;
   firstName?: string;
@@ -127,6 +163,7 @@ export interface TeamMember {
 export interface TeamInvite {
   email: string;
   role: TeamRole;
+  roleId?: string;
   invitedBy: string;
   createdAt: string;
   expiresAt: string;
@@ -140,6 +177,8 @@ export interface TeamResponse {
   clientId: string;
   clientName: string;
   role: TeamRole;
+  permissions: Permission[];
+  roles: ClientRole[];
   members: TeamMember[];
   invites: TeamInvite[];
   memberLimit: number;
@@ -153,6 +192,7 @@ export interface CreateTeamInviteInput {
   lastName?: string;
   emailNotifications?: boolean;
   role?: "member" | "admin";
+  roleId?: string;
 }
 
 export interface UpdateTeamMemberInput {
@@ -161,8 +201,19 @@ export interface UpdateTeamMemberInput {
   lastName?: string | null;
   emailNotifications?: boolean;
   role?: "member" | "admin";
+  roleId?: string;
   allowedFromIdentityIds?: string[] | null;
   defaultFromIdentityId?: string | null;
+}
+
+export interface CreateTeamRoleInput {
+  name: string;
+  permissions?: Permission[];
+}
+
+export interface UpdateTeamRoleInput {
+  name?: string;
+  permissions?: Permission[];
 }
 
 /** Compose a display label from first/last or legacy name. */
@@ -306,6 +357,41 @@ export async function getTeam(): Promise<TeamResponse> {
   return (await authFetch("/team")) as unknown as TeamResponse;
 }
 
+export async function getTeamRoles(): Promise<{
+  roles: ClientRole[];
+  permissions: Permission[];
+}> {
+  return (await authFetch("/team/roles")) as unknown as {
+    roles: ClientRole[];
+    permissions: Permission[];
+  };
+}
+
+export async function createTeamRole(
+  input: CreateTeamRoleInput,
+): Promise<{ role: ClientRole; message?: string }> {
+  return (await authFetch("/team/roles", {
+    method: "POST",
+    body: JSON.stringify(input),
+  })) as unknown as { role: ClientRole; message?: string };
+}
+
+export async function updateTeamRole(
+  roleId: string,
+  patch: UpdateTeamRoleInput,
+): Promise<{ role: ClientRole; message?: string }> {
+  return (await authFetch(`/team/roles/${encodeURIComponent(roleId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  })) as unknown as { role: ClientRole; message?: string };
+}
+
+export async function deleteTeamRole(roleId: string): Promise<void> {
+  await authFetch(`/team/roles/${encodeURIComponent(roleId)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function createTeamInvite(
   input: CreateTeamInviteInput | string,
 ): Promise<{ invite: TeamInvite; message?: string }> {
@@ -315,10 +401,13 @@ export async function createTeamInvite(
       : {
           email: input.email,
           ...(input.name ? { name: input.name } : {}),
+          ...(input.firstName ? { firstName: input.firstName } : {}),
+          ...(input.lastName ? { lastName: input.lastName } : {}),
           ...(typeof input.emailNotifications === "boolean"
             ? { emailNotifications: input.emailNotifications }
             : {}),
           ...(input.role ? { role: input.role } : {}),
+          ...(input.roleId ? { roleId: input.roleId } : {}),
         };
   return (await authFetch("/team/invites", {
     method: "POST",

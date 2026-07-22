@@ -4,7 +4,6 @@ import { useState } from "react";
 import type {
   MailboxStatusResponse,
   PatchMailboxInput,
-  TeamRole,
 } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
 
@@ -13,12 +12,8 @@ const labelClass =
 const inputClass =
   "w-full border-0 border-b border-outline-variant bg-transparent py-2 text-sm text-white placeholder:text-outline focus:border-primary focus:outline-none";
 
-function canManageSending(role: TeamRole): boolean {
-  return role === "owner" || role === "admin";
-}
-
 export interface SendingPreferencesSettingsProps {
-  role: TeamRole;
+  canManage?: boolean;
   mailbox: MailboxStatusResponse | null;
   busy?: boolean;
   error?: string | null;
@@ -27,14 +22,13 @@ export interface SendingPreferencesSettingsProps {
 }
 
 export function SendingPreferencesSettings({
-  role,
+  canManage = false,
   mailbox,
   busy = false,
   error,
   notice,
   onPatch,
 }: SendingPreferencesSettingsProps) {
-  const canManage = canManageSending(role);
   const identities = mailbox?.fromIdentities ?? [];
   const [nameDraft, setNameDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -208,8 +202,8 @@ export function SendingPreferencesSettings({
             </ul>
           )}
           <p className="pt-2">
-            Only owners and admins can manage the catalog. Your allowed names are
-            set under Members.
+            You need Manage Email Sender Display Names to manage the catalog.
+            Your allowed names are set under Members.
           </p>
         </div>
       )}

@@ -8,16 +8,30 @@ vi.mock("@/lib/api", async (importOriginal) => {
   return {
     ...actual,
     getAccount: vi.fn(),
+    getTeam: vi.fn(),
     createApiKey: vi.fn(),
     deleteApiKey: vi.fn(),
   };
 });
 
-import { createApiKey, deleteApiKey, getAccount } from "@/lib/api";
+import { createApiKey, deleteApiKey, getAccount, getTeam } from "@/lib/api";
+
+const ownerTeam = {
+  clientId: "c1",
+  clientName: "Acme",
+  role: "owner" as const,
+  permissions: ["manage_api_keys" as const],
+  roles: [],
+  members: [],
+  invites: [],
+  memberLimit: 5,
+  memberCount: 1,
+};
 
 describe("ApiKeysSettings", () => {
   beforeEach(() => {
     sessionStorage.clear();
+    vi.mocked(getTeam).mockResolvedValue(ownerTeam);
     vi.mocked(getAccount).mockResolvedValue({
       linked: true,
       email: "owner@example.com",
@@ -30,7 +44,7 @@ describe("ApiKeysSettings", () => {
     });
   });
 
-  it("fetches account and lets owners create a key", async () => {
+  it("fetches account and lets managers create a key", async () => {
     vi.mocked(createApiKey).mockResolvedValue({
       apiKey: "fapi_created",
       hasApiKey: true,
@@ -51,7 +65,7 @@ describe("ApiKeysSettings", () => {
     expect(screen.getByRole("heading", { name: /key active/i })).toBeInTheDocument();
   });
 
-  it("lets owners delete an active key after confirm", async () => {
+  it("lets managers delete an active key after confirm", async () => {
     vi.mocked(getAccount).mockResolvedValue({
       linked: true,
       email: "owner@example.com",
@@ -82,7 +96,12 @@ describe("ApiKeysSettings", () => {
     ).toBeInTheDocument();
   });
 
-  it("blocks members from managing keys", async () => {
+  it("blocks users without manage_api_keys", async () => {
+    vi.mocked(getTeam).mockResolvedValue({
+      ...ownerTeam,
+      role: "member",
+      permissions: [],
+    });
     vi.mocked(getAccount).mockResolvedValue({
       linked: true,
       email: "member@example.com",
@@ -93,7 +112,7 @@ describe("ApiKeysSettings", () => {
     render(<ApiKeysSettings />);
 
     expect(
-      await screen.findByText(/only owners and admins can manage api keys/i),
+      await screen.findByText(/You need Manage API Keys permission/i),
     ).toBeInTheDocument();
   });
 });

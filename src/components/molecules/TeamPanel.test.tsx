@@ -1,8 +1,33 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { TeamMember } from "@/lib/api";
+import type { ClientRole, TeamMember } from "@/lib/api";
 import { TeamPanel } from "./TeamPanel";
+
+const systemRoles: ClientRole[] = [
+  {
+    id: "admin",
+    name: "Admin",
+    system: true,
+    permissions: [
+      "manage_sender_display_names",
+      "allow_all_sender_display_names",
+      "manage_team_members",
+      "manage_roles_and_permissions",
+      "manage_api_keys",
+    ],
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "member",
+    name: "Member",
+    system: true,
+    permissions: [],
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  },
+];
 
 const owner: TeamMember = {
   email: "owner@example.com",
@@ -14,12 +39,23 @@ const owner: TeamMember = {
 const member: TeamMember = {
   email: "sarah@example.com",
   role: "member",
+  roleId: "member",
   joinedAt: "2026-02-01T00:00:00.000Z",
   firstName: "Sarah",
   lastName: "Chen",
   emailNotifications: false,
   allowedFromIdentityIds: ["s1"],
   defaultFromIdentityId: "s1",
+};
+
+const adminMember: TeamMember = {
+  email: "admin@example.com",
+  role: "admin",
+  roleId: "admin",
+  joinedAt: "2026-02-01T00:00:00.000Z",
+  firstName: "Alex",
+  lastName: "Admin",
+  emailNotifications: true,
 };
 
 const catalog = [
@@ -35,30 +71,38 @@ const catalog = [
   },
 ];
 
+const defaultProps = {
+  role: "owner" as const,
+  currentUserEmail: "owner@example.com",
+  members: [owner],
+  invites: [],
+  roles: systemRoles,
+  canManageTeamMembers: true,
+  senderDisplayNames: catalog,
+  memberLimit: 5,
+  memberCount: 1,
+  onInvite: vi.fn(),
+  onRevokeInvite: vi.fn(),
+  onRemoveMember: vi.fn(),
+  onUpdateMember: vi.fn(),
+};
+
 describe("TeamPanel", () => {
-  it("invites with first and last name", async () => {
+  it("invites with first and last name and roleId", async () => {
     const user = userEvent.setup();
     const onInvite = vi.fn().mockResolvedValue(undefined);
 
     render(
       <TeamPanel
-        role="owner"
-        currentUserEmail="owner@example.com"
-        members={[owner]}
-        invites={[]}
-        senderDisplayNames={catalog}
-        memberLimit={5}
-        memberCount={1}
+        {...defaultProps}
         onInvite={onInvite}
-        onRevokeInvite={vi.fn()}
-        onRemoveMember={vi.fn()}
-        onUpdateMember={vi.fn()}
       />,
     );
 
     await user.type(screen.getByLabelText(/^email$/i), "new@example.com");
     await user.type(screen.getByLabelText(/first name/i), "New");
     await user.type(screen.getByLabelText(/last name/i), "Hire");
+    await user.selectOptions(screen.getByLabelText(/^role$/i), "admin");
     await user.click(screen.getByRole("button", { name: /send invite/i }));
 
     expect(onInvite).toHaveBeenCalledWith({
@@ -66,6 +110,7 @@ describe("TeamPanel", () => {
       firstName: "New",
       lastName: "Hire",
       emailNotifications: true,
+      roleId: "admin",
     });
   });
 
@@ -75,16 +120,9 @@ describe("TeamPanel", () => {
 
     render(
       <TeamPanel
-        role="owner"
-        currentUserEmail="owner@example.com"
+        {...defaultProps}
         members={[owner, member]}
-        invites={[]}
-        senderDisplayNames={catalog}
-        memberLimit={5}
         memberCount={2}
-        onInvite={vi.fn()}
-        onRevokeInvite={vi.fn()}
-        onRemoveMember={vi.fn()}
         onUpdateMember={onUpdateMember}
       />,
     );
@@ -107,20 +145,52 @@ describe("TeamPanel", () => {
     );
   });
 
+  it("shows a note instead of allow-list when role allows all sender names", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <TeamPanel
+        {...defaultProps}
+        members={[owner, adminMember]}
+        memberCount={2}
+      />,
+    );
+
+    const editButtons = screen.getAllByRole("button", { name: /edit profile/i });
+    await user.click(editButtons[1]!);
+
+    expect(
+      screen.getByText(/allows all Sender Display Names/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Allowed Sender Display Names/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows Owner badge and hides invite when lacking manage_team_members", () => {
+    render(
+      <TeamPanel
+        {...defaultProps}
+        role="member"
+        canManageTeamMembers={false}
+        members={[owner, member]}
+        memberCount={2}
+        currentUserEmail="sarah@example.com"
+      />,
+    );
+
+    expect(screen.getByText("Owner")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /send invite/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows first and last name in the member list", () => {
     render(
       <TeamPanel
-        role="owner"
-        currentUserEmail="owner@example.com"
+        {...defaultProps}
         members={[owner, member]}
-        invites={[]}
-        senderDisplayNames={catalog}
-        memberLimit={5}
         memberCount={2}
-        onInvite={vi.fn()}
-        onRevokeInvite={vi.fn()}
-        onRemoveMember={vi.fn()}
-        onUpdateMember={vi.fn()}
       />,
     );
 

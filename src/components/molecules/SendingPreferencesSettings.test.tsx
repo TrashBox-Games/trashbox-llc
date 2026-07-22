@@ -12,13 +12,13 @@ const mailbox = {
 };
 
 describe("SendingPreferencesSettings", () => {
-  it("lets owners add a Sender Display Name", async () => {
+  it("lets managers add a Sender Display Name", async () => {
     const user = userEvent.setup();
     const onPatch = vi.fn().mockResolvedValue(undefined);
 
     render(
       <SendingPreferencesSettings
-        role="owner"
+        canManage
         mailbox={mailbox}
         onPatch={onPatch}
       />,
@@ -41,7 +41,7 @@ describe("SendingPreferencesSettings", () => {
   it("explains names are not separate email addresses", () => {
     render(
       <SendingPreferencesSettings
-        role="owner"
+        canManage
         mailbox={mailbox}
         onPatch={vi.fn()}
       />,
@@ -52,10 +52,10 @@ describe("SendingPreferencesSettings", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows read-only catalog for members", () => {
+  it("shows read-only catalog without manage permission", () => {
     render(
       <SendingPreferencesSettings
-        role="member"
+        canManage={false}
         mailbox={{
           ...mailbox,
           fromIdentities: [

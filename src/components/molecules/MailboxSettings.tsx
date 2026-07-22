@@ -3,7 +3,6 @@
 import type {
   MailboxProvider,
   MailboxStatusResponse,
-  TeamRole,
 } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
@@ -11,12 +10,8 @@ import { PORTAL_PATHS } from "@/lib/sites";
 const labelClass =
   "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
 
-function canManageMailbox(role: TeamRole): boolean {
-  return role === "owner" || role === "admin";
-}
-
 export interface MailboxSettingsProps {
-  role: TeamRole;
+  canManage?: boolean;
   mailbox: MailboxStatusResponse | null;
   busy?: boolean;
   error?: string | null;
@@ -27,7 +22,7 @@ export interface MailboxSettingsProps {
 }
 
 export function MailboxSettings({
-  role,
+  canManage = false,
   mailbox,
   busy = false,
   error,
@@ -36,7 +31,6 @@ export function MailboxSettings({
   onDisconnect,
   onSync,
 }: MailboxSettingsProps) {
-  const canManage = canManageMailbox(role);
   const connected = Boolean(mailbox?.connected);
 
   return (
@@ -113,7 +107,8 @@ export function MailboxSettings({
 
           {!canManage && (
             <p className="text-sm text-on-surface-variant">
-              Only owners and admins can disconnect or sync the mailbox.
+              You need Manage Email Sender Display Names to disconnect or sync
+              the mailbox.
             </p>
           )}
         </div>
@@ -122,7 +117,7 @@ export function MailboxSettings({
           <p className="text-sm text-on-surface-variant">
             No mailbox connected yet.
             {!canManage &&
-              " Ask an owner or admin to connect one in Settings."}
+              " Ask someone with Manage Email Sender Display Names to connect one in Settings."}
           </p>
           {canManage && (
             <div className="flex flex-wrap gap-3">

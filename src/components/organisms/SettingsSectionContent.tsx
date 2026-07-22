@@ -6,6 +6,7 @@ import { SettingsPlaceholder } from "@/components/molecules/SettingsPlaceholder"
 import { ApiDocsSettings } from "@/components/organisms/ApiDocsSettings";
 import { ApiKeysSettings } from "@/components/organisms/ApiKeysSettings";
 import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
+import { RolesPermissionsSettingsSection } from "@/components/organisms/RolesPermissionsSettingsSection";
 import { TeamMembersSettings } from "@/components/organisms/TeamMembersSettings";
 import { useAuth } from "@/lib/auth";
 import { usePortal } from "@/lib/portal";
@@ -52,7 +53,7 @@ export function SettingsSectionContent({
   if (sectionId === "email-accounts") {
     return (
       <MailboxSettings
-        role={portal.teamRole}
+        canManage={portal.hasPermission("manage_sender_display_names")}
         mailbox={portal.mailbox}
         busy={portal.mailboxBusy}
         error={portal.mailboxError}
@@ -67,7 +68,7 @@ export function SettingsSectionContent({
   if (sectionId === "sending-preferences") {
     return (
       <SendingPreferencesSettings
-        role={portal.teamRole}
+        canManage={portal.hasPermission("manage_sender_display_names")}
         mailbox={portal.mailbox}
         busy={portal.mailboxBusy}
         error={portal.mailboxError}
@@ -84,6 +85,10 @@ export function SettingsSectionContent({
         tier={portal.account.tier}
       />
     );
+  }
+
+  if (sectionId === "roles-permissions") {
+    return <RolesPermissionsSettingsSection />;
   }
 
   if (sectionId === "api-keys") {

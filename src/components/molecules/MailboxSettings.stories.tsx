@@ -28,7 +28,7 @@ const meta = {
     ),
   ],
   args: {
-    role: "owner",
+    canManage: true,
     mailbox: disconnected,
     onConnect: fn().mockResolvedValue(undefined),
     onDisconnect: fn().mockResolvedValue(undefined),
@@ -39,17 +39,16 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const OwnerDisconnected: Story = {};
+export const ManagerDisconnected: Story = {};
 
-export const MemberDisconnected: Story = {
+export const ReadOnlyDisconnected: Story = {
   args: {
-    role: "member",
+    canManage: false,
   },
 };
 
-export const AdminConnected: Story = {
+export const ManagerConnected: Story = {
   args: {
-    role: "admin",
     mailbox: connected,
   },
 };

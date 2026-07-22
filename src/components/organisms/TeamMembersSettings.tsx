@@ -10,7 +10,9 @@ import {
   deleteTeamMember,
   getMailbox,
   getTeam,
+  hasPermission,
   updateTeamMember,
+  type ClientRole,
   type CreateTeamInviteInput,
   type FromIdentity,
   type TeamInvite,
@@ -30,10 +32,12 @@ export function TeamMembersSettings({
 }: TeamMembersSettingsProps) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [invites, setInvites] = useState<TeamInvite[]>([]);
+  const [roles, setRoles] = useState<ClientRole[]>([]);
   const [senderDisplayNames, setSenderDisplayNames] = useState<FromIdentity[]>(
     [],
   );
   const [role, setRole] = useState<TeamRole>("member");
+  const [canManageTeamMembers, setCanManageTeamMembers] = useState(false);
   const [memberLimit, setMemberLimit] = useState(1);
   const [memberCount, setMemberCount] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -45,7 +49,12 @@ export function TeamMembersSettings({
     const [team, mailbox] = await Promise.all([getTeam(), getMailbox()]);
     setMembers(team.members);
     setInvites(team.invites);
+    setRoles(team.roles ?? []);
     setRole(team.role);
+    setCanManageTeamMembers(
+      team.role === "owner" ||
+        hasPermission(team.permissions, "manage_team_members"),
+    );
     setMemberLimit(team.memberLimit);
     setMemberCount(team.memberCount);
     setSenderDisplayNames(mailbox.fromIdentities ?? []);
@@ -159,6 +168,8 @@ export function TeamMembersSettings({
       currentUserEmail={currentUserEmail}
       members={members}
       invites={invites}
+      roles={roles}
+      canManageTeamMembers={canManageTeamMembers}
       senderDisplayNames={senderDisplayNames}
       memberLimit={memberLimit}
       memberCount={memberCount}

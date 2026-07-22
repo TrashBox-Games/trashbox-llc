@@ -26,6 +26,37 @@ describe("TeamMembersSettings", () => {
       clientId: "c1",
       clientName: "Acme",
       role: "owner",
+      permissions: [
+        "manage_sender_display_names",
+        "allow_all_sender_display_names",
+        "manage_team_members",
+        "manage_roles_and_permissions",
+        "manage_api_keys",
+      ],
+      roles: [
+        {
+          id: "admin",
+          name: "Admin",
+          system: true,
+          permissions: [
+            "manage_sender_display_names",
+            "allow_all_sender_display_names",
+            "manage_team_members",
+            "manage_roles_and_permissions",
+            "manage_api_keys",
+          ],
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          id: "member",
+          name: "Member",
+          system: true,
+          permissions: [],
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ],
       members: [
         {
           email: "owner@example.com",
