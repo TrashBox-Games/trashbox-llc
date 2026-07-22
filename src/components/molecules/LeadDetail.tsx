@@ -12,6 +12,8 @@ import {
   leadNotesOf,
   leadStatusOf,
   leadTagsOf,
+  teamMemberDisplayName,
+  type FromIdentityOption,
   type LeadMessage,
   type LeadStatus,
   type LeadTag,
@@ -65,6 +67,8 @@ interface LeadDetailProps {
   mailboxConnected?: boolean;
   /** Connected mailbox address; used as the reply-from and "To" recipient. */
   fromAddress?: string;
+  /** From identities the current user may use when replying. */
+  fromOptions?: FromIdentityOption[];
   messages?: LeadMessage[];
   messageError?: string | null;
   onUpdate: (patch: {
@@ -73,7 +77,11 @@ interface LeadDetailProps {
     assignedTo?: string | null;
   }) => Promise<void>;
   onAddNote: (body: string) => Promise<void>;
-  onSendMessage?: (body: string, bodyHtml?: string) => Promise<void>;
+  onSendMessage?: (
+    body: string,
+    bodyHtml?: string,
+    from?: { fromIdentityId?: string },
+  ) => Promise<void>;
 }
 
 export function LeadDetail({
@@ -82,6 +90,7 @@ export function LeadDetail({
   busy = false,
   mailboxConnected = false,
   fromAddress,
+  fromOptions,
   messages = [],
   messageError = null,
   onUpdate,
@@ -188,12 +197,16 @@ export function LeadDetail({
               }
               options={[
                 { value: "", label: "Unassigned" },
-                ...members.map((member) => ({
-                  value: member.email,
-                  label: member.name?.trim()
-                    ? `${member.name.trim()} (${member.email})`
-                    : member.email,
-                })),
+                ...members.map((member) => {
+                  const label = teamMemberDisplayName(member);
+                  return {
+                    value: member.email,
+                    label:
+                      label === member.email
+                        ? member.email
+                        : `${label} (${member.email})`,
+                  };
+                }),
               ]}
             />
           </div>
@@ -250,6 +263,7 @@ export function LeadDetail({
           messages={messages}
           mailboxConnected={mailboxConnected}
           fromAddress={fromAddress}
+          fromOptions={fromOptions}
           busy={busy}
           error={messageError}
           onSend={onSendMessage}

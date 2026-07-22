@@ -7,6 +7,7 @@ import {
   LEAD_STATUS_LABELS,
   LEAD_TAGS,
   LEAD_TAG_LABELS,
+  teamMemberDisplayName,
   type LeadStatus,
   type LeadTag,
   type TeamMember,
@@ -107,12 +108,16 @@ export function LeadInboxFilters({
           onChange={(assignedTo) => onChange({ ...value, assignedTo })}
           options={[
             { value: "", label: "Anyone" },
-            ...members.map((member) => ({
-              value: member.email,
-              label: member.name?.trim()
-                ? `${member.name.trim()} (${member.email})`
-                : member.email,
-            })),
+            ...members.map((member) => {
+              const label = teamMemberDisplayName(member);
+              return {
+                value: member.email,
+                label:
+                  label === member.email
+                    ? member.email
+                    : `${label} (${member.email})`,
+              };
+            }),
           ]}
         />
       </div>

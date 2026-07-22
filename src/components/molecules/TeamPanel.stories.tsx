@@ -14,8 +14,11 @@ const member: TeamMember = {
   email: "sarah@example.com",
   role: "member",
   joinedAt: "2026-02-01T00:00:00.000Z",
-  name: "Sarah",
+  firstName: "Sarah",
+  lastName: "Chen",
   emailNotifications: false,
+  allowedFromIdentityIds: ["s1"],
+  defaultFromIdentityId: "s1",
 };
 
 const pendingInvite: TeamInvite = {
@@ -43,6 +46,18 @@ const meta = {
     currentUserEmail: "owner@example.com",
     members: [owner, member],
     invites: [],
+    senderDisplayNames: [
+      {
+        id: "s1",
+        name: "Sales Team",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      {
+        id: "s2",
+        name: "Support",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
     memberLimit: 5,
     memberCount: 2,
     tier: "premium",

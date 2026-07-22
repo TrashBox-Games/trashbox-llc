@@ -503,6 +503,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                     busy={portal.crmBusy}
                     mailboxConnected={Boolean(portal.mailbox?.connected)}
                     fromAddress={portal.mailbox?.email}
+                    fromOptions={portal.mailbox?.fromOptions}
                     messages={portal.leadMessages}
                     messageError={portal.messageError}
                     onUpdate={portal.onLeadUpdate}

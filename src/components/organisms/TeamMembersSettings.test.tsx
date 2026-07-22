@@ -7,6 +7,10 @@ vi.mock("@/lib/api", async (importOriginal) => {
   return {
     ...actual,
     getTeam: vi.fn(),
+    getMailbox: vi.fn().mockResolvedValue({
+      connected: false,
+      fromIdentities: [],
+    }),
     createTeamInvite: vi.fn(),
     deleteTeamInvite: vi.fn(),
     deleteTeamMember: vi.fn(),

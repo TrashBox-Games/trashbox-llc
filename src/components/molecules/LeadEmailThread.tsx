@@ -2,11 +2,12 @@
 
 import { useState, type KeyboardEvent, type ReactNode } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { Select } from "@/components/atoms/Select";
 import {
   RichTextEditor,
   type RichTextValue,
 } from "@/components/molecules/RichTextEditor";
-import type { LeadMessage } from "@/lib/api";
+import type { FromIdentityOption, LeadMessage } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
 import { cn } from "@/lib/utils";
 
@@ -118,11 +119,15 @@ export interface LeadEmailThreadProps {
   formAt: string;
   messages: LeadMessage[];
   mailboxConnected: boolean;
-  /** Address the reply is sent from (connected mailbox). */
   fromAddress?: string;
+  fromOptions?: FromIdentityOption[];
   busy?: boolean;
   error?: string | null;
-  onSend: (text: string, html?: string) => Promise<void>;
+  onSend: (
+    text: string,
+    html?: string,
+    from?: { fromIdentityId?: string },
+  ) => Promise<void>;
 }
 
 export function LeadEmailThread({
@@ -132,18 +137,28 @@ export function LeadEmailThread({
   messages,
   mailboxConnected,
   fromAddress,
+  fromOptions = [],
   busy = false,
   error,
   onSend,
 }: LeadEmailThreadProps) {
+  const defaultOption =
+    fromOptions.find((option) => option.label.includes("(Default)")) ??
+    fromOptions[0];
   const [draft, setDraft] = useState<RichTextValue>({ html: "", text: "" });
   const [editorKey, setEditorKey] = useState(0);
+  const [fromIdentityId, setFromIdentityId] = useState(defaultOption?.id ?? "");
   const hasContent = draft.text.trim().length > 0;
+  const selected = fromOptions.find((o) => o.id === fromIdentityId);
+  const resolvedPreview = selected?.displayName || selected?.label || "";
+  const hasFromOptions = fromOptions.length > 0;
 
   async function submit() {
-    if (!hasContent || busy) return;
+    if (!hasContent || busy || !fromIdentityId) return;
     const html = draft.html.trim();
-    await onSend(draft.text, html ? html : undefined);
+    await onSend(draft.text, html ? html : undefined, {
+      fromIdentityId,
+    });
     setDraft({ html: "", text: "" });
     setEditorKey((k) => k + 1);
   }
@@ -154,6 +169,8 @@ export function LeadEmailThread({
       void submit();
     }
   }
+
+  const sendDisabled = busy || !hasContent || !fromIdentityId;
 
   return (
     <div className="mt-10 border-t border-outline-variant/10 pt-6">
@@ -186,7 +203,9 @@ export function LeadEmailThread({
               eyebrow={`${outbound ? "Sent" : "Received"} · ${message.from}${
                 message.sentBy ? ` · ${message.sentBy}` : ""
               }`}
-              title={message.subject || (outbound ? "Reply sent" : "Reply received")}
+              title={
+                message.subject || (outbound ? "Reply sent" : "Reply received")
+              }
               day={formatDay(message.createdAt)}
               accent={outbound ? "primary" : "muted"}
             >
@@ -209,19 +228,37 @@ export function LeadEmailThread({
 
       {mailboxConnected ? (
         <div className="mt-8 overflow-hidden rounded-lg border border-outline-variant/10 bg-surface-container-low shadow-md">
-          <div className="flex gap-1 bg-surface-container p-1">
-            <span className="rounded bg-surface-container-highest px-6 py-2.5 font-label text-[10px] uppercase tracking-widest text-white shadow-sm">
-              Reply
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4 bg-surface-container-lowest/50 px-4 py-3">
-            <span className="w-8 shrink-0 font-label text-[10px] uppercase text-outline">
-              To
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded bg-surface-container px-2 py-1 text-xs text-white shadow-sm">
-              {formFrom}
-            </span>
+          <div className="space-y-3 bg-surface-container-lowest/50 p-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="w-8 shrink-0 font-label text-[10px] uppercase text-outline">
+                To
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded bg-surface-container px-2 py-1 text-xs text-white shadow-sm">
+                {formFrom}
+              </span>
+              <span className="w-10 shrink-0 font-label text-[10px] uppercase text-outline">
+                From
+              </span>
+              <div className="min-w-[12rem] flex-1">
+                {hasFromOptions ? (
+                  <Select
+                    aria-label="Sender Display Name"
+                    value={fromIdentityId}
+                    onChange={setFromIdentityId}
+                    disabled={busy}
+                    options={fromOptions.map((option) => ({
+                      value: option.id,
+                      label: option.label,
+                    }))}
+                  />
+                ) : (
+                  <p className="py-2 text-sm text-on-surface-variant">
+                    No Sender Display Name assigned. Ask an owner or admin to set
+                    one in Members.
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
           <RichTextEditor
@@ -239,7 +276,11 @@ export function LeadEmailThread({
               {fromAddress && (
                 <span className="font-label text-[10px] uppercase text-outline-variant">
                   Replying as{" "}
-                  <span className="font-medium text-white">{fromAddress}</span>
+                  <span className="font-medium text-white">
+                    {resolvedPreview
+                      ? `${resolvedPreview} <${fromAddress}>`
+                      : fromAddress}
+                  </span>
                 </span>
               )}
               <span className="font-mono text-[10px] text-outline-variant/60">
@@ -248,7 +289,7 @@ export function LeadEmailThread({
             </div>
             <button
               type="button"
-              disabled={busy || !hasContent}
+              disabled={sendDisabled}
               onClick={() => void submit()}
               className="flex items-center gap-2 rounded bg-surface-container-highest px-6 py-2.5 font-label text-xs uppercase tracking-widest text-white shadow-sm transition-colors hover:bg-surface-variant disabled:opacity-40"
             >

@@ -100,12 +100,28 @@ export interface ApiKeyResponse {
   message?: string;
 }
 
+export interface FromIdentity {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface FromIdentityOption {
+  id: string;
+  label: string;
+  displayName?: string;
+}
+
 export interface TeamMember {
   email: string;
   role: TeamRole;
   joinedAt: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
   emailNotifications: boolean;
+  allowedFromIdentityIds?: string[];
+  defaultFromIdentityId?: string;
 }
 
 export interface TeamInvite {
@@ -115,6 +131,8 @@ export interface TeamInvite {
   createdAt: string;
   expiresAt: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
   emailNotifications: boolean;
 }
 
@@ -131,14 +149,36 @@ export interface TeamResponse {
 export interface CreateTeamInviteInput {
   email: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
   emailNotifications?: boolean;
   role?: "member" | "admin";
 }
 
 export interface UpdateTeamMemberInput {
   name?: string;
+  firstName?: string | null;
+  lastName?: string | null;
   emailNotifications?: boolean;
   role?: "member" | "admin";
+  allowedFromIdentityIds?: string[] | null;
+  defaultFromIdentityId?: string | null;
+}
+
+/** Compose a display label from first/last or legacy name. */
+export function teamMemberDisplayName(member: {
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  email: string;
+}): string {
+  const composed = [member.firstName, member.lastName]
+    .map((p) => p?.trim())
+    .filter(Boolean)
+    .join(" ");
+  if (composed) return composed;
+  if (member.name?.trim()) return member.name.trim();
+  return member.email;
 }
 
 export class ApiError extends Error {
@@ -395,6 +435,9 @@ export interface MailboxStatusResponse {
   status?: "connected" | "error" | "disconnected";
   lastSyncAt?: string;
   lastError?: string;
+  fromIdentities?: FromIdentity[];
+  fromOptions?: FromIdentityOption[];
+  defaultFromIdentityId?: string;
 }
 
 export type LeadMessageDirection = "outbound" | "inbound";
@@ -438,6 +481,21 @@ export async function disconnectMailbox(): Promise<void> {
   await authFetch("/mailbox", { method: "DELETE" });
 }
 
+export type PatchMailboxInput =
+  | { action: "addIdentity"; name: string }
+  | { action: "updateIdentity"; id: string; name: string }
+  | { action: "removeIdentity"; id: string }
+  | { fromDisplayName: string | null };
+
+export async function updateMailboxSettings(
+  input: PatchMailboxInput,
+): Promise<MailboxStatusResponse> {
+  return (await authFetch("/mailbox", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  })) as unknown as MailboxStatusResponse;
+}
+
 export async function syncMailbox(): Promise<{
   success: boolean;
   clientId: string;
@@ -465,7 +523,12 @@ export async function listLeadMessages(
 
 export async function sendLeadMessage(
   submissionId: string,
-  input: { body: string; bodyHtml?: string; subject?: string },
+  input: {
+    body: string;
+    bodyHtml?: string;
+    subject?: string;
+    fromIdentityId?: string;
+  },
 ): Promise<LeadMessage> {
   return (await authFetch(
     `/submissions/${encodeURIComponent(submissionId)}/messages`,

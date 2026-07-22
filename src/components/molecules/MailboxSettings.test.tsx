@@ -43,9 +43,7 @@ describe("MailboxSettings", () => {
     expect(
       screen.queryByRole("button", { name: /connect google workspace/i }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByText(/ask an owner or admin/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/ask an owner or admin/i)).toBeInTheDocument();
   });
 
   it("shows disconnect and sync when connected for admin", async () => {
@@ -74,5 +72,21 @@ describe("MailboxSettings", () => {
     expect(onSync).toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: /disconnect/i }));
     expect(onDisconnect).toHaveBeenCalled();
+  });
+
+  it("links to Sending Preferences for From identity settings", () => {
+    render(
+      <MailboxSettings
+        role="owner"
+        mailbox={{ connected: false }}
+        onConnect={vi.fn()}
+        onDisconnect={vi.fn()}
+        onSync={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("link", { name: /sending preferences/i }),
+    ).toHaveAttribute("href", "/portal/settings/sending-preferences/");
   });
 });

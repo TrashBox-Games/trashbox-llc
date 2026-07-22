@@ -8,9 +8,11 @@ import {
   createTeamInvite,
   deleteTeamInvite,
   deleteTeamMember,
+  getMailbox,
   getTeam,
   updateTeamMember,
   type CreateTeamInviteInput,
+  type FromIdentity,
   type TeamInvite,
   type TeamMember,
   type TeamRole,
@@ -28,6 +30,9 @@ export function TeamMembersSettings({
 }: TeamMembersSettingsProps) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [invites, setInvites] = useState<TeamInvite[]>([]);
+  const [senderDisplayNames, setSenderDisplayNames] = useState<FromIdentity[]>(
+    [],
+  );
   const [role, setRole] = useState<TeamRole>("member");
   const [memberLimit, setMemberLimit] = useState(1);
   const [memberCount, setMemberCount] = useState(0);
@@ -37,12 +42,13 @@ export function TeamMembersSettings({
   const [notice, setNotice] = useState<string | null>(null);
 
   const loadTeam = useCallback(async () => {
-    const team = await getTeam();
+    const [team, mailbox] = await Promise.all([getTeam(), getMailbox()]);
     setMembers(team.members);
     setInvites(team.invites);
     setRole(team.role);
     setMemberLimit(team.memberLimit);
     setMemberCount(team.memberCount);
+    setSenderDisplayNames(mailbox.fromIdentities ?? []);
   }, []);
 
   useEffect(() => {
@@ -153,6 +159,7 @@ export function TeamMembersSettings({
       currentUserEmail={currentUserEmail}
       members={members}
       invites={invites}
+      senderDisplayNames={senderDisplayNames}
       memberLimit={memberLimit}
       memberCount={memberCount}
       tier={tier}

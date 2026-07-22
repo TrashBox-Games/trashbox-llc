@@ -129,11 +129,13 @@ describe("TeamPanel", () => {
     );
 
     await user.type(screen.getByLabelText(/^email$/i), "teammate@example.com");
-    await user.type(screen.getByLabelText(/^name$/i), "Teammate");
+    await user.type(screen.getByLabelText(/first name/i), "Tee");
+    await user.type(screen.getByLabelText(/last name/i), "Mate");
     await user.click(screen.getByRole("button", { name: /send invite/i }));
     expect(onInvite).toHaveBeenCalledWith({
       email: "teammate@example.com",
-      name: "Teammate",
+      firstName: "Tee",
+      lastName: "Mate",
       emailNotifications: true,
     });
   });

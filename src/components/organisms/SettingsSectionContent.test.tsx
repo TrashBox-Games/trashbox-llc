@@ -94,4 +94,16 @@ describe("SettingsSectionContent", () => {
       await screen.findByRole("heading", { name: /key active|no key issued/i }),
     ).toBeInTheDocument();
   });
+
+  it("renders Sending Preferences in the sending-preferences section", async () => {
+    render(
+      <PortalProvider>
+        <SettingsSectionContent sectionId="sending-preferences" />
+      </PortalProvider>,
+    );
+
+    expect(
+      await screen.findByText(/Create the Sender Display Names/i),
+    ).toBeInTheDocument();
+  });
 });

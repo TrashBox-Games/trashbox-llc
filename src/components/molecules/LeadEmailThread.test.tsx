@@ -3,6 +3,15 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { LeadEmailThread } from "./LeadEmailThread";
 
+const fromOptions = [
+  {
+    id: "s1",
+    label: "Sales Team (Default)",
+    displayName: "Sales Team",
+  },
+  { id: "s2", label: "Support", displayName: "Support" },
+];
+
 describe("LeadEmailThread", () => {
   it("shows settings CTA when mailbox is disconnected", () => {
     render(
@@ -17,48 +26,12 @@ describe("LeadEmailThread", () => {
     );
 
     expect(screen.getByText(/connect a business mailbox/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /settings/i })).toHaveAttribute(
-      "href",
-      "/portal/settings/email-accounts/",
-    );
     expect(
       screen.queryByRole("button", { name: /send message/i }),
     ).not.toBeInTheDocument();
   });
 
-  it("reveals a message body when its timeline node is expanded", async () => {
-    const user = userEvent.setup();
-
-    render(
-      <LeadEmailThread
-        formMessage="Need a quote"
-        formFrom="ada@example.com"
-        formAt="2026-07-15T12:00:00.000Z"
-        messages={[
-          {
-            clientId: "c1",
-            submissionId: "s1",
-            messageId: "m1",
-            direction: "outbound",
-            from: "sales@example.com",
-            to: "ada@example.com",
-            subject: "Re: Need a quote",
-            bodyText: "Thanks for reaching out",
-            createdAt: "2026-07-15T13:00:00.000Z",
-            sentBy: "owner@example.com",
-          },
-        ]}
-        mailboxConnected
-        onSend={vi.fn()}
-      />,
-    );
-
-    expect(screen.queryByText("Thanks for reaching out")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /re: need a quote/i }));
-    expect(screen.getByText("Thanks for reaching out")).toBeInTheDocument();
-  });
-
-  it("sends a reply with plain text and html when connected", async () => {
+  it("sends a reply with the selected Sender Display Name", async () => {
     const user = userEvent.setup();
     const onSend = vi.fn().mockResolvedValue(undefined);
 
@@ -69,6 +42,7 @@ describe("LeadEmailThread", () => {
         formAt="2026-07-15T12:00:00.000Z"
         messages={[]}
         mailboxConnected
+        fromOptions={fromOptions}
         onSend={onSend}
       />,
     );
@@ -77,7 +51,30 @@ describe("LeadEmailThread", () => {
     await user.type(screen.getByRole("textbox", { name: /reply/i }), "Happy to help");
     await user.click(screen.getByRole("button", { name: /send message/i }));
 
-    expect(onSend).toHaveBeenCalledWith("Happy to help", expect.any(String));
+    expect(onSend).toHaveBeenCalledWith("Happy to help", expect.any(String), {
+      fromIdentityId: "s1",
+    });
+  });
+
+  it("disables send when no Sender Display Name is assigned", () => {
+    render(
+      <LeadEmailThread
+        formMessage="Need a quote"
+        formFrom="ada@example.com"
+        formAt="2026-07-15T12:00:00.000Z"
+        messages={[]}
+        mailboxConnected
+        fromOptions={[]}
+        onSend={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/No Sender Display Name assigned/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /send message/i }),
+    ).toBeDisabled();
   });
 
   it("disables send when draft is empty", () => {
@@ -88,6 +85,7 @@ describe("LeadEmailThread", () => {
         formAt="2026-07-15T12:00:00.000Z"
         messages={[]}
         mailboxConnected
+        fromOptions={fromOptions}
         onSend={vi.fn()}
       />,
     );

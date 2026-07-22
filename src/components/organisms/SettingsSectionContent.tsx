@@ -1,6 +1,7 @@
 "use client";
 
 import { MailboxSettings } from "@/components/molecules/MailboxSettings";
+import { SendingPreferencesSettings } from "@/components/molecules/SendingPreferencesSettings";
 import { SettingsPlaceholder } from "@/components/molecules/SettingsPlaceholder";
 import { ApiDocsSettings } from "@/components/organisms/ApiDocsSettings";
 import { ApiKeysSettings } from "@/components/organisms/ApiKeysSettings";
@@ -59,6 +60,19 @@ export function SettingsSectionContent({
         onConnect={portal.onMailboxConnect}
         onDisconnect={portal.onMailboxDisconnect}
         onSync={portal.onMailboxSync}
+      />
+    );
+  }
+
+  if (sectionId === "sending-preferences") {
+    return (
+      <SendingPreferencesSettings
+        role={portal.teamRole}
+        mailbox={portal.mailbox}
+        busy={portal.mailboxBusy}
+        error={portal.mailboxError}
+        notice={portal.mailboxNotice}
+        onPatch={portal.onMailboxPatch}
       />
     );
   }

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "storybook/test";
-import type { LeadMessage } from "@/lib/api";
+import type { FromIdentityOption, LeadMessage } from "@/lib/api";
 import { LeadEmailThread } from "./LeadEmailThread";
 
 const outboundReply: LeadMessage = {
@@ -15,6 +15,15 @@ const outboundReply: LeadMessage = {
   createdAt: "2026-07-15T13:00:00.000Z",
   sentBy: "owner@example.com",
 };
+
+const fromOptions: FromIdentityOption[] = [
+  {
+    id: "s1",
+    label: "Sales Team (Default)",
+    displayName: "Sales Team",
+  },
+  { id: "s2", label: "Support", displayName: "Support" },
+];
 
 const meta = {
   title: "Molecules/LeadEmailThread",
@@ -33,6 +42,7 @@ const meta = {
     formAt: "2026-07-15T12:00:00.000Z",
     messages: [],
     mailboxConnected: false,
+    fromOptions,
     onSend: fn().mockResolvedValue(undefined),
   },
 } satisfies Meta<typeof LeadEmailThread>;
@@ -57,16 +67,10 @@ export const WithOutboundReply: Story = {
   },
 };
 
-export const WithError: Story = {
+export const NoAssignedNames: Story = {
   args: {
     mailboxConnected: true,
-    error: "Failed to send message. Try again.",
-  },
-};
-
-export const Busy: Story = {
-  args: {
-    mailboxConnected: true,
-    busy: true,
+    fromAddress: "sales@example.com",
+    fromOptions: [],
   },
 };

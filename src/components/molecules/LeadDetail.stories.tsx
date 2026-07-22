@@ -91,6 +91,14 @@ export const WithEmailThread: Story = {
   args: {
     mailboxConnected: true,
     fromAddress: "sales@example.com",
+    fromOptions: [
+      {
+        id: "s1",
+        label: "Trashbox LLC (Default)",
+        displayName: "Trashbox LLC",
+      },
+      { id: "s2", label: "Support", displayName: "Support" },
+    ],
     messages: [outboundReply],
     onSendMessage: fn().mockResolvedValue(undefined),
   },

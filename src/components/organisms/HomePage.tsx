@@ -29,6 +29,12 @@ const aboutCards = [
   },
 ] as const;
 
+/** Match Reveal: hide before paint so client navigations don't flash then snap. */
+const heroItemStyle = {
+  opacity: 0,
+  transform: "translateY(28px)",
+} as const;
+
 export function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const scrollLineRef = useRef<HTMLDivElement>(null);
@@ -48,6 +54,7 @@ export function HomePage() {
           stagger: 0.09,
           delay: 0.12,
           ease: "power3.out",
+          immediateRender: true,
         },
       );
     },
@@ -76,12 +83,14 @@ export function HomePage() {
         <div ref={heroRef} className="relative z-10 mx-auto max-w-screen-xl text-center">
           <h1
             data-hero-item
+            style={heroItemStyle}
             className="mb-6 font-headline text-[clamp(3.5rem,10vw,8rem)] leading-[0.9] font-bold tracking-tighter text-white uppercase"
           >
             Trashbox LLC
           </h1>
           <p
             data-hero-item
+            style={heroItemStyle}
             className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed font-light text-on-surface-variant md:text-xl"
           >
             Architecting the next generation of digital tools through high-fidelity engineering and
@@ -89,6 +98,7 @@ export function HomePage() {
           </p>
           <div
             data-hero-item
+            style={heroItemStyle}
             className="flex flex-col items-center justify-center gap-6 md:flex-row"
           >
             <Link

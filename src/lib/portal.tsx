@@ -26,6 +26,7 @@ import {
   sendLeadMessage,
   startCheckout,
   syncMailbox,
+  updateMailboxSettings,
   updateSubmission,
   type AccountResponse,
   type LeadMessage,
@@ -33,6 +34,7 @@ import {
   type LeadTag,
   type MailboxProvider,
   type MailboxStatusResponse,
+  type PatchMailboxInput,
   type Submission,
   type TeamMember,
   type TeamRole,
@@ -121,10 +123,15 @@ export interface PortalContextValue {
     assignedTo?: string | null;
   }) => Promise<void>;
   onLeadNote: (body: string) => Promise<void>;
-  onSendLeadMessage: (body: string, bodyHtml?: string) => Promise<void>;
+  onSendLeadMessage: (
+    body: string,
+    bodyHtml?: string,
+    from?: { fromIdentityId?: string },
+  ) => Promise<void>;
   onMailboxConnect: (provider: MailboxProvider) => Promise<void>;
   onMailboxDisconnect: () => Promise<void>;
   onMailboxSync: () => Promise<void>;
+  onMailboxPatch: (input: PatchMailboxInput) => Promise<void>;
   onProvisionAccount: () => Promise<void>;
   onUpgrade: (plan: "basic" | "premium") => Promise<void>;
   onManageBilling: () => Promise<void>;
@@ -457,7 +464,11 @@ export function PortalProvider({ children }: { children: ReactNode }) {
   }, [selectedId, account?.linked]);
 
   const onSendLeadMessage = useCallback(
-    async (body: string, bodyHtml?: string) => {
+    async (
+      body: string,
+      bodyHtml?: string,
+      from?: { fromIdentityId?: string },
+    ) => {
       if (!selectedId) return;
       setCrmBusy(true);
       setMessageError(null);
@@ -465,6 +476,9 @@ export function PortalProvider({ children }: { children: ReactNode }) {
         const message = await sendLeadMessage(selectedId, {
           body,
           ...(bodyHtml ? { bodyHtml } : {}),
+          ...(from?.fromIdentityId
+            ? { fromIdentityId: from.fromIdentityId }
+            : {}),
         });
         setLeadMessages((prev) => [...prev, message]);
         setItems((items) =>
@@ -537,6 +551,28 @@ export function PortalProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       setMailboxError(
         err instanceof ApiError ? err.message : "Failed to sync mailbox",
+      );
+    } finally {
+      setMailboxBusy(false);
+    }
+  }, []);
+
+  const onMailboxPatch = useCallback(async (input: PatchMailboxInput) => {
+    setMailboxBusy(true);
+    setMailboxError(null);
+    setMailboxNotice(null);
+    try {
+      const box = await updateMailboxSettings(input);
+      setMailbox((prev) => ({
+        ...(prev ?? { connected: false }),
+        ...box,
+      }));
+      setMailboxNotice("Sending Preferences updated.");
+    } catch (err) {
+      setMailboxError(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to update outbound identity settings",
       );
     } finally {
       setMailboxBusy(false);
@@ -655,6 +691,7 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       onMailboxConnect,
       onMailboxDisconnect,
       onMailboxSync,
+      onMailboxPatch,
       onProvisionAccount,
       onUpgrade,
       onManageBilling,
@@ -691,6 +728,7 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       onMailboxConnect,
       onMailboxDisconnect,
       onMailboxSync,
+      onMailboxPatch,
       onProvisionAccount,
       onUpgrade,
       onManageBilling,

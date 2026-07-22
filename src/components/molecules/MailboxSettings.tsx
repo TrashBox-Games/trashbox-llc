@@ -1,6 +1,11 @@
 "use client";
 
-import type { MailboxProvider, MailboxStatusResponse, TeamRole } from "@/lib/api";
+import type {
+  MailboxProvider,
+  MailboxStatusResponse,
+  TeamRole,
+} from "@/lib/api";
+import { settingsSectionPath } from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
 
 const labelClass =
@@ -37,10 +42,18 @@ export function MailboxSettings({
   return (
     <div className="space-y-8 border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
       <div>
-        <p className={labelClass}>Business mailbox</p>
+        <p className={labelClass}>Business Mailbox</p>
         <p className="mt-2 max-w-2xl text-sm text-on-surface-variant">
           Connect Google Workspace or Microsoft 365 so your team can reply to
-          leads from the portal. One shared mailbox per business.
+          leads from the portal. One shared mailbox per business. Configure From
+          display names in{" "}
+          <a
+            href={settingsSectionPath("sending-preferences")}
+            className="text-white underline"
+          >
+            Sending Preferences
+          </a>
+          .
         </p>
       </div>
 
@@ -58,7 +71,7 @@ export function MailboxSettings({
       {connected ? (
         <div className="space-y-4">
           <div>
-            <p className={labelClass}>Connected as</p>
+            <p className={labelClass}>Connected As</p>
             <p className="text-lg text-white">{mailbox?.email}</p>
             <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
               {mailbox?.provider === "gmail"
@@ -69,7 +82,7 @@ export function MailboxSettings({
             </p>
             {mailbox?.lastSyncAt && (
               <p className="mt-1 text-xs text-on-surface-variant">
-                Last sync: {new Date(mailbox.lastSyncAt).toLocaleString()}
+                Last Sync: {new Date(mailbox.lastSyncAt).toLocaleString()}
               </p>
             )}
             {mailbox?.lastError && (
@@ -85,7 +98,7 @@ export function MailboxSettings({
                 onClick={() => void onSync()}
                 className="border border-outline-variant/40 px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white hover:border-white disabled:opacity-40"
               >
-                Sync now
+                Sync Now
               </button>
               <button
                 type="button"
