@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { PortalSkeleton } from "@/components/organisms/PortalSkeleton";
+import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { useAuth } from "@/lib/auth";
 import { PORTAL_PATHS } from "@/lib/sites";
 

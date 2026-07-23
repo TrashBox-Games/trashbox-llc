@@ -1,4 +1,4 @@
-import { PlatformNav } from "@/components/organisms/PlatformNav";
+import { PlatformNav } from "@/components/features/marketing/PlatformNav";
 
 export default function PlatformLayout({
   children,

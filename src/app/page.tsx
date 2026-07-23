@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { HomePage } from "@/components/organisms/HomePage";
+import { HomePage } from "@/components/features/marketing/HomePage";
 
 export const metadata: Metadata = {
   title: "Trashbox",

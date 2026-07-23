@@ -1,4 +1,4 @@
-import { SettingsShell } from "@/components/organisms/SettingsShell";
+import { SettingsShell } from "@/components/features/settings/SettingsShell";
 
 export default function SettingsLayout({
   children,

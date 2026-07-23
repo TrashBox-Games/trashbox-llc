@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PortalLoginPage } from "@/components/organisms/PortalPage";
+import { PortalLoginPage } from "@/components/features/leads/PortalPage";
 
 export const metadata: Metadata = {
   title: "Portal Login",

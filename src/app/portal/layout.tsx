@@ -1,4 +1,4 @@
-import { PortalHeader } from "@/components/organisms/PortalHeader";
+import { PortalHeader } from "@/components/features/portal/PortalHeader";
 import { PortalProvider } from "@/lib/portal";
 
 export default function PortalLayout({

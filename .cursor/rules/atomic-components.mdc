@@ -1,41 +1,47 @@
 ---
-description: Atomic component architecture and shadcn/ui conventions
+description: Hybrid atomic + feature component architecture and shadcn/ui conventions
 alwaysApply: false
 ---
-# Atomic Components & shadcn/ui
+# Hybrid Components & shadcn/ui
 
 ## Directory structure
 
-Organize `src/components/` by atomic design layer:
+Organize `src/components/` as shared primitives plus feature folders:
 
 ```
 src/components/
-├── ui/          # shadcn primitives (Button, Input, Card, etc.)
-├── atoms/       # project-specific single elements
-├── molecules/   # small compositions with one responsibility
-├── organisms/   # larger self-contained sections
-└── templates/   # page layouts that arrange organisms (optional)
+├── ui/              # shadcn primitives (Button, Input, Card, etc.)
+├── atoms/           # shared, domain-agnostic primitives and small compositions
+└── features/
+    ├── leads/       # inbox / membership lead UI
+    ├── settings/    # portal settings sections
+    ├── portal/      # portal chrome (header, skeleton)
+    ├── marketing/   # public site pages, chrome, layouts
+    ├── email/       # email product surfaces
+    └── contact/     # contact form
 ```
+
+Features are **flat** — no `molecules/` or `organisms/` nesting inside a feature.
 
 ## Layer responsibilities
 
 | Layer | Purpose | Examples |
 |-------|---------|----------|
 | `ui/` | shadcn-installed primitives — treat as atoms | `Button`, `Input`, `Card` |
-| `atoms/` | custom single-purpose elements not covered by shadcn | `Logo`, `PriceTag` |
-| `molecules/` | groups of atoms/ui | `SearchField`, `NavLink` |
-| `organisms/` | distinct page sections | `SiteHeader`, `Hero`, `ContactForm` |
-| `templates/` | layout shells shared across pages | `MarketingLayout` |
+| `atoms/` | shared, domain-agnostic elements reused across features | `FadeIn`, `MaterialIcon`, `Select`, `RichTextEditor`, `CodeBlock` |
+| `features/<name>/` | anything tied to a product area | `LeadDetail`, `SettingsShell`, `HomePage`, `ContactForm` |
 
-Pages in `src/app/` compose templates or organisms — not raw atoms.
+Pages in `src/app/` compose feature components (and shared atoms when needed) — not raw `ui/` primitives for page structure.
 
 ## Import direction
 
-Only import **downward** in the hierarchy:
+Only import **downward**:
 
-`templates` → `organisms` → `molecules` → `atoms` → `ui`
+`pages` → `features` → `atoms` → `ui`
 
-Never import an organism from a molecule or atom.
+- Features may import `atoms/` and `ui/` only.
+- Do not import one feature from another, except the documented one-way case: `marketing` → `contact` (`ContactForm` inside `ServicesPage`).
+- Prefer importing `features/portal/*` from pages/layouts rather than from other features when possible.
 
 ## Prefer shadcn
 
@@ -44,10 +50,10 @@ Before building custom UI from scratch:
 1. Check the [shadcn/ui docs](https://ui.shadcn.com/docs/components) for an existing component.
 2. Install it: `pnpm dlx shadcn@latest add <component>`
 3. Import from `@/components/ui/<component>`.
-4. Customize with Tailwind classes and `cn()` — compose in `atoms/` or `molecules/`, don't fork `ui/` files unless the primitive itself must change.
+4. Customize with Tailwind classes and `cn()` — compose in `atoms/` or a feature folder; don't fork `ui/` files unless the primitive itself must change.
 
 ```tsx
-// ✅ GOOD — compose shadcn primitives in a molecule
+// ✅ GOOD — compose shadcn primitives in a shared atom or feature
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -68,14 +74,15 @@ export function CustomButton({ children }: { children: React.ReactNode }) {
 }
 ```
 
-## When custom components are appropriate
+## When to use atoms vs features
 
-- No shadcn equivalent exists for the primitive.
-- The component is business-specific (brand logo, pricing display).
-- You are composing existing `ui/` primitives into higher-level pieces.
+- **`atoms/`** — domain-agnostic (motion, icons, editors, generic selects). If the name would make sense in another product, it belongs here.
+- **`features/<name>/`** — tied to leads, settings, marketing, email, contact, or portal chrome. Prefer a feature folder over inventing new shared layers.
+- **`ui/`** — shadcn only.
 
 ## File conventions
 
 - PascalCase component names with named exports.
 - Colocate stories (`*.stories.tsx`) and tests next to the component.
+- Storybook titles: `"Atoms/…"`, `"UI/…"`, or `"Features/<Feature>/…"`.
 - Use `@/` path aliases for all imports.

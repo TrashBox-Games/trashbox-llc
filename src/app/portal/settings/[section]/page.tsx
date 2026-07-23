@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SettingsSectionContent } from "@/components/organisms/SettingsSectionContent";
+import { SettingsSectionContent } from "@/components/features/settings/SettingsSectionContent";
 import {
   PORTAL_SETTINGS_NAV,
   getSettingsSection,

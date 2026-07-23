@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MarkdownDocument } from "@/components/organisms/MarkdownDocument";
+import { MarkdownDocument } from "@/components/features/marketing/MarkdownDocument";
 import {
   getAppMarkdown,
   getAppPageMeta,

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { EmailRedirect } from "@/components/organisms/EmailRedirect";
+import { EmailRedirect } from "@/components/features/email/EmailRedirect";
 
 export const metadata: Metadata = {
   title: "Platform",

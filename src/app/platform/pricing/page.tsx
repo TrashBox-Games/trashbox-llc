@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { FadeIn } from "@/components/atoms/FadeIn";
-import { EmailPlanTiers } from "@/components/organisms/EmailPlanTiers";
+import { EmailPlanTiers } from "@/components/features/email/EmailPlanTiers";
 import { PORTAL_PATHS } from "@/lib/sites";
 
 export const metadata: Metadata = {

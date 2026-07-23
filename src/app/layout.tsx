@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Space_Grotesk } from "next/font/google";
 import { AuthProvider } from "@/lib/auth";
-import { MarketingLayout } from "@/components/templates/MarketingLayout";
+import { MarketingLayout } from "@/components/features/marketing/MarketingLayout";
 import "@/styles/globals.css";
 
 const spaceGrotesk = Space_Grotesk({
