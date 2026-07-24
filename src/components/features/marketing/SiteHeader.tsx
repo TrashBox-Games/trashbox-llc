@@ -27,7 +27,7 @@ function navLinkClass(active: boolean) {
 }
 
 export function SiteHeader() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const navRef = useRef<HTMLElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);

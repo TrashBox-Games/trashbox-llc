@@ -21,27 +21,51 @@ import {
   type UpdateTeamMemberInput,
 } from "@/lib/api";
 
+export type TeamMembersSettingsInitialState = {
+  members: TeamMember[];
+  invites: TeamInvite[];
+  roles: ClientRole[];
+  role: TeamRole;
+  canManageTeamMembers: boolean;
+  memberLimit: number;
+  memberCount: number;
+  senderDisplayNames?: FromIdentity[];
+};
+
 interface TeamMembersSettingsProps {
   currentUserEmail?: string;
   tier?: "basic" | "premium";
+  /** When set, skip network load (Storybook/Chromatic demos). */
+  initialState?: TeamMembersSettingsInitialState;
 }
 
 export function TeamMembersSettings({
   currentUserEmail,
   tier,
+  initialState,
 }: TeamMembersSettingsProps) {
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [invites, setInvites] = useState<TeamInvite[]>([]);
-  const [roles, setRoles] = useState<ClientRole[]>([]);
-  const [senderDisplayNames, setSenderDisplayNames] = useState<FromIdentity[]>(
-    [],
+  const [members, setMembers] = useState<TeamMember[]>(
+    initialState?.members ?? [],
   );
-  const [role, setRole] = useState<TeamRole>("member");
-  const [canManageTeamMembers, setCanManageTeamMembers] = useState(false);
-  const [memberLimit, setMemberLimit] = useState(1);
-  const [memberCount, setMemberCount] = useState(0);
+  const [invites, setInvites] = useState<TeamInvite[]>(
+    initialState?.invites ?? [],
+  );
+  const [roles, setRoles] = useState<ClientRole[]>(initialState?.roles ?? []);
+  const [senderDisplayNames, setSenderDisplayNames] = useState<FromIdentity[]>(
+    initialState?.senderDisplayNames ?? [],
+  );
+  const [role, setRole] = useState<TeamRole>(initialState?.role ?? "member");
+  const [canManageTeamMembers, setCanManageTeamMembers] = useState(
+    initialState?.canManageTeamMembers ?? false,
+  );
+  const [memberLimit, setMemberLimit] = useState(
+    initialState?.memberLimit ?? 1,
+  );
+  const [memberCount, setMemberCount] = useState(
+    initialState?.memberCount ?? 0,
+  );
   const [busy, setBusy] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(Boolean(initialState));
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -61,6 +85,8 @@ export function TeamMembersSettings({
   }, []);
 
   useEffect(() => {
+    if (initialState) return;
+
     const stored = sessionStorage.getItem("portalTeamNotice");
     if (stored) {
       sessionStorage.removeItem("portalTeamNotice");
@@ -87,7 +113,7 @@ export function TeamMembersSettings({
     return () => {
       cancelled = true;
     };
-  }, [loadTeam]);
+  }, [loadTeam, initialState]);
 
   async function onInvite(input: CreateTeamInviteInput) {
     setBusy(true);

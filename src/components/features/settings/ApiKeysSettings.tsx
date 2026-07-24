@@ -14,12 +14,27 @@ import {
 } from "@/lib/api";
 import { PORTAL_ISSUED_API_KEY_STORAGE } from "@/lib/portal";
 
-export function ApiKeysSettings() {
-  const [account, setAccount] = useState<AccountResponse | null>(null);
-  const [canManage, setCanManage] = useState(false);
-  const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null);
+export type ApiKeysSettingsInitialState = {
+  account: AccountResponse;
+  canManage: boolean;
+  issuedApiKey?: string | null;
+};
+
+export type ApiKeysSettingsProps = {
+  /** When set, skip network load (Storybook/Chromatic demos). */
+  initialState?: ApiKeysSettingsInitialState;
+};
+
+export function ApiKeysSettings({ initialState }: ApiKeysSettingsProps = {}) {
+  const [account, setAccount] = useState<AccountResponse | null>(
+    initialState?.account ?? null,
+  );
+  const [canManage, setCanManage] = useState(initialState?.canManage ?? false);
+  const [issuedApiKey, setIssuedApiKey] = useState<string | null>(
+    initialState?.issuedApiKey ?? null,
+  );
   const [busy, setBusy] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(Boolean(initialState));
   const [error, setError] = useState<string | null>(null);
 
   const loadAccount = useCallback(async () => {
@@ -32,6 +47,8 @@ export function ApiKeysSettings() {
   }, []);
 
   useEffect(() => {
+    if (initialState) return;
+
     const stored = sessionStorage.getItem(PORTAL_ISSUED_API_KEY_STORAGE);
     if (stored) {
       sessionStorage.removeItem(PORTAL_ISSUED_API_KEY_STORAGE);
@@ -58,7 +75,7 @@ export function ApiKeysSettings() {
     return () => {
       cancelled = true;
     };
-  }, [loadAccount]);
+  }, [loadAccount, initialState]);
 
   async function onCreateApiKey() {
     setBusy(true);

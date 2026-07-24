@@ -115,4 +115,29 @@ describe("ApiKeysSettings", () => {
       await screen.findByText(/You need Manage API Keys permission/i),
     ).toBeInTheDocument();
   });
+
+  it("renders from initialState without calling the API", () => {
+    vi.mocked(getAccount).mockClear();
+    vi.mocked(getTeam).mockClear();
+
+    render(
+      <ApiKeysSettings
+        initialState={{
+          canManage: true,
+          account: {
+            linked: true,
+            email: "owner@example.com",
+            hasApiKey: false,
+            role: "owner",
+          },
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: /no key issued/i }),
+    ).toBeInTheDocument();
+    expect(getAccount).not.toHaveBeenCalled();
+    expect(getTeam).not.toHaveBeenCalled();
+  });
 });

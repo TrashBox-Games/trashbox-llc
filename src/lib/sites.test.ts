@@ -26,4 +26,11 @@ describe("sites helpers", () => {
     expect(isPortalPath("/portal/inbox/")).toBe(true);
     expect(isPortalPath("/platform")).toBe(false);
   });
+
+  it("treats nullish pathnames as non-matching (Storybook/Chromatic)", () => {
+    expect(isPlatformPath(null)).toBe(false);
+    expect(isPortalPath(null)).toBe(false);
+    expect(isPlatformPath(undefined)).toBe(false);
+    expect(isPortalPath(undefined)).toBe(false);
+  });
 });

@@ -14,14 +14,15 @@ import {
 } from "@/lib/portal-settings";
 import { cn } from "@/lib/utils";
 
-function activeSectionFromPath(pathname: string) {
+function activeSectionFromPath(pathname: string | null | undefined) {
+  if (!pathname) return null;
   const parts = pathname.replace(/\/$/, "").split("/").filter(Boolean);
   const maybe = parts[parts.length - 1];
   return maybe && isSettingsSectionId(maybe) ? maybe : null;
 }
 
 export function SettingsSidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const activeSection = activeSectionFromPath(pathname);
   const activeGroupId =
     (activeSection && getSettingsSection(activeSection)?.groupId) || null;

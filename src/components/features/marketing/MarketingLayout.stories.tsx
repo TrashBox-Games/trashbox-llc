@@ -7,6 +7,11 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
+    nextjs: {
+      navigation: {
+        pathname: "/",
+      },
+    },
   },
   args: {
     children: (
@@ -26,3 +31,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const PortalRoute: Story = {
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: "/portal/inbox/",
+      },
+    },
+  },
+};

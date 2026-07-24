@@ -26,12 +26,14 @@ export const PORTAL_PATHS = {
   settings: "/portal/settings/",
 } as const;
 
-export function isPlatformPath(pathname: string): boolean {
+export function isPlatformPath(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
   return (
     pathname === PLATFORM_BASE || pathname.startsWith(`${PLATFORM_BASE}/`)
   );
 }
 
-export function isPortalPath(pathname: string): boolean {
+export function isPortalPath(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
   return pathname === PORTAL_BASE || pathname.startsWith(`${PORTAL_BASE}/`);
 }

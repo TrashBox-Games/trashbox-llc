@@ -146,7 +146,76 @@ export interface PortalContextValue {
 
 const PortalContext = createContext<PortalContextValue | null>(null);
 
-export function PortalProvider({ children }: { children: ReactNode }) {
+const portalNoop = async () => {};
+
+/** Side-effect-free portal context for Storybook/Chromatic (no login redirects). */
+export function StubPortalProvider({
+  value,
+  children,
+}: {
+  value?: Partial<PortalContextValue>;
+  children: ReactNode;
+}) {
+  const merged: PortalContextValue = {
+    ready: false,
+    items: [],
+    clientName: null,
+    account: null,
+    nextCursor: undefined,
+    listError: null,
+    listBusy: false,
+    crmBusy: false,
+    billingBusy: false,
+    billingError: null,
+    billingNotice: null,
+    businessName: "",
+    setBusinessName: () => {},
+    selectedId: null,
+    setSelectedId: () => {},
+    selected: null,
+    filters: emptyFilters,
+    setFilters: () => {},
+    applyFilters: () => {},
+    members: [],
+    teamRole: "member",
+    permissions: [],
+    roles: [],
+    isOwner: false,
+    hasPermission: () => false,
+    mailbox: null,
+    mailboxBusy: false,
+    mailboxError: null,
+    mailboxNotice: null,
+    leadMessages: [],
+    messageError: null,
+    loadMore: portalNoop,
+    onLeadUpdate: portalNoop,
+    onLeadNote: portalNoop,
+    onSendLeadMessage: portalNoop,
+    onMailboxConnect: portalNoop,
+    onMailboxDisconnect: portalNoop,
+    onMailboxSync: portalNoop,
+    onMailboxPatch: portalNoop,
+    onProvisionAccount: portalNoop,
+    onUpgrade: portalNoop,
+    onManageBilling: portalNoop,
+    ...value,
+  };
+  return (
+    <PortalContext.Provider value={merged}>{children}</PortalContext.Provider>
+  );
+}
+
+export type PortalProviderProps = {
+  children: ReactNode;
+  /** Skip login redirect (Storybook/Chromatic — avoid destroying the capture iframe). */
+  disableAuthRedirect?: boolean;
+};
+
+export function PortalProvider({
+  children,
+  disableAuthRedirect = false,
+}: PortalProviderProps) {
   const auth = useAuth();
   const [items, setItems] = useState<Submission[]>([]);
   const [clientName, setClientName] = useState<string | null>(null);
@@ -212,9 +281,11 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       if (invite) {
         sessionStorage.setItem("portalInviteToken", invite);
       }
-      const path = window.location.pathname.replace(/\/$/, "") || "/";
-      if (path !== PORTAL_PATHS.login.replace(/\/$/, "")) {
-        redirect(PORTAL_PATHS.login);
+      if (!disableAuthRedirect) {
+        const path = window.location.pathname.replace(/\/$/, "") || "/";
+        if (path !== PORTAL_PATHS.login.replace(/\/$/, "")) {
+          redirect(PORTAL_PATHS.login);
+        }
       }
       return;
     }
@@ -366,7 +437,7 @@ export function PortalProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [auth.status, appliedFilters]);
+  }, [auth.status, appliedFilters, disableAuthRedirect]);
 
   const loadMore = useCallback(async () => {
     if (!nextCursor) return;

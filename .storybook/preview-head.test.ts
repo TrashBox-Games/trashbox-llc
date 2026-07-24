@@ -15,3 +15,13 @@ describe("Storybook preview fonts", () => {
     expect(head).toContain("family=Space+Grotesk");
   });
 });
+
+describe("Storybook preview navigation guard", () => {
+  it("stubs hard navigations so Chromatic capture stays on the story", () => {
+    const preview = readFileSync(join(storybookDir, "preview.tsx"), "utf8");
+
+    expect(preview).toContain("DisableHardNavigation");
+    expect(preview).toContain("Location.prototype.assign");
+    expect(preview).toContain("Location.prototype.replace");
+  });
+});

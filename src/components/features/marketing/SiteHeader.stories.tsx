@@ -7,6 +7,11 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
+    nextjs: {
+      navigation: {
+        pathname: "/",
+      },
+    },
   },
   decorators: [
     (Story) => (

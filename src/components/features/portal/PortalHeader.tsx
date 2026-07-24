@@ -26,7 +26,7 @@ function linkClass(active: boolean) {
 
 /** Standalone chrome for /portal — separate from marketing SiteHeader. */
 export function PortalHeader() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const auth = useAuth();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);

@@ -81,4 +81,34 @@ describe("TeamMembersSettings", () => {
       expect(getTeam).toHaveBeenCalledTimes(1);
     });
   });
+
+  it("renders from initialState without calling the API", () => {
+    vi.mocked(getTeam).mockClear();
+
+    render(
+      <TeamMembersSettings
+        currentUserEmail="owner@example.com"
+        tier="premium"
+        initialState={{
+          role: "owner",
+          canManageTeamMembers: true,
+          members: [
+            {
+              email: "owner@example.com",
+              role: "owner",
+              joinedAt: "2026-01-01T00:00:00.000Z",
+              emailNotifications: true,
+            },
+          ],
+          invites: [],
+          roles: [],
+          memberLimit: 5,
+          memberCount: 1,
+        }}
+      />,
+    );
+
+    expect(screen.getByText(/owner@example.com/i)).toBeInTheDocument();
+    expect(getTeam).not.toHaveBeenCalled();
+  });
 });

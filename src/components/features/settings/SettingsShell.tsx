@@ -13,7 +13,8 @@ interface SettingsShellProps {
   children: ReactNode;
 }
 
-function sectionIdFromPath(pathname: string) {
+function sectionIdFromPath(pathname: string | null | undefined) {
+  if (!pathname) return DEFAULT_SETTINGS_SECTION;
   const parts = pathname.replace(/\/$/, "").split("/").filter(Boolean);
   const maybe = parts[parts.length - 1];
   if (maybe && isSettingsSectionId(maybe)) return maybe;
@@ -22,7 +23,7 @@ function sectionIdFromPath(pathname: string) {
 }
 
 export function SettingsShell({ children }: SettingsShellProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const sectionId = sectionIdFromPath(pathname);
   const section = getSettingsSection(sectionId);
 

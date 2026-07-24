@@ -4,10 +4,16 @@ import { MailboxSettings } from "@/components/features/settings/MailboxSettings"
 import { SendingPreferencesSettings } from "@/components/features/settings/SendingPreferencesSettings";
 import { SettingsPlaceholder } from "@/components/features/settings/SettingsPlaceholder";
 import { ApiDocsSettings } from "@/components/features/settings/ApiDocsSettings";
-import { ApiKeysSettings } from "@/components/features/settings/ApiKeysSettings";
+import {
+  ApiKeysSettings,
+  type ApiKeysSettingsInitialState,
+} from "@/components/features/settings/ApiKeysSettings";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { RolesPermissionsSettingsSection } from "@/components/features/settings/RolesPermissionsSettingsSection";
-import { TeamMembersSettings } from "@/components/features/settings/TeamMembersSettings";
+import {
+  TeamMembersSettings,
+  type TeamMembersSettingsInitialState,
+} from "@/components/features/settings/TeamMembersSettings";
 import { useAuth } from "@/lib/auth";
 import { usePortal } from "@/lib/portal";
 import {
@@ -17,10 +23,15 @@ import {
 
 interface SettingsSectionContentProps {
   sectionId: SettingsSectionId;
+  /** Storybook/demo seed for nested API-backed sections. */
+  apiKeysInitialState?: ApiKeysSettingsInitialState;
+  teamMembersInitialState?: TeamMembersSettingsInitialState;
 }
 
 export function SettingsSectionContent({
   sectionId,
+  apiKeysInitialState,
+  teamMembersInitialState,
 }: SettingsSectionContentProps) {
   const auth = useAuth();
   const portal = usePortal();
@@ -83,6 +94,7 @@ export function SettingsSectionContent({
       <TeamMembersSettings
         currentUserEmail={portal.account.email}
         tier={portal.account.tier}
+        initialState={teamMembersInitialState}
       />
     );
   }
@@ -92,7 +104,7 @@ export function SettingsSectionContent({
   }
 
   if (sectionId === "api-keys") {
-    return <ApiKeysSettings />;
+    return <ApiKeysSettings initialState={apiKeysInitialState} />;
   }
 
   if (sectionId === "api-documentation") {

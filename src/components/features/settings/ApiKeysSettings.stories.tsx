@@ -17,5 +17,72 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Loads account state from the API — shows skeleton then live/error UI. */
-export const Default: Story = {};
+export const NoKeyIssued: Story = {
+  args: {
+    initialState: {
+      canManage: true,
+      account: {
+        linked: true,
+        email: "owner@example.com",
+        clientName: "Acme",
+        tier: "premium",
+        active: true,
+        hasBilling: true,
+        hasApiKey: false,
+        role: "owner",
+      },
+    },
+  },
+};
+
+export const KeyActive: Story = {
+  args: {
+    initialState: {
+      canManage: true,
+      account: {
+        linked: true,
+        email: "owner@example.com",
+        clientName: "Acme",
+        tier: "premium",
+        active: true,
+        hasBilling: true,
+        hasApiKey: true,
+        role: "owner",
+      },
+    },
+  },
+};
+
+export const KeyJustCreated: Story = {
+  name: "Key just created",
+  args: {
+    initialState: {
+      canManage: true,
+      issuedApiKey: "fapi_storybook_demo_key_do_not_use",
+      account: {
+        linked: true,
+        email: "owner@example.com",
+        clientName: "Acme",
+        tier: "premium",
+        active: true,
+        hasBilling: true,
+        hasApiKey: true,
+        role: "owner",
+      },
+    },
+  },
+};
+
+export const NoPermission: Story = {
+  args: {
+    initialState: {
+      canManage: false,
+      account: {
+        linked: true,
+        email: "member@example.com",
+        role: "member",
+        hasApiKey: true,
+      },
+    },
+  },
+};

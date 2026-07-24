@@ -1,12 +1,18 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlatformNav } from "./PlatformNav";
 
+const usePathname = vi.fn(() => "/platform/");
+
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/platform/",
+  usePathname: () => usePathname(),
 }));
 
 describe("PlatformNav", () => {
+  beforeEach(() => {
+    usePathname.mockReturnValue("/platform/");
+  });
+
   it("links Features under /platform and Login to portal", () => {
     render(<PlatformNav />);
 
@@ -18,5 +24,12 @@ describe("PlatformNav", () => {
       "href",
       expect.stringMatching(/\/platform\/features\/?$/),
     );
+  });
+
+  it("renders without crashing when pathname is null", () => {
+    usePathname.mockReturnValue(null);
+
+    expect(() => render(<PlatformNav />)).not.toThrow();
+    expect(screen.getByRole("link", { name: /^features$/i })).toBeInTheDocument();
   });
 });

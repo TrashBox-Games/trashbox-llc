@@ -1,13 +1,19 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SettingsSidebar } from "./SettingsSidebar";
 
+const usePathname = vi.fn(() => "/portal/settings/email-accounts/");
+
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/portal/settings/email-accounts/",
+  usePathname: () => usePathname(),
 }));
 
 describe("SettingsSidebar", () => {
+  beforeEach(() => {
+    usePathname.mockReturnValue("/portal/settings/email-accounts/");
+  });
+
   it("renders group toggles and section links with icons", () => {
     render(<SettingsSidebar />);
 
@@ -48,5 +54,12 @@ describe("SettingsSidebar", () => {
     await user.click(communication);
     expect(communication).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("link", { name: /email accounts/i })).toBeInTheDocument();
+  });
+
+  it("renders without crashing when pathname is null", () => {
+    usePathname.mockReturnValue(null);
+
+    expect(() => render(<SettingsSidebar />)).not.toThrow();
+    expect(screen.getByRole("navigation", { name: /settings/i })).toBeInTheDocument();
   });
 });

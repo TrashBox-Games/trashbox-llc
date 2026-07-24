@@ -21,7 +21,7 @@ function linkClass(active: boolean) {
 }
 
 export function PlatformNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   return (
     <div className="mb-12 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/10 pb-6">

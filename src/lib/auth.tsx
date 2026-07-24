@@ -21,7 +21,7 @@ import { authConfigured, configureAmplify } from "./amplify";
 
 type AuthStatus = "loading" | "signedOut" | "signedIn";
 
-interface AuthContextValue {
+export interface AuthContextValue {
   status: AuthStatus;
   email: string | null;
   configured: boolean;
@@ -34,6 +34,29 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const noopAsync = async () => {};
+
+/** Side-effect-free auth context for Storybook/Chromatic. */
+export function StubAuthProvider({
+  value,
+  children,
+}: {
+  value: Partial<AuthContextValue> & Pick<AuthContextValue, "status" | "configured">;
+  children: ReactNode;
+}) {
+  const merged: AuthContextValue = {
+    email: null,
+    signInWithPassword: noopAsync,
+    signUpWithPassword: async () => "done",
+    confirmSignUpCode: noopAsync,
+    resendCode: noopAsync,
+    signOutUser: noopAsync,
+    refresh: noopAsync,
+    ...value,
+  };
+  return <AuthContext.Provider value={merged}>{children}</AuthContext.Provider>;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>(
