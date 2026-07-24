@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { ApiKeysSettings } from "./ApiKeysSettings";
 
 const meta = {
-  title: "Features/Settings/ApiKeysSettings",
+  title: "Features/Portal/Settings/ApiKeysSettings",
   component: ApiKeysSettings,
   tags: ["autodocs"],
   decorators: [

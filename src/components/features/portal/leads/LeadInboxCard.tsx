@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, JSX } from "react";
-import { LeadStatusBadge } from "@/components/features/leads/LeadStatusBadge";
+import { LeadStatusBadge } from "@/components/features/portal/leads/LeadStatusBadge";
 import { Button } from "@/components/ui/button";
 import type { LeadStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";

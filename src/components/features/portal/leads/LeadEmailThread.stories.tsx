@@ -26,7 +26,7 @@ const fromOptions: FromIdentityOption[] = [
 ];
 
 const meta = {
-  title: "Features/Leads/LeadEmailThread",
+  title: "Features/Portal/Leads/LeadEmailThread",
   component: LeadEmailThread,
   tags: ["autodocs"],
   decorators: [

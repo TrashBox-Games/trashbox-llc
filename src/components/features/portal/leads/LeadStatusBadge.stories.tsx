@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { LeadStatusBadge } from "./LeadStatusBadge";
 
 const meta = {
-  title: "Features/Leads/LeadStatusBadge",
+  title: "Features/Portal/Leads/LeadStatusBadge",
   component: LeadStatusBadge,
   tags: ["autodocs"],
 } satisfies Meta<typeof LeadStatusBadge>;

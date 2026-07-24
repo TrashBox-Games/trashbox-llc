@@ -17,7 +17,7 @@ const connected: MailboxStatusResponse = {
 };
 
 const meta = {
-  title: "Features/Settings/MailboxSettings",
+  title: "Features/Portal/Settings/MailboxSettings",
   component: MailboxSettings,
   tags: ["autodocs"],
   decorators: [

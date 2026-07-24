@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Select } from "@/components/atoms/Select";
-import { LeadEmailThread } from "@/components/features/leads/LeadEmailThread";
+import { LeadEmailThread } from "@/components/features/portal/leads/LeadEmailThread";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {

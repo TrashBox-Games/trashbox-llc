@@ -37,7 +37,7 @@ const customRole: ClientRole = {
 };
 
 const meta = {
-  title: "Features/Settings/RolesPermissionsSettings",
+  title: "Features/Portal/Settings/RolesPermissionsSettings",
   component: RolesPermissionsSettings,
   tags: ["autodocs"],
   decorators: [

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { SettingsShell } from "./SettingsShell";
 
 const meta = {
-  title: "Features/Settings/SettingsShell",
+  title: "Features/Portal/Settings/SettingsShell",
   component: SettingsShell,
   tags: ["autodocs"],
   parameters: {

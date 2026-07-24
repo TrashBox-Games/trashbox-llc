@@ -1,19 +1,19 @@
 "use client";
 
-import { MailboxSettings } from "@/components/features/settings/MailboxSettings";
-import { SendingPreferencesSettings } from "@/components/features/settings/SendingPreferencesSettings";
-import { SettingsPlaceholder } from "@/components/features/settings/SettingsPlaceholder";
-import { ApiDocsSettings } from "@/components/features/settings/ApiDocsSettings";
+import { MailboxSettings } from "@/components/features/portal/settings/MailboxSettings";
+import { SendingPreferencesSettings } from "@/components/features/portal/settings/SendingPreferencesSettings";
+import { SettingsPlaceholder } from "@/components/features/portal/settings/SettingsPlaceholder";
+import { ApiDocsSettings } from "@/components/features/portal/settings/ApiDocsSettings";
 import {
   ApiKeysSettings,
   type ApiKeysSettingsInitialState,
-} from "@/components/features/settings/ApiKeysSettings";
+} from "@/components/features/portal/settings/ApiKeysSettings";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
-import { RolesPermissionsSettingsSection } from "@/components/features/settings/RolesPermissionsSettingsSection";
+import { RolesPermissionsSettingsSection } from "@/components/features/portal/settings/RolesPermissionsSettingsSection";
 import {
   TeamMembersSettings,
   type TeamMembersSettingsInitialState,
-} from "@/components/features/settings/TeamMembersSettings";
+} from "@/components/features/portal/settings/TeamMembersSettings";
 import { useAuth } from "@/lib/auth";
 import { usePortal } from "@/lib/portal";
 import {

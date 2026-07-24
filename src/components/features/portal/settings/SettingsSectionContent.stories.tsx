@@ -81,7 +81,7 @@ const signedInDecorator: Decorator = (Story) => (
 );
 
 const meta = {
-  title: "Features/Settings/SettingsSectionContent",
+  title: "Features/Portal/Settings/SettingsSectionContent",
   component: SettingsSectionContent,
   tags: ["autodocs"],
   decorators: [signedInDecorator],

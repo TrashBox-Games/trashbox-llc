@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { TeamPanel } from "@/components/features/settings/TeamPanel";
+import { TeamPanel } from "@/components/features/portal/settings/TeamPanel";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import {
   ApiError,

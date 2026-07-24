@@ -45,7 +45,7 @@ const outboundReply: LeadMessage = {
 };
 
 const meta = {
-  title: "Features/Leads/LeadDetail",
+  title: "Features/Portal/Leads/LeadDetail",
   component: LeadDetail,
   tags: ["autodocs"],
   decorators: [

@@ -3,7 +3,7 @@ import { fn } from "storybook/test";
 import { LeadInboxCard } from "./LeadInboxCard";
 
 const meta = {
-  title: "Features/Leads/LeadInboxCard",
+  title: "Features/Portal/Leads/LeadInboxCard",
   component: LeadInboxCard,
   tags: ["autodocs"],
   decorators: [

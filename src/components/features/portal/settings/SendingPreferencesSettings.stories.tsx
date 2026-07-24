@@ -18,7 +18,7 @@ const mailbox: MailboxStatusResponse = {
 };
 
 const meta = {
-  title: "Features/Settings/SendingPreferencesSettings",
+  title: "Features/Portal/Settings/SendingPreferencesSettings",
   component: SendingPreferencesSettings,
   tags: ["autodocs"],
   decorators: [

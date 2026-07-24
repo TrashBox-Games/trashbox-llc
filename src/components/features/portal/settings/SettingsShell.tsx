@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { SettingsSidebar } from "@/components/features/settings/SettingsSidebar";
+import { SettingsSidebar } from "@/components/features/portal/settings/SettingsSidebar";
 import {
   DEFAULT_SETTINGS_SECTION,
   getSettingsSection,

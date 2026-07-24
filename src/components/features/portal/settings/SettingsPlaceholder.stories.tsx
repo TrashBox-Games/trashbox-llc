@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { SettingsPlaceholder } from "./SettingsPlaceholder";
 
 const meta = {
-  title: "Features/Settings/SettingsPlaceholder",
+  title: "Features/Portal/Settings/SettingsPlaceholder",
   component: SettingsPlaceholder,
   tags: ["autodocs"],
   decorators: [

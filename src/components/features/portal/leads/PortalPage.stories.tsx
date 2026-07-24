@@ -3,7 +3,7 @@ import { AuthProvider } from "@/lib/auth";
 import { PortalLoginPage } from "./PortalPage";
 
 const meta = {
-  title: "Features/Leads/PortalLoginPage",
+  title: "Features/Portal/Leads/PortalLoginPage",
   component: PortalLoginPage,
   tags: ["autodocs"],
   parameters: {

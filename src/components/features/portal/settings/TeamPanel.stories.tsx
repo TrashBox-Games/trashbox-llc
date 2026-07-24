@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { fn } from "storybook/test";
 import type { ClientRole, TeamInvite, TeamMember } from "@/lib/api";
-import { TeamMembersSettings } from "./TeamMembersSettings";
+import { TeamPanel } from "./TeamPanel";
 
 const systemRoles: ClientRole[] = [
   {
@@ -42,6 +43,8 @@ const member: TeamMember = {
   firstName: "Sarah",
   lastName: "Chen",
   emailNotifications: false,
+  allowedFromIdentityIds: ["s1"],
+  defaultFromIdentityId: "s1",
 };
 
 const pendingInvite: TeamInvite = {
@@ -54,66 +57,81 @@ const pendingInvite: TeamInvite = {
   emailNotifications: true,
 };
 
-const demoTeamState = {
-  role: "owner" as const,
-  canManageTeamMembers: true,
-  members: [owner, member],
-  invites: [] as TeamInvite[],
-  roles: systemRoles,
-  memberLimit: 5,
-  memberCount: 2,
-  senderDisplayNames: [
-    {
-      id: "s1",
-      name: "Acme Support",
-      createdAt: "2026-01-01T00:00:00.000Z",
-    },
-  ],
-};
-
 const meta = {
-  title: "Features/Settings/TeamMembersSettings",
-  component: TeamMembersSettings,
+  title: "Features/Portal/Settings/TeamPanel",
+  component: TeamPanel,
   tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <div className="mx-auto max-w-2xl bg-background px-8 py-16">
+      <div className="max-w-2xl bg-background p-8">
         <Story />
       </div>
     ),
   ],
   args: {
+    role: "owner",
     currentUserEmail: "owner@example.com",
+    members: [owner, member],
+    invites: [],
+    roles: systemRoles,
+    canManageTeamMembers: true,
+    senderDisplayNames: [
+      {
+        id: "s1",
+        name: "Sales Team",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      {
+        id: "s2",
+        name: "Support",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
+    memberLimit: 5,
+    memberCount: 2,
     tier: "premium",
-    initialState: demoTeamState,
+    onInvite: fn().mockResolvedValue(undefined),
+    onRevokeInvite: fn().mockResolvedValue(undefined),
+    onRemoveMember: fn().mockResolvedValue(undefined),
+    onUpdateMember: fn().mockResolvedValue(undefined),
   },
-} satisfies Meta<typeof TeamMembersSettings>;
+} satisfies Meta<typeof TeamPanel>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const OwnerPremium: Story = {};
 
-export const BasicTier: Story = {
-  name: "Basic tier",
+export const OwnerAtCapBasic: Story = {
   args: {
     tier: "basic",
-    initialState: {
-      ...demoTeamState,
-      memberLimit: 1,
-      memberCount: 1,
-      members: [owner],
-    },
+    memberLimit: 2,
+    memberCount: 2,
   },
 };
 
-export const WithPendingInvite: Story = {
-  name: "With pending invite",
+export const MemberReadOnly: Story = {
   args: {
-    initialState: {
-      ...demoTeamState,
-      invites: [pendingInvite],
-      memberCount: 2,
-    },
+    role: "member",
+    canManageTeamMembers: false,
+    currentUserEmail: "sarah@example.com",
+  },
+};
+
+export const WithPendingInvites: Story = {
+  args: {
+    invites: [pendingInvite],
+  },
+};
+
+export const WithError: Story = {
+  args: {
+    error: "Could not send invite.",
+  },
+};
+
+export const Busy: Story = {
+  args: {
+    busy: true,
   },
 };

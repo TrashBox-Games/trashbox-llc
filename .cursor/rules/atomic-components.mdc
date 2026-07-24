@@ -13,15 +13,16 @@ src/components/
 ├── ui/              # shadcn primitives (Button, Input, Card, etc.)
 ├── atoms/           # shared, domain-agnostic primitives and small compositions
 └── features/
-    ├── leads/       # inbox / membership lead UI
-    ├── settings/    # portal settings sections
-    ├── portal/      # portal chrome (header, skeleton)
+    ├── portal/      # authenticated portal product area
+    │   ├── …        # portal chrome (header, skeleton)
+    │   ├── leads/   # inbox / membership lead UI
+    │   └── settings/# portal settings sections
     ├── marketing/   # public site pages, chrome, layouts
     ├── email/       # email product surfaces
     └── contact/     # contact form
 ```
 
-Features are **flat** — no `molecules/` or `organisms/` nesting inside a feature.
+Top-level features are product areas. Nesting under a product area (e.g. `portal/leads`, `portal/settings`) is allowed. Still no `molecules/` or `organisms/` layers.
 
 ## Layer responsibilities
 
@@ -40,7 +41,8 @@ Only import **downward**:
 `pages` → `features` → `atoms` → `ui`
 
 - Features may import `atoms/` and `ui/` only.
-- Do not import one feature from another, except the documented one-way case: `marketing` → `contact` (`ContactForm` inside `ServicesPage`).
+- Do not import one top-level feature from another, except the documented one-way case: `marketing` → `contact` (`ContactForm` inside `ServicesPage`).
+- Portal chrome, `portal/leads`, and `portal/settings` are one feature area — they may import each other freely.
 - Prefer importing `features/portal/*` from pages/layouts rather than from other features when possible.
 
 ## Prefer shadcn
@@ -77,12 +79,12 @@ export function CustomButton({ children }: { children: React.ReactNode }) {
 ## When to use atoms vs features
 
 - **`atoms/`** — domain-agnostic (motion, icons, editors, generic selects). If the name would make sense in another product, it belongs here.
-- **`features/<name>/`** — tied to leads, settings, marketing, email, contact, or portal chrome. Prefer a feature folder over inventing new shared layers.
+- **`features/<name>/`** — tied to a product area (`portal`, `marketing`, `email`, `contact`). Prefer a feature folder over inventing new shared layers.
 - **`ui/`** — shadcn only.
 
 ## File conventions
 
 - PascalCase component names with named exports.
 - Colocate stories (`*.stories.tsx`) and tests next to the component.
-- Storybook titles: `"Atoms/…"`, `"UI/…"`, or `"Features/<Feature>/…"`.
+- Storybook titles: `"Atoms/…"`, `"UI/…"`, or `"Features/<Feature>/…"` (nested areas use `"Features/Portal/Leads/…"`, `"Features/Portal/Settings/…"`, etc.).
 - Use `@/` path aliases for all imports.

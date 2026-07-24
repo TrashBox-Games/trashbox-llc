@@ -2,9 +2,9 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
-import { LeadDetail } from "@/components/features/leads/LeadDetail";
-import { LeadInboxCard } from "@/components/features/leads/LeadInboxCard";
-import { LeadInboxFilters } from "@/components/features/leads/LeadInboxFilters";
+import { LeadDetail } from "@/components/features/portal/leads/LeadDetail";
+import { LeadInboxCard } from "@/components/features/portal/leads/LeadInboxCard";
+import { LeadInboxFilters } from "@/components/features/portal/leads/LeadInboxFilters";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

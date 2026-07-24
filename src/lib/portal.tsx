@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { LeadInboxFiltersValue } from "@/components/features/leads/LeadInboxFilters";
+import type { LeadInboxFiltersValue } from "@/components/features/portal/leads/LeadInboxFilters";
 import {
   ApiError,
   acceptTeamInvite,

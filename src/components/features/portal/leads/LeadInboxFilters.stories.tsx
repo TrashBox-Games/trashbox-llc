@@ -30,7 +30,7 @@ const emptyValue: LeadInboxFiltersValue = {
 };
 
 const meta = {
-  title: "Features/Leads/LeadInboxFilters",
+  title: "Features/Portal/Leads/LeadInboxFilters",
   component: LeadInboxFilters,
   tags: ["autodocs"],
   decorators: [

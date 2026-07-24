@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PortalApp } from "@/components/features/leads/PortalPage";
+import { PortalApp } from "@/components/features/portal/leads/PortalPage";
 
 export const metadata: Metadata = {
   title: "Portal Membership",

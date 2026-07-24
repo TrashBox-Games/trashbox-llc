@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { RolesPermissionsSettings } from "@/components/features/settings/RolesPermissionsSettings";
+import { RolesPermissionsSettings } from "@/components/features/portal/settings/RolesPermissionsSettings";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import {
   ApiError,
