@@ -62,6 +62,5 @@ For GitHub Pages, set the same names as repository **Secrets** (used by `.github
 | `/portal/inbox` | Notifications inbox |
 | `/portal/api-key` | API key management |
 | `/portal/membership` | Subscription / billing |
-| `/email` | Redirects to `/platform` |
 
 Platform marketing lives under `/platform/*` with the main site header. The signed-in product lives under `/portal/*` with its own header.
