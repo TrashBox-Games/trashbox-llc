@@ -638,6 +638,21 @@ export function PortalProvider({
           ? `Synced ${result.imported} new message${result.imported === 1 ? "" : "s"}.`
           : "Sync complete. No new replies.",
       );
+      if (selectedId) {
+        try {
+          const res = await listLeadMessages(selectedId);
+          setLeadMessages(res.items);
+          setItems((prev) =>
+            prev.map((item) =>
+              item.submissionId === selectedId
+                ? { ...item, messageCount: res.items.length }
+                : item,
+            ),
+          );
+        } catch {
+          // Sync succeeded; thread refresh is best-effort.
+        }
+      }
     } catch (err) {
       setMailboxError(
         err instanceof ApiError ? err.message : "Failed to sync mailbox",
@@ -645,7 +660,7 @@ export function PortalProvider({
     } finally {
       setMailboxBusy(false);
     }
-  }, []);
+  }, [selectedId]);
 
   const onMailboxPatch = useCallback(async (input: PatchMailboxInput) => {
     setMailboxBusy(true);

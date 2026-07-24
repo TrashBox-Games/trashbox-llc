@@ -542,6 +542,8 @@ export interface LeadMessage {
   bodyText: string;
   bodyHtml?: string;
   providerMessageId?: string;
+  /** RFC 5322 Message-ID without angle brackets. */
+  rfcMessageId?: string;
   threadId?: string;
   conversationId?: string;
   sentBy?: string;
