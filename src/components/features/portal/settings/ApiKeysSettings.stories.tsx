@@ -1,5 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import type { AccountResponse } from "@/lib/api";
 import { ApiKeysSettings } from "./ApiKeysSettings";
+
+const ownerAccount: AccountResponse = {
+  linked: true,
+  email: "owner@example.com",
+  clientName: "Acme",
+  tier: "premium",
+  active: true,
+  hasBilling: true,
+  hasApiKey: false,
+  role: "owner",
+};
 
 const meta = {
   title: "Features/Portal/Settings/ApiKeysSettings",
@@ -21,16 +33,7 @@ export const NoKeyIssued: Story = {
   args: {
     initialState: {
       canManage: true,
-      account: {
-        linked: true,
-        email: "owner@example.com",
-        clientName: "Acme",
-        tier: "premium",
-        active: true,
-        hasBilling: true,
-        hasApiKey: false,
-        role: "owner",
-      },
+      account: ownerAccount,
     },
   },
 };
@@ -39,16 +42,7 @@ export const KeyActive: Story = {
   args: {
     initialState: {
       canManage: true,
-      account: {
-        linked: true,
-        email: "owner@example.com",
-        clientName: "Acme",
-        tier: "premium",
-        active: true,
-        hasBilling: true,
-        hasApiKey: true,
-        role: "owner",
-      },
+      account: { ...ownerAccount, hasApiKey: true },
     },
   },
 };
@@ -59,16 +53,7 @@ export const KeyJustCreated: Story = {
     initialState: {
       canManage: true,
       issuedApiKey: "fapi_storybook_demo_key_do_not_use",
-      account: {
-        linked: true,
-        email: "owner@example.com",
-        clientName: "Acme",
-        tier: "premium",
-        active: true,
-        hasBilling: true,
-        hasApiKey: true,
-        role: "owner",
-      },
+      account: { ...ownerAccount, hasApiKey: true },
     },
   },
 };

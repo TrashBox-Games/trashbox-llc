@@ -25,7 +25,7 @@ export type ApiKeysSettingsProps = {
   initialState?: ApiKeysSettingsInitialState;
 };
 
-export function ApiKeysSettings({ initialState }: ApiKeysSettingsProps = {}) {
+export function ApiKeysSettings({ initialState }: ApiKeysSettingsProps) {
   const [account, setAccount] = useState<AccountResponse | null>(
     initialState?.account ?? null,
   );
