@@ -4,7 +4,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { LeadDetail } from "@/components/features/portal/leads/LeadDetail";
 import {
-  INBOX_SIDEBAR_DEFAULT_WIDTH,
+  INBOX_SIDEBAR_SNAP_WIDTH,
   LeadInboxResizeHandle,
   LeadInboxSidebar,
   LeadInboxSidebarToggle,
@@ -246,9 +246,14 @@ export function PortalApp({ tab }: PortalAppProps) {
   const portal = usePortal();
   const [inboxSidebarOpen, setInboxSidebarOpen] = useState(true);
   const [inboxSidebarWidth, setInboxSidebarWidth] = useState(
-    INBOX_SIDEBAR_DEFAULT_WIDTH,
+    INBOX_SIDEBAR_SNAP_WIDTH,
   );
   const [inboxResizing, setInboxResizing] = useState(false);
+
+  function onInboxSidebarOpenChange(next: boolean) {
+    if (next) setInboxSidebarWidth(INBOX_SIDEBAR_SNAP_WIDTH);
+    setInboxSidebarOpen(next);
+  }
 
   if (!auth.configured) {
     return (
@@ -464,7 +469,7 @@ export function PortalApp({ tab }: PortalAppProps) {
               >
                 <LeadInboxSidebar
                   open={inboxSidebarOpen}
-                  onOpenChange={setInboxSidebarOpen}
+                  onOpenChange={onInboxSidebarOpenChange}
                   filters={portal.filters}
                   members={portal.members}
                   onFiltersChange={portal.setFilters}
@@ -486,7 +491,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                   <LeadInboxResizeHandle
                     width={inboxSidebarWidth}
                     onWidthChange={setInboxSidebarWidth}
-                    onOpenChange={setInboxSidebarOpen}
+                    onOpenChange={onInboxSidebarOpenChange}
                     onDraggingChange={setInboxResizing}
                     className="hidden lg:flex"
                   />
@@ -496,7 +501,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                     <div className="mb-4">
                       <LeadInboxSidebarToggle
                         open={false}
-                        onOpenChange={setInboxSidebarOpen}
+                        onOpenChange={onInboxSidebarOpenChange}
                       />
                     </div>
                   )}

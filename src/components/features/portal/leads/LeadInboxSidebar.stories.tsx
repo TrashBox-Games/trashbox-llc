@@ -3,7 +3,7 @@ import { useState } from "react";
 import { fn } from "storybook/test";
 import type { Submission } from "@/lib/api";
 import {
-  INBOX_SIDEBAR_DEFAULT_WIDTH,
+  INBOX_SIDEBAR_SNAP_WIDTH,
   LeadInboxResizeHandle,
   LeadInboxSidebar,
   LeadInboxSidebarToggle,
@@ -84,8 +84,15 @@ type Story = StoryObj<typeof meta>;
 
 function ControlledSidebar(args: LeadInboxSidebarProps) {
   const [open, setOpen] = useState(args.open);
-  const [width, setWidth] = useState(args.width ?? INBOX_SIDEBAR_DEFAULT_WIDTH);
+  const [width, setWidth] = useState(args.width ?? INBOX_SIDEBAR_SNAP_WIDTH);
   const [resizing, setResizing] = useState(false);
+
+  function onOpenChange(next: boolean) {
+    if (next) setWidth(INBOX_SIDEBAR_SNAP_WIDTH);
+    setOpen(next);
+    args.onOpenChange(next);
+  }
+
   return (
     <div className="flex gap-8">
       <LeadInboxSidebar
@@ -93,26 +100,23 @@ function ControlledSidebar(args: LeadInboxSidebarProps) {
         open={open}
         width={width}
         resizing={resizing}
-        onOpenChange={(next) => {
-          setOpen(next);
-          args.onOpenChange(next);
-        }}
+        onOpenChange={onOpenChange}
       />
       <div className="relative min-w-0 flex-1 rounded bg-surface-container-low p-6 text-sm text-on-surface-variant">
         {open && (
           <LeadInboxResizeHandle
             width={width}
             onWidthChange={setWidth}
-            onOpenChange={setOpen}
+            onOpenChange={onOpenChange}
             onDraggingChange={setResizing}
           />
         )}
         {!open && (
           <div className="mb-4">
-            <LeadInboxSidebarToggle open={false} onOpenChange={setOpen} />
+            <LeadInboxSidebarToggle open={false} onOpenChange={onOpenChange} />
           </div>
         )}
-        Detail pane (drag left edge — snaps to stops or closes)
+        Detail pane (click or drag the left edge to close)
       </div>
     </div>
   );

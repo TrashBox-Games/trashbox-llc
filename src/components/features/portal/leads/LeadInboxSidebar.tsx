@@ -14,25 +14,14 @@ import {
   type LeadInboxFiltersValue,
 } from "@/components/features/portal/leads/LeadInboxFilters";
 import { Button } from "@/components/ui/button";
-import {
-  leadStatusOf,
-  type Submission,
-  type TeamMember,
-} from "@/lib/api";
+import { leadStatusOf, type Submission, type TeamMember } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export const INBOX_SIDEBAR_DEFAULT_WIDTH = 320;
 export const INBOX_SIDEBAR_MIN_WIDTH = 240;
 export const INBOX_SIDEBAR_MAX_WIDTH = 520;
-/** Release below this width snaps the leads panel closed. */
-export const INBOX_SIDEBAR_COLLAPSE_WIDTH = 180;
-export const INBOX_SIDEBAR_SNAP_POINTS = [
-  INBOX_SIDEBAR_MIN_WIDTH,
-  INBOX_SIDEBAR_DEFAULT_WIDTH,
-  INBOX_SIDEBAR_MAX_WIDTH,
-] as const;
-export const INBOX_SIDEBAR_SNAP_DISTANCE = 32;
-const KEYBOARD_RESIZE_STEP = 16;
+/** Open / restore width for the leads panel. */
+export const INBOX_SIDEBAR_SNAP_WIDTH = INBOX_SIDEBAR_DEFAULT_WIDTH;
 
 export function clampInboxSidebarWidth(width: number): number {
   return Math.min(
@@ -41,38 +30,9 @@ export function clampInboxSidebarWidth(width: number): number {
   );
 }
 
-/** Live drag range — allows shrinking past min toward the collapse snap. */
+/** Live drag range — allows shrinking toward closed while dragging. */
 export function clampInboxSidebarDragWidth(width: number): number {
   return Math.min(INBOX_SIDEBAR_MAX_WIDTH, Math.max(0, Math.round(width)));
-}
-
-export type InboxSidebarSnapResult =
-  | { open: false; width: number }
-  | { open: true; width: number };
-
-/** Resolve open/closed + width after a resize drag (or keyboard release). */
-export function resolveInboxSidebarSnap(
-  rawWidth: number,
-): InboxSidebarSnapResult {
-  if (rawWidth < INBOX_SIDEBAR_COLLAPSE_WIDTH) {
-    return { open: false, width: INBOX_SIDEBAR_DEFAULT_WIDTH };
-  }
-
-  let snapped = clampInboxSidebarWidth(rawWidth);
-  let nearestDistance = Number.POSITIVE_INFINITY;
-
-  for (const point of INBOX_SIDEBAR_SNAP_POINTS) {
-    const distance = Math.abs(rawWidth - point);
-    if (
-      distance <= INBOX_SIDEBAR_SNAP_DISTANCE &&
-      distance < nearestDistance
-    ) {
-      snapped = point;
-      nearestDistance = distance;
-    }
-  }
-
-  return { open: true, width: snapped };
 }
 
 export interface LeadInboxSidebarToggleProps {
@@ -109,16 +69,15 @@ export function LeadInboxSidebarToggle({
 }
 
 export interface LeadInboxResizeHandleProps {
-  /** Current sidebar width in px (the split being adjusted). */
+  /** Current sidebar width in px (used for drag-shrink feedback). */
   width: number;
   onWidthChange: (width: number) => void;
-  /** Called when a drag release snaps the panel closed. */
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange: (open: boolean) => void;
   onDraggingChange?: (dragging: boolean) => void;
   className?: string;
 }
 
-/** Drag handle on the email pane’s left edge to resize the leads split. */
+/** Handle on the email pane’s left edge — click or drag closes the leads panel. */
 export function LeadInboxResizeHandle({
   width,
   onWidthChange,
@@ -129,7 +88,6 @@ export function LeadInboxResizeHandle({
   const dragRef = useRef<{
     startX: number;
     startWidth: number;
-    lastWidth: number;
   } | null>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -138,19 +96,16 @@ export function LeadInboxResizeHandle({
     onDraggingChange?.(next);
   }
 
-  function applySnap(rawWidth: number) {
-    const result = resolveInboxSidebarSnap(rawWidth);
-    onWidthChange(result.width);
-    if (!result.open) onOpenChange?.(false);
+  function closeToSnap() {
+    onWidthChange(INBOX_SIDEBAR_SNAP_WIDTH);
+    onOpenChange(false);
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     event.preventDefault();
-    const startWidth = clampInboxSidebarDragWidth(width);
     dragRef.current = {
       startX: event.clientX,
-      startWidth,
-      lastWidth: startWidth,
+      startWidth: clampInboxSidebarDragWidth(width),
     };
     setDraggingState(true);
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -159,10 +114,10 @@ export function LeadInboxResizeHandle({
   function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
     const drag = dragRef.current;
     if (!drag) return;
+    // Dragging left shrinks toward closed; any drag still closes on release.
     const next = clampInboxSidebarDragWidth(
       drag.startWidth + (event.clientX - drag.startX),
     );
-    drag.lastWidth = next;
     onWidthChange(next);
   }
 
@@ -170,19 +125,19 @@ export function LeadInboxResizeHandle({
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    const raw = dragRef.current?.lastWidth ?? width;
     dragRef.current = null;
     setDraggingState(false);
-    applySnap(raw);
+    closeToSnap();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "ArrowRight") {
+    if (
+      event.key === "Enter" ||
+      event.key === " " ||
+      event.key === "ArrowLeft"
+    ) {
       event.preventDefault();
-      applySnap(width + KEYBOARD_RESIZE_STEP);
-    } else if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      applySnap(width - KEYBOARD_RESIZE_STEP);
+      closeToSnap();
     }
   }
 
@@ -190,7 +145,7 @@ export function LeadInboxResizeHandle({
     <div
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize email panel"
+      aria-label="Close leads panel"
       aria-valuenow={Math.round(width)}
       aria-valuemin={0}
       aria-valuemax={INBOX_SIDEBAR_MAX_WIDTH}
@@ -269,7 +224,7 @@ export function LeadInboxSidebar({
       <div style={{ width }} className="pr-1">
         <aside className="flex flex-col gap-6">
           <div className="flex items-center justify-between gap-3">
-            <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+            <p className="font-label text-outline text-[10px] tracking-widest uppercase">
               Leads
             </p>
             <LeadInboxSidebarToggle
@@ -287,19 +242,19 @@ export function LeadInboxSidebar({
           />
 
           {showListError && (
-            <p className="border border-outline-variant/20 bg-surface-container-low p-4 text-sm text-on-surface-variant">
+            <p className="border-outline-variant/20 bg-surface-container-low text-on-surface-variant border p-4 text-sm">
               {listError}
             </p>
           )}
 
           {listBusy && items.length === 0 && (
-            <p className="font-label text-xs uppercase tracking-widest text-outline">
+            <p className="font-label text-outline text-xs tracking-widest uppercase">
               Loading…
             </p>
           )}
 
           {!listBusy && !listError && items.length === 0 && (
-            <p className="text-sm text-on-surface-variant">
+            <p className="text-on-surface-variant text-sm">
               No leads match these filters.
             </p>
           )}

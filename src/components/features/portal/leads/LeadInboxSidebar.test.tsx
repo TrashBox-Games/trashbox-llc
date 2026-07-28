@@ -3,13 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { Submission } from "@/lib/api";
 import {
-  INBOX_SIDEBAR_DEFAULT_WIDTH,
-  INBOX_SIDEBAR_MAX_WIDTH,
-  INBOX_SIDEBAR_MIN_WIDTH,
+  INBOX_SIDEBAR_SNAP_WIDTH,
   LeadInboxResizeHandle,
   LeadInboxSidebar,
   LeadInboxSidebarToggle,
-  resolveInboxSidebarSnap,
 } from "./LeadInboxSidebar";
 
 const items: Submission[] = [
@@ -56,9 +53,7 @@ const baseProps = {
 
 describe("LeadInboxSidebar", () => {
   it("renders filters and vertical lead cards when open", () => {
-    render(
-      <LeadInboxSidebar open onOpenChange={vi.fn()} {...baseProps} />,
-    );
+    render(<LeadInboxSidebar open onOpenChange={vi.fn()} {...baseProps} />);
 
     expect(screen.getByLabelText(/search/i)).toBeInTheDocument();
     expect(
@@ -102,9 +97,7 @@ describe("LeadInboxSidebar", () => {
       <LeadInboxSidebar open onOpenChange={onOpenChange} {...baseProps} />,
     );
 
-    await user.click(
-      screen.getByRole("button", { name: /hide leads panel/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /hide leads panel/i }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
@@ -112,13 +105,9 @@ describe("LeadInboxSidebar", () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
 
-    render(
-      <LeadInboxSidebarToggle open={false} onOpenChange={onOpenChange} />,
-    );
+    render(<LeadInboxSidebarToggle open={false} onOpenChange={onOpenChange} />);
 
-    await user.click(
-      screen.getByRole("button", { name: /show leads panel/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /show leads panel/i }));
     expect(onOpenChange).toHaveBeenCalledWith(true);
   });
 
@@ -158,9 +147,7 @@ describe("LeadInboxSidebar", () => {
   });
 
   it("does not render a resize handle on the sidebar", () => {
-    render(
-      <LeadInboxSidebar open onOpenChange={vi.fn()} {...baseProps} />,
-    );
+    render(<LeadInboxSidebar open onOpenChange={vi.fn()} {...baseProps} />);
 
     expect(
       screen.queryByRole("separator", { name: /resize/i }),
@@ -168,59 +155,8 @@ describe("LeadInboxSidebar", () => {
   });
 });
 
-describe("resolveInboxSidebarSnap", () => {
-  it("snaps closed below the collapse threshold", () => {
-    expect(resolveInboxSidebarSnap(120)).toEqual({
-      open: false,
-      width: INBOX_SIDEBAR_DEFAULT_WIDTH,
-    });
-  });
-
-  it("snaps to nearby width stops", () => {
-    expect(resolveInboxSidebarSnap(330)).toEqual({
-      open: true,
-      width: INBOX_SIDEBAR_DEFAULT_WIDTH,
-    });
-    expect(resolveInboxSidebarSnap(250)).toEqual({
-      open: true,
-      width: INBOX_SIDEBAR_MIN_WIDTH,
-    });
-    expect(resolveInboxSidebarSnap(500)).toEqual({
-      open: true,
-      width: INBOX_SIDEBAR_MAX_WIDTH,
-    });
-  });
-
-  it("clamps when not near a snap point", () => {
-    expect(resolveInboxSidebarSnap(400)).toEqual({
-      open: true,
-      width: 400,
-    });
-  });
-});
-
 describe("LeadInboxResizeHandle", () => {
-  it("updates sidebar width when dragged", () => {
-    const onWidthChange = vi.fn();
-
-    render(
-      <LeadInboxResizeHandle width={320} onWidthChange={onWidthChange} />,
-    );
-
-    const handle = screen.getByRole("separator", {
-      name: /resize email panel/i,
-    });
-
-    fireEvent.pointerDown(handle, { clientX: 320, pointerId: 1 });
-    fireEvent.pointerMove(handle, { clientX: 400, pointerId: 1 });
-    fireEvent.pointerUp(handle, { pointerId: 1 });
-
-    expect(onWidthChange).toHaveBeenCalled();
-    const last = onWidthChange.mock.calls.at(-1)?.[0] as number;
-    expect(last).toBeGreaterThan(320);
-  });
-
-  it("snaps closed when released past the collapse threshold", () => {
+  it("closes on click", () => {
     const onWidthChange = vi.fn();
     const onOpenChange = vi.fn();
 
@@ -233,52 +169,59 @@ describe("LeadInboxResizeHandle", () => {
     );
 
     const handle = screen.getByRole("separator", {
-      name: /resize email panel/i,
+      name: /close leads panel/i,
     });
 
     fireEvent.pointerDown(handle, { clientX: 320, pointerId: 1 });
-    fireEvent.pointerMove(handle, { clientX: 100, pointerId: 1 });
     fireEvent.pointerUp(handle, { pointerId: 1 });
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
-    expect(onWidthChange).toHaveBeenCalledWith(INBOX_SIDEBAR_DEFAULT_WIDTH);
+    expect(onWidthChange).toHaveBeenCalledWith(INBOX_SIDEBAR_SNAP_WIDTH);
   });
 
-  it("snaps to the default width when released nearby", () => {
+  it("closes when dragged at all", () => {
     const onWidthChange = vi.fn();
+    const onOpenChange = vi.fn();
 
     render(
-      <LeadInboxResizeHandle width={320} onWidthChange={onWidthChange} />,
+      <LeadInboxResizeHandle
+        width={320}
+        onWidthChange={onWidthChange}
+        onOpenChange={onOpenChange}
+      />,
     );
 
     const handle = screen.getByRole("separator", {
-      name: /resize email panel/i,
+      name: /close leads panel/i,
     });
 
     fireEvent.pointerDown(handle, { clientX: 320, pointerId: 1 });
-    fireEvent.pointerMove(handle, { clientX: 340, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 400, pointerId: 1 });
     fireEvent.pointerUp(handle, { pointerId: 1 });
 
-    expect(onWidthChange).toHaveBeenLastCalledWith(INBOX_SIDEBAR_DEFAULT_WIDTH);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onWidthChange).toHaveBeenLastCalledWith(INBOX_SIDEBAR_SNAP_WIDTH);
   });
 
-  it("nudges width with arrow keys and applies snap", async () => {
+  it("closes with Enter or ArrowLeft", async () => {
     const user = userEvent.setup();
     const onWidthChange = vi.fn();
+    const onOpenChange = vi.fn();
 
     render(
-      <LeadInboxResizeHandle width={320} onWidthChange={onWidthChange} />,
+      <LeadInboxResizeHandle
+        width={320}
+        onWidthChange={onWidthChange}
+        onOpenChange={onOpenChange}
+      />,
     );
 
     const handle = screen.getByRole("separator", {
-      name: /resize email panel/i,
+      name: /close leads panel/i,
     });
     handle.focus();
-    await user.keyboard("{ArrowRight}");
-    // 336 is within snap distance of 320
-    expect(onWidthChange).toHaveBeenCalledWith(INBOX_SIDEBAR_DEFAULT_WIDTH);
-
-    await user.keyboard("{ArrowLeft}");
-    expect(onWidthChange).toHaveBeenCalledWith(INBOX_SIDEBAR_DEFAULT_WIDTH);
+    await user.keyboard("{Enter}");
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onWidthChange).toHaveBeenCalledWith(INBOX_SIDEBAR_SNAP_WIDTH);
   });
 });

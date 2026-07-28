@@ -6,6 +6,8 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
   type ReactNode,
 } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
@@ -22,6 +24,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type {
   EmailSignature,
   EmailSnippet,
@@ -71,82 +79,266 @@ function formatDay(iso: string) {
   }
 }
 
-interface TimelineNodeProps {
+function formatTime(iso: string) {
+  try {
+    return new Intl.DateTimeFormat(undefined, { timeStyle: "short" }).format(
+      new Date(iso),
+    );
+  } catch {
+    return iso;
+  }
+}
+
+/** Local calendar day key used to segment the thread timeline. */
+function dayKey(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+interface TimelineMeta {
+  from: string;
+  to?: string;
+  at: string;
+}
+
+interface TimelineEntry {
+  id: string;
+  at: string;
   eyebrow: string;
   title: string;
-  day: string;
+  preview: string;
   accent: "primary" | "muted";
+  icon: string;
+  iconLabel: string;
+  meta: TimelineMeta;
+  defaultOpen?: boolean;
+  body: ReactNode;
+}
+
+function groupTimelineByDay(entries: TimelineEntry[]): {
+  key: string;
+  label: string;
+  entries: TimelineEntry[];
+}[] {
+  const groups: {
+    key: string;
+    label: string;
+    entries: TimelineEntry[];
+  }[] = [];
+
+  for (const entry of entries) {
+    const key = dayKey(entry.at);
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) {
+      last.entries.push(entry);
+    } else {
+      groups.push({
+        key,
+        label: formatDay(entry.at),
+        entries: [entry],
+      });
+    }
+  }
+
+  return groups;
+}
+
+interface TimelineNodeProps {
+  id: string;
+  eyebrow: string;
+  title: string;
+  preview: string;
+  time: string;
+  at: string;
+  accent: "primary" | "muted";
+  icon: string;
+  iconLabel: string;
+  meta: TimelineMeta;
   defaultOpen?: boolean;
   children: ReactNode;
 }
 
 function TimelineNode({
+  id,
   eyebrow,
   title,
-  day,
+  preview,
+  time,
+  at,
   accent,
+  icon,
+  iconLabel,
+  meta,
   defaultOpen = false,
   children,
 }: TimelineNodeProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const panelId = `timeline-panel-${id}`;
+
+  function toggleOpen() {
+    setOpen((value) => !value);
+  }
+
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  function onCardPointerDown(event: PointerEvent<HTMLDivElement>) {
+    pointerStartRef.current = { x: event.clientX, y: event.clientY };
+  }
+
+  function onCardClick(event: MouseEvent<HTMLDivElement>) {
+    const start = pointerStartRef.current;
+    pointerStartRef.current = null;
+    if (start) {
+      const moved =
+        Math.abs(event.clientX - start.x) > 4 ||
+        Math.abs(event.clientY - start.y) > 4;
+      if (moved) return;
+    }
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) return;
+    toggleOpen();
+  }
+
+  function onCardKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleOpen();
+    }
+  }
 
   return (
-    <li className="relative">
+    <li className="relative pt-3">
+      <div
+        data-slot="timeline-connector"
+        className="absolute top-6 -left-[calc(7rem+1px)] z-10 w-[calc(7.25rem+1px)]"
+      >
+        <time
+          dateTime={at}
+          className="text-outline-variant absolute right-8 bottom-full left-0 mb-1 text-center font-mono text-[9px] uppercase"
+        >
+          {time}
+        </time>
+        <span
+          aria-hidden="true"
+          className="bg-outline-variant/40 absolute top-0 right-0 left-0 h-0.5 -translate-y-1/2"
+        />
+      </div>
       <span
-        aria-hidden="true"
+        role="img"
+        aria-label={iconLabel}
         className={cn(
-          "ring-surface-container-low absolute top-2 -left-[25px] size-2 rounded-full ring-4",
-          accent === "primary" ? "bg-primary" : "bg-secondary-fixed-dim",
-        )}
-      />
-      <Button
-        type="button"
-        variant="ghost"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "h-auto w-full flex-col items-stretch justify-start rounded p-4 text-left font-normal tracking-normal whitespace-normal text-inherit normal-case",
-          open
-            ? "bg-surface-container hover:bg-surface-variant"
-            : "bg-surface-container-lowest hover:bg-surface-container",
+          "ring-background absolute top-6 -left-1 z-10 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ring-4",
+          accent === "primary"
+            ? "bg-white text-background"
+            : "bg-surface-container-highest text-white",
         )}
       >
-        <div className="mb-1 flex items-start justify-between gap-4">
-          <span className="font-label text-outline text-[9px] tracking-widest uppercase">
-            {eyebrow}
-          </span>
-          <span className="text-outline-variant font-mono text-[9px] uppercase">
-            {day}
-          </span>
+        <MaterialIcon name={icon} className="text-base" />
+      </span>
+      <div className="group relative">
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={open}
+          aria-controls={panelId}
+          aria-label={title}
+          onPointerDown={onCardPointerDown}
+          onClick={onCardClick}
+          onKeyDown={onCardKeyDown}
+          className="bg-surface-container-lowest cursor-pointer overflow-hidden rounded text-left outline-none select-text focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          <div className="flex items-start justify-between gap-4 px-4 pt-4 pr-10">
+            <span className="font-label text-outline text-[9px] tracking-widest uppercase">
+              {eyebrow}
+            </span>
+          </div>
+          <div className={cn("px-4 pt-1 pr-10", open ? "pb-2" : "pb-3")}>
+            <span className="text-sm font-medium text-white">{title}</span>
+            {!open && preview ? (
+              <p className="text-on-surface-variant mt-1 line-clamp-2 text-xs">
+                {preview}
+              </p>
+            ) : null}
+          </div>
+          <div
+            id={panelId}
+            role="region"
+            aria-label={`${title} content`}
+            aria-hidden={!open}
+            inert={!open ? true : undefined}
+            className={cn(
+              "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+              open
+                ? "grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0",
+            )}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <div className="text-on-surface px-4 pt-1 pb-4 text-sm">
+                {children}
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-sm font-medium text-white">{title}</span>
+        <div className="absolute top-4 right-4 z-10">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Details for ${title}`}
+                className="text-outline hover:text-white inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-colors"
+              >
+                <MaterialIcon name="info" className="text-sm" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="left"
+              sideOffset={8}
+              className="bg-surface-container-highest text-on-surface border-outline-variant/20 max-w-xs border px-3 py-2 shadow-md"
+            >
+              <dl className="space-y-1.5 text-left">
+                <div className="flex gap-3">
+                  <dt className="font-label text-outline w-10 shrink-0 text-[10px] uppercase">
+                    From
+                  </dt>
+                  <dd className="min-w-0 text-xs break-all">{meta.from}</dd>
+                </div>
+                {meta.to && (
+                  <div className="flex gap-3">
+                    <dt className="font-label text-outline w-10 shrink-0 text-[10px] uppercase">
+                      To
+                    </dt>
+                    <dd className="min-w-0 text-xs break-all">{meta.to}</dd>
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <dt className="font-label text-outline w-10 shrink-0 text-[10px] uppercase">
+                    Date
+                  </dt>
+                  <dd className="min-w-0 text-xs">{formatWhen(meta.at)}</dd>
+                </div>
+              </dl>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute right-4 bottom-3 z-10 h-0 w-5 overflow-visible opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100"
+        >
           <MaterialIcon
             name="expand_more"
             className={cn(
-              "text-outline text-sm transition-transform",
+              "text-outline absolute right-0 bottom-0 text-sm transition-transform duration-200",
               open && "rotate-180",
             )}
           />
-        </div>
-      </Button>
-      {open && (
-        <div className="bg-surface-container/50 text-on-surface mt-3 rounded p-4 text-sm">
-          {children}
-        </div>
-      )}
+        </span>
+      </div>
     </li>
-  );
-}
-
-function MetaRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex gap-4">
-      <span className="font-label text-outline w-12 shrink-0 text-[10px] uppercase">
-        {label}
-      </span>
-      <span className="text-on-surface min-w-0">{value}</span>
-    </div>
   );
 }
 
@@ -375,57 +567,104 @@ export function LeadEmailThread({
   const libraryEmpty =
     templates.length === 0 && signatures.length === 0 && snippets.length === 0;
 
+  const timelineGroups = useMemo(() => {
+    const entries: TimelineEntry[] = [
+      {
+        id: "form",
+        at: formAt,
+        eyebrow: `Received ← ${formFrom}`,
+        title: formMessage.split("\n")[0] || "Form submission",
+        preview: formMessage.replace(/\s+/g, " ").trim(),
+        accent: "primary",
+        icon: "description",
+        iconLabel: "Form submission event",
+        meta: { from: formFrom, at: formAt },
+        defaultOpen: true,
+        body: (
+          <p className="text-on-surface leading-relaxed whitespace-pre-wrap">
+            {formMessage}
+          </p>
+        ),
+      },
+      ...messages.map((message) => {
+        const outbound = message.direction === "outbound";
+        const counterpart = outbound ? message.to : message.from;
+        return {
+          id: message.messageId,
+          at: message.createdAt,
+          eyebrow: outbound
+            ? `Sent ${message.from} → ${counterpart}`
+            : `Received ← ${counterpart}`,
+          title:
+            message.subject || (outbound ? "Reply sent" : "Reply received"),
+          preview: message.bodyText.replace(/\s+/g, " ").trim(),
+          accent: outbound ? ("primary" as const) : ("muted" as const),
+          icon: outbound ? "send" : "inbox",
+          iconLabel: outbound ? "Sent message event" : "Received message event",
+          meta: {
+            from: message.from,
+            to: message.to,
+            at: message.createdAt,
+          },
+          body: (
+            <p className="text-on-surface leading-relaxed whitespace-pre-wrap">
+              {message.bodyText}
+            </p>
+          ),
+        };
+      }),
+    ];
+    return groupTimelineByDay(entries);
+  }, [formAt, formFrom, formMessage, messages]);
+
   return (
-    <div className="border-outline-variant/10 mt-10 border-t pt-6">
+    <TooltipProvider delayDuration={200}>
+      <div className="border-outline-variant/10 mt-10 border-t pt-6">
       <p className={labelClass}>Email thread</p>
 
-      <ol className="border-outline-variant/20 relative ml-1 space-y-4 border-l pl-6">
-        <TimelineNode
-          eyebrow={`Form submission · ${formFrom}`}
-          title={formMessage.split("\n")[0] || "Form submission"}
-          day={formatDay(formAt)}
-          accent="primary"
-          defaultOpen
-        >
-          <div className="space-y-4">
-            <div className="border-outline-variant/10 grid gap-2 border-b pb-4">
-              <MetaRow label="From" value={formFrom} />
-              <MetaRow label="Date" value={formatWhen(formAt)} />
+      <div className="space-y-8">
+        {timelineGroups.map((group) => (
+          <section key={group.key} aria-label={`Messages on ${group.label}`}>
+            <div className="mb-4 flex items-center gap-3">
+              <div
+                aria-hidden="true"
+                className="bg-outline-variant/40 h-px min-w-4 flex-1"
+              />
+              <time
+                dateTime={group.key}
+                className="font-label text-outline shrink-0 text-[10px] tracking-widest uppercase"
+              >
+                {group.label}
+              </time>
+              <div
+                aria-hidden="true"
+                className="bg-outline-variant/40 h-px min-w-4 flex-1"
+              />
             </div>
-            <p className="text-on-surface leading-relaxed whitespace-pre-wrap">
-              {formMessage}
-            </p>
-          </div>
-        </TimelineNode>
 
-        {messages.map((message) => {
-          const outbound = message.direction === "outbound";
-          return (
-            <TimelineNode
-              key={message.messageId}
-              eyebrow={`${outbound ? "Sent" : "Received"} · ${message.from}${
-                message.sentBy ? ` · ${message.sentBy}` : ""
-              }`}
-              title={
-                message.subject || (outbound ? "Reply sent" : "Reply received")
-              }
-              day={formatDay(message.createdAt)}
-              accent={outbound ? "primary" : "muted"}
-            >
-              <div className="space-y-4">
-                <div className="border-outline-variant/10 grid gap-1 border-b pb-3">
-                  <MetaRow label="From" value={message.from} />
-                  <MetaRow label="To" value={message.to} />
-                  <MetaRow label="Date" value={formatWhen(message.createdAt)} />
-                </div>
-                <p className="text-on-surface leading-relaxed whitespace-pre-wrap">
-                  {message.bodyText}
-                </p>
-              </div>
-            </TimelineNode>
-          );
-        })}
-      </ol>
+            <ol className="border-outline-variant/30 relative ml-4 space-y-6 border-l-2 pt-2 pl-28">
+              {group.entries.map((entry) => (
+                <TimelineNode
+                  key={entry.id}
+                  id={entry.id}
+                  eyebrow={entry.eyebrow}
+                  title={entry.title}
+                  preview={entry.preview}
+                  time={formatTime(entry.at)}
+                  at={entry.at}
+                  accent={entry.accent}
+                  icon={entry.icon}
+                  iconLabel={entry.iconLabel}
+                  meta={entry.meta}
+                  defaultOpen={entry.defaultOpen}
+                >
+                  {entry.body}
+                </TimelineNode>
+              ))}
+            </ol>
+          </section>
+        ))}
+      </div>
 
       {error && <p className="text-error mt-4 text-sm">{error}</p>}
 
@@ -485,7 +724,7 @@ export function LeadEmailThread({
                       aria-label="Template"
                       title="Templates"
                       disabled={busy || templates.length === 0}
-                      className="h-8 gap-0.5 rounded px-1.5 font-body text-xs font-normal normal-case tracking-normal text-outline hover:bg-surface-variant hover:text-white"
+                      className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
                     >
                       <MaterialIcon name="description" className="text-lg" />
                       <MaterialIcon
@@ -496,7 +735,7 @@ export function LeadEmailThread({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    className="z-[100] max-h-64 border-outline-variant/20 bg-surface-container-high text-on-surface"
+                    className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
                   >
                     {templates.map((template) => (
                       <DropdownMenuItem
@@ -518,7 +757,7 @@ export function LeadEmailThread({
                       aria-label="Snippet"
                       title="Snippets"
                       disabled={busy || snippets.length === 0}
-                      className="h-8 gap-0.5 rounded px-1.5 font-body text-xs font-normal normal-case tracking-normal text-outline hover:bg-surface-variant hover:text-white"
+                      className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
                     >
                       <MaterialIcon name="data_object" className="text-lg" />
                       <MaterialIcon
@@ -529,7 +768,7 @@ export function LeadEmailThread({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    className="z-[100] max-h-64 border-outline-variant/20 bg-surface-container-high text-on-surface"
+                    className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
                   >
                     {snippets.map((snippet) => (
                       <DropdownMenuItem
@@ -553,7 +792,7 @@ export function LeadEmailThread({
                       aria-label="Signature"
                       title="Signatures"
                       disabled={busy || signatures.length === 0}
-                      className="h-8 gap-0.5 rounded px-1.5 font-body text-xs font-normal normal-case tracking-normal text-outline hover:bg-surface-variant hover:text-white"
+                      className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
                     >
                       <MaterialIcon name="draw" className="text-lg" />
                       <MaterialIcon
@@ -564,7 +803,7 @@ export function LeadEmailThread({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    className="z-[100] max-h-64 border-outline-variant/20 bg-surface-container-high text-on-surface"
+                    className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
                   >
                     {signatures.map((signature) => (
                       <DropdownMenuItem
@@ -614,7 +853,7 @@ export function LeadEmailThread({
               variant="secondary"
               disabled={sendDisabled}
               onClick={() => void submit()}
-              className="rounded bg-white font-label font-medium text-background shadow-sm hover:bg-white/90 hover:text-background"
+              className="font-label text-background hover:text-background rounded bg-white font-medium shadow-sm hover:bg-white/90"
             >
               Send message
               <MaterialIcon name="send" className="text-sm" />
@@ -634,5 +873,6 @@ export function LeadEmailThread({
         </p>
       )}
     </div>
+    </TooltipProvider>
   );
 }

@@ -64,6 +64,31 @@ const outboundReply: LeadMessage = {
   sentBy: "owner@example.com",
 };
 
+const nextDayReply: LeadMessage = {
+  clientId: "c1",
+  submissionId: "s1",
+  messageId: "m2",
+  direction: "inbound",
+  from: "ada@example.com",
+  to: "sales@example.com",
+  subject: "Re: Need a quote",
+  bodyText: "That works — when can you come by?",
+  createdAt: "2026-07-16T16:30:00.000Z",
+};
+
+const followUpReply: LeadMessage = {
+  clientId: "c1",
+  submissionId: "s1",
+  messageId: "m3",
+  direction: "outbound",
+  from: "sales@example.com",
+  to: "ada@example.com",
+  subject: "Scheduling pickup",
+  bodyText: "We can do Thursday morning.",
+  createdAt: "2026-07-16T18:00:00.000Z",
+  sentBy: "owner@example.com",
+};
+
 const fromOptions: FromIdentityOption[] = [
   {
     id: "s1",
@@ -125,6 +150,19 @@ export const WithOutboundReply: Story = {
     mailboxConnected: true,
     fromAddress: "sales@example.com",
     messages: [outboundReply],
+    library: { templates, signatures, snippets },
+    variableContext: {
+      lead: { name: "Ada Lovelace", email: "ada@example.com" },
+      business: { name: "Trashbox LLC" },
+    },
+  },
+};
+
+export const MultiDayThread: Story = {
+  args: {
+    mailboxConnected: true,
+    fromAddress: "sales@example.com",
+    messages: [outboundReply, nextDayReply, followUpReply],
     library: { templates, signatures, snippets },
     variableContext: {
       lead: { name: "Ada Lovelace", email: "ada@example.com" },
