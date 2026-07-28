@@ -66,7 +66,7 @@ export function LeadInboxCard({
         className={cn(
           "h-auto w-[300px] shrink-0 snap-start flex-col items-stretch justify-start whitespace-normal rounded p-5 text-left font-normal normal-case tracking-normal text-inherit",
           active
-            ? "bg-surface-container-high shadow-md ring-1 ring-white/20 hover:bg-surface-container-high"
+            ? "bg-surface-container-high shadow-md hover:bg-surface-container-high"
             : "bg-surface-container-low hover:bg-surface-container",
         )}
       >
@@ -120,24 +120,19 @@ export function LeadInboxCard({
         data-stack-depth={depth}
         aria-pressed={active}
         className={cn(
-          "relative z-10 h-auto w-full flex-col items-stretch justify-start whitespace-normal border-y border-r border-l-2 px-5 py-4 text-left font-normal normal-case tracking-normal text-inherit",
+          "relative z-10 h-auto w-full flex-col items-stretch justify-start whitespace-normal px-5 py-4 text-left font-normal normal-case tracking-normal text-inherit",
           active
-            ? "border-y-outline/45 border-r-outline/45 border-l-white bg-surface-container-high hover:bg-surface-container-high"
-            : "border-y-outline-variant/20 border-r-outline-variant/20 border-l-transparent bg-surface-container-low hover:bg-surface-container-high",
-          behind === 1 &&
-            "[box-shadow:var(--stack-1-fill),var(--stack-1-edge)]",
+            ? "bg-surface-container-high hover:bg-surface-container-high"
+            : "bg-surface-container-low hover:bg-surface-container-high",
+          behind === 1 && "[box-shadow:var(--stack-1-fill)]",
           behind >= 2 &&
-            "[box-shadow:var(--stack-1-fill),var(--stack-1-edge),var(--stack-2-fill),var(--stack-2-edge)]",
+            "[box-shadow:var(--stack-1-fill),var(--stack-2-fill)]",
         )}
         style={
           behind > 0
             ? ({
-                // Each fill sits above its 1px edge so the border peeks the same
-                // on every under-card (first shadow paints on top).
                 "--stack-1-fill": `${STACK_STEP} ${STACK_STEP} 0 0 var(--color-surface-container-high)`,
-                "--stack-1-edge": `${STACK_STEP} ${STACK_STEP} 0 1px rgb(145 145 145 / 0.45)`,
                 "--stack-2-fill": `calc(${STACK_STEP} * 2) calc(${STACK_STEP} * 2) 0 0 var(--color-surface-container-highest)`,
-                "--stack-2-edge": `calc(${STACK_STEP} * 2) calc(${STACK_STEP} * 2) 0 1px rgb(145 145 145 / 0.45)`,
               } as CSSProperties)
             : undefined
         }
