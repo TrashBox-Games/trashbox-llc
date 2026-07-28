@@ -9,7 +9,9 @@ describe("RichTextEditor", () => {
     render(<RichTextEditor ariaLabel="Reply" onChange={vi.fn()} />);
 
     expect(screen.getByRole("button", { name: /^bold$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^italic$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^italic$/i }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /^underline$/i }),
     ).toBeInTheDocument();
@@ -60,7 +62,9 @@ describe("RichTextEditor", () => {
     expect(
       screen.getByRole("button", { name: /increase indent/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^emoji$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^emoji$/i }),
+    ).toBeInTheDocument();
   });
 
   it("opens the font menu when the font trigger is clicked", async () => {
@@ -78,12 +82,14 @@ describe("RichTextEditor", () => {
     render(<RichTextEditor ariaLabel="Reply" onChange={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: /^font size$/i }));
-    expect(await screen.findByRole("spinbutton", { name: /custom font size/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("spinbutton", { name: /custom font size/i }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /18 pixels/i }));
-    expect(screen.getByRole("button", { name: /^font size$/i })).toHaveTextContent(
-      "18",
-    );
+    expect(
+      screen.getByRole("button", { name: /^font size$/i }),
+    ).toHaveTextContent("18");
 
     await user.click(screen.getByRole("button", { name: /^font size$/i }));
     const custom = await screen.findByRole("spinbutton", {
@@ -92,9 +98,9 @@ describe("RichTextEditor", () => {
     await user.clear(custom);
     await user.type(custom, "22");
     await user.click(screen.getByRole("button", { name: /^apply$/i }));
-    expect(screen.getByRole("button", { name: /^font size$/i })).toHaveTextContent(
-      "22",
-    );
+    expect(
+      screen.getByRole("button", { name: /^font size$/i }),
+    ).toHaveTextContent("22");
   });
 
   it("renders a chrome-style color picker with format and presets", async () => {
@@ -161,7 +167,9 @@ describe("RichTextEditor", () => {
     ).toBeTruthy();
 
     await user.click(preset);
-    expect(screen.getByLabelText(/text color color picker/i)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/text color color picker/i),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /^confirm$/i }));
     expect(
@@ -250,9 +258,10 @@ describe("RichTextEditor", () => {
     render(<RichTextEditor ariaLabel="Reply" disabled onChange={vi.fn()} />);
 
     expect(screen.getByRole("button", { name: /^bold$/i })).toBeDisabled();
-    expect(
-      screen.getByRole("textbox", { name: /reply/i }),
-    ).toHaveAttribute("contenteditable", "false");
+    expect(screen.getByRole("textbox", { name: /reply/i })).toHaveAttribute(
+      "contenteditable",
+      "false",
+    );
   });
 
   it("invokes strikethrough and clear formatting without throwing", async () => {
@@ -266,9 +275,7 @@ describe("RichTextEditor", () => {
   it("replaces the document through the imperative handle", () => {
     const onChange = vi.fn();
     const ref = createRef<RichTextEditorHandle>();
-    render(
-      <RichTextEditor ref={ref} ariaLabel="Reply" onChange={onChange} />,
-    );
+    render(<RichTextEditor ref={ref} ariaLabel="Reply" onChange={onChange} />);
 
     ref.current?.setHtml("<p>Template body</p>");
 
@@ -276,7 +283,9 @@ describe("RichTextEditor", () => {
       "<p>Template body</p>",
     );
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ text: expect.stringContaining("Template body") }),
+      expect.objectContaining({
+        text: expect.stringContaining("Template body"),
+      }),
     );
   });
 
@@ -284,9 +293,7 @@ describe("RichTextEditor", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     const ref = createRef<RichTextEditorHandle>();
-    render(
-      <RichTextEditor ref={ref} ariaLabel="Reply" onChange={onChange} />,
-    );
+    render(<RichTextEditor ref={ref} ariaLabel="Reply" onChange={onChange} />);
 
     const editor = screen.getByRole("textbox", { name: /reply/i });
     await user.click(editor);

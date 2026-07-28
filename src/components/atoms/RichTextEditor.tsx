@@ -565,7 +565,7 @@ const ToolbarMenuButton = forwardRef<
       disabled={disabled}
       className={cn(
         toolbarBtnClass,
-        "h-8 gap-0.5 px-1.5 font-body text-xs font-normal normal-case tracking-normal",
+        "font-body h-8 gap-0.5 px-1.5 text-xs font-normal tracking-normal normal-case",
         className,
       )}
       {...props}
@@ -625,7 +625,9 @@ function ColorPickerPanel({
   const initial = normalizeHexColor(value) ?? DEFAULT_TEXT_COLOR;
   const [draft, setDraft] = useState(initial);
   const [format, setFormat] = useState<ColorFormat>("css");
-  const [inputValue, setInputValue] = useState(formatColorValue(initial, "css"));
+  const [inputValue, setInputValue] = useState(
+    formatColorValue(initial, "css"),
+  );
   const [eyedropperSupported, setEyedropperSupported] = useState(false);
 
   useEffect(() => {
@@ -698,7 +700,7 @@ function ColorPickerPanel({
             aria-label={`${labelPrefix} color format`}
             value={format}
             onChange={(event) => setFormat(event.target.value as ColorFormat)}
-            className="h-8 appearance-none rounded-md border-0 bg-[#3c3c3c] py-1 pl-2.5 pr-7 text-xs text-white outline-none"
+            className="h-8 appearance-none rounded-md border-0 bg-[#3c3c3c] py-1 pr-7 pl-2.5 text-xs text-white outline-none"
           >
             {COLOR_FORMATS.map((option) => (
               <option key={option.id} value={option.id}>
@@ -731,7 +733,7 @@ function ColorPickerPanel({
           <select
             aria-label={`${labelPrefix} palette`}
             defaultValue="presets"
-            className="h-8 w-full appearance-none rounded-md border-0 bg-[#3c3c3c] py-1 pl-2.5 pr-7 text-xs text-white outline-none"
+            className="h-8 w-full appearance-none rounded-md border-0 bg-[#3c3c3c] py-1 pr-7 pl-2.5 text-xs text-white outline-none"
           >
             <option value="presets">Presets</option>
           </select>
@@ -765,7 +767,7 @@ function ColorPickerPanel({
           type="button"
           variant="ghost"
           size="xs"
-          className="normal-case tracking-normal text-outline hover:text-white"
+          className="text-outline tracking-normal normal-case hover:text-white"
           onMouseDown={(event) => event.preventDefault()}
           onClick={onCancel}
         >
@@ -775,7 +777,7 @@ function ColorPickerPanel({
           type="button"
           variant="secondary"
           size="xs"
-          className="normal-case tracking-normal"
+          className="tracking-normal normal-case"
           onMouseDown={(event) => event.preventDefault()}
           onClick={confirm}
         >
@@ -1067,7 +1069,7 @@ export const RichTextEditor = forwardRef<
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
-              className="z-[100] border-outline-variant/20 bg-surface-container-high text-on-surface"
+              className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100]"
             >
               {FONT_OPTIONS.map((option) => (
                 <DropdownMenuItem
@@ -1094,7 +1096,7 @@ export const RichTextEditor = forwardRef<
             </PopoverTrigger>
             <PopoverContent
               align="start"
-              className="z-[100] w-44 border-outline-variant/20 bg-surface-container-high p-2 text-on-surface"
+              className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] w-44 p-2"
               onOpenAutoFocus={(event) => event.preventDefault()}
             >
               <form
@@ -1111,16 +1113,16 @@ export const RichTextEditor = forwardRef<
                   max={MAX_FONT_SIZE_PX}
                   value={fontSizeDraft}
                   onChange={(event) => setFontSizeDraft(event.target.value)}
-                  className="h-8 border-outline-variant/30 bg-surface-container-lowest px-2 py-1 text-sm"
+                  className="border-outline-variant/30 bg-surface-container-lowest h-8 px-2 py-1 text-sm"
                 />
-                <span className="font-label text-[10px] uppercase tracking-widest text-outline">
+                <span className="font-label text-outline text-[10px] tracking-widest uppercase">
                   px
                 </span>
                 <Button
                   type="submit"
                   variant="ghost"
                   size="xs"
-                  className="normal-case tracking-normal text-white"
+                  className="tracking-normal text-white normal-case"
                 >
                   Apply
                 </Button>
@@ -1132,14 +1134,16 @@ export const RichTextEditor = forwardRef<
                       type="button"
                       aria-label={`${size} pixels`}
                       className={cn(
-                        "flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-surface-bright hover:text-white",
+                        "hover:bg-surface-bright flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:text-white",
                         size === fontSizePx && "bg-surface-bright text-white",
                       )}
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => applyFontSize(size)}
                     >
-                      <span style={{ fontSize: Math.min(size, 18) }}>{size}</span>
-                      <span className="font-label text-[10px] uppercase tracking-widest text-outline">
+                      <span style={{ fontSize: Math.min(size, 18) }}>
+                        {size}
+                      </span>
+                      <span className="font-label text-outline text-[10px] tracking-widest uppercase">
                         px
                       </span>
                     </button>
@@ -1207,7 +1211,7 @@ export const RichTextEditor = forwardRef<
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
-              className="z-[100] border-outline-variant/20 bg-surface-container-high text-on-surface"
+              className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100]"
             >
               {ALIGN_OPTIONS.map((option) => (
                 <DropdownMenuItem
@@ -1263,7 +1267,7 @@ export const RichTextEditor = forwardRef<
             </PopoverTrigger>
             <PopoverContent
               align="start"
-              className="z-[100] w-auto border-outline-variant/20 bg-surface-container-high p-2"
+              className="border-outline-variant/20 bg-surface-container-high z-[100] w-auto p-2"
             >
               <div className="grid grid-cols-8 gap-1">
                 {EMOJIS.map((emoji) => (
