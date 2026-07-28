@@ -56,8 +56,10 @@ const signedInDecorator: Decorator = (Story) => (
           hasBilling: true,
           hasApiKey: true,
           role: "owner",
+          emailsUsed: 25,
+          emailLimit: 1000,
         },
-        isOwner: true,
+        clientName: "Acme",        isOwner: true,
         hasPermission: () => true,
         mailbox: {
           connected: true,
@@ -92,6 +94,12 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+export const General: Story = {
+  args: {
+    sectionId: "general",
+  },
+};
 
 export const EmailAccounts: Story = {
   args: {

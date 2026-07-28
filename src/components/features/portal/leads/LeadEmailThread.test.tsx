@@ -295,7 +295,9 @@ describe("LeadEmailThread", () => {
       library: { templates: [], signatures: [], snippets: [] },
     });
 
-    expect(screen.getByText(/Received ← ada@example\.com/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Form Submission ← ada@example\.com/i),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(/Sent sales@acme\.test → customer@gmail\.com/i),
     ).toBeInTheDocument();

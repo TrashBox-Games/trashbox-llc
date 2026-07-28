@@ -231,7 +231,7 @@ function TimelineNode({
         role="img"
         aria-label={iconLabel}
         className={cn(
-          "ring-background absolute top-6 -left-1 z-10 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ring-4",
+          "ring-background absolute top-6 -left-1 z-10 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ring-4 select-none",
           accent === "primary"
             ? "bg-white text-background"
             : "bg-surface-container-highest text-white",
@@ -239,7 +239,7 @@ function TimelineNode({
       >
         <MaterialIcon name={icon} className="text-base" />
       </span>
-      <div className="group relative">
+      <div className="relative">
         <div
           role="button"
           tabIndex={0}
@@ -249,7 +249,7 @@ function TimelineNode({
           onPointerDown={onCardPointerDown}
           onClick={onCardClick}
           onKeyDown={onCardKeyDown}
-          className="bg-surface-container-lowest cursor-pointer overflow-hidden rounded text-left outline-none select-text focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="bg-surface-container-lowest peer cursor-pointer overflow-hidden rounded text-left outline-none select-text focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           <div className="flex items-start justify-between gap-4 px-4 pt-4 pr-10">
             <span className="font-label text-outline text-[9px] tracking-widest uppercase">
@@ -290,7 +290,7 @@ function TimelineNode({
               <button
                 type="button"
                 aria-label={`Details for ${title}`}
-                className="text-outline hover:text-white inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-colors"
+                className="text-outline hover:text-white inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-colors select-none"
               >
                 <MaterialIcon name="info" className="text-sm" />
               </button>
@@ -327,7 +327,7 @@ function TimelineNode({
         </div>
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute right-4 bottom-3 z-10 h-0 w-5 overflow-visible opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100"
+          className="pointer-events-none absolute right-4 bottom-3 z-10 h-0 w-5 overflow-visible opacity-0 transition-opacity duration-200 select-none peer-hover:opacity-100 peer-focus-visible:opacity-100"
         >
           <MaterialIcon
             name="expand_more"
@@ -572,7 +572,7 @@ export function LeadEmailThread({
       {
         id: "form",
         at: formAt,
-        eyebrow: `Received ← ${formFrom}`,
+        eyebrow: `Form Submission ← ${formFrom}`,
         title: formMessage.split("\n")[0] || "Form submission",
         preview: formMessage.replace(/\s+/g, " ").trim(),
         accent: "primary",

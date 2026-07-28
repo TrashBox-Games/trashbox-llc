@@ -66,14 +66,18 @@ vi.mock("@/lib/api", async (importOriginal) => {
       clientName: "Acme",
       items: [],
     }),
-    listLeadMessages: vi.fn().mockResolvedValue({ submissionId: "", items: [] }),
+    listLeadMessages: vi
+      .fn()
+      .mockResolvedValue({ submissionId: "", items: [] }),
     listEmailTemplates: vi
       .fn()
       .mockResolvedValue({ items: [], canManage: true }),
     listEmailSignatures: vi
       .fn()
       .mockResolvedValue({ items: [], canManage: true }),
-    listEmailSnippets: vi.fn().mockResolvedValue({ items: [], canManage: true }),
+    listEmailSnippets: vi
+      .fn()
+      .mockResolvedValue({ items: [], canManage: true }),
   };
 });
 
@@ -106,7 +110,22 @@ describe("SettingsSectionContent", () => {
       hasBilling: true,
       hasApiKey: true,
       role: "owner",
+      emailsUsed: 25,
+      emailLimit: 1000,
     });
+  });
+
+  it("renders account summary in the general section", async () => {
+    render(
+      <PortalProvider>
+        <SettingsSectionContent sectionId="general" />
+      </PortalProvider>,
+    );
+
+    expect(await screen.findByText(/^signed in$/i)).toBeInTheDocument();
+    expect(screen.getByText("owner@example.com")).toBeInTheDocument();
+    expect(screen.getByText(/Client: Acme/i)).toBeInTheDocument();
+    expect(screen.getByText("premium")).toBeInTheDocument();
   });
 
   it("renders team members management in the members section", async () => {
@@ -116,9 +135,7 @@ describe("SettingsSectionContent", () => {
       </PortalProvider>,
     );
 
-    expect(
-      await screen.findByText(/owner@example.com/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/owner@example.com/i)).toBeInTheDocument();
   });
 
   it("renders api keys management in the api-keys section", async () => {

@@ -13,6 +13,7 @@ import {
   ApiKeysSettings,
   type ApiKeysSettingsInitialState,
 } from "@/components/features/portal/settings/ApiKeysSettings";
+import { GeneralSettings } from "@/components/features/portal/settings/GeneralSettings";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { RolesPermissionsSettingsSection } from "@/components/features/portal/settings/RolesPermissionsSettingsSection";
 import {
@@ -73,6 +74,19 @@ export function SettingsSectionContent({
       <p className="text-on-surface-variant">
         Create a Form API account from the inbox to manage settings.
       </p>
+    );
+  }
+
+  if (sectionId === "general") {
+    return (
+      <GeneralSettings
+        email={auth.email || portal.account.email || ""}
+        clientName={portal.clientName || portal.account.clientName}
+        tier={portal.account.tier}
+        active={portal.account.active}
+        emailsUsed={portal.account.emailsUsed}
+        emailLimit={portal.account.emailLimit}
+      />
     );
   }
 

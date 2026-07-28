@@ -267,14 +267,7 @@ export function PortalApp({ tab }: PortalAppProps) {
 
   const tabMeta =
     tab === "inbox"
-      ? {
-          eyebrow: "Inbox",
-          title: (
-            <>
-              Lead <span className="text-outline">Inbox.</span>
-            </>
-          ),
-        }
+      ? null
       : {
           eyebrow: "Membership",
           title: (
@@ -289,52 +282,21 @@ export function PortalApp({ tab }: PortalAppProps) {
 
   return (
     <div className="space-y-10">
-      <header>
-        <p className="font-label text-outline mb-6 text-xs tracking-[0.4em] uppercase">
-          {tabMeta.eyebrow}
-        </p>
-        <h1 className="font-headline max-w-4xl text-4xl leading-tight font-bold tracking-tighter text-white md:text-6xl">
-          {tabMeta.title}
-        </h1>
-      </header>
+      {tabMeta && (
+        <header>
+          <p className="font-label text-outline mb-6 text-xs tracking-[0.4em] uppercase">
+            {tabMeta.eyebrow}
+          </p>
+          <h1 className="font-headline max-w-4xl text-4xl leading-tight font-bold tracking-tighter text-white md:text-6xl">
+            {tabMeta.title}
+          </h1>
+        </header>
+      )}
 
       {contentPending ? (
         <PortalSkeleton variant={tab} />
       ) : (
         <>
-          {tab === "inbox" && (
-            <div className="border-outline-variant/10 border-b pb-6">
-              <p className="font-label text-outline text-[10px] tracking-widest uppercase">
-                Signed in
-              </p>
-              <p className="mt-1 text-white">{auth.email}</p>
-              {portal.clientName && (
-                <p className="text-on-surface-variant mt-1 text-sm">
-                  Client: {portal.clientName}
-                </p>
-              )}
-              {portal.account?.linked && portal.account.tier && (
-                <p className="font-label text-outline mt-2 text-[10px] tracking-widest uppercase">
-                  Plan:{" "}
-                  <span className="text-white">{portal.account.tier}</span>
-                  {!portal.account.active ? " · inactive" : ""}
-                  {typeof portal.account.emailsUsed === "number" &&
-                    typeof portal.account.emailLimit === "number" && (
-                      <>
-                        {" "}
-                        · Usage:{" "}
-                        <span className="text-white">
-                          {portal.account.emailsUsed.toLocaleString()} /{" "}
-                          {portal.account.emailLimit.toLocaleString()}
-                        </span>{" "}
-                        emails
-                      </>
-                    )}
-                </p>
-              )}
-            </div>
-          )}
-
           {tab === "inbox" && portal.billingNotice && (
             <p className="border-outline-variant/20 bg-surface-container-low text-on-surface-variant border p-4 text-sm">
               {portal.billingNotice}

@@ -89,12 +89,12 @@ describe("PortalProvider session", () => {
       </PortalProvider>,
     );
 
-    expect(
-      await screen.findByRole("heading", { name: /lead inbox/i }),
-    ).toBeInTheDocument();
     await waitFor(() => {
       expect(getAccount).toHaveBeenCalledTimes(1);
     });
+    expect(
+      screen.queryByRole("heading", { name: /lead inbox/i }),
+    ).not.toBeInTheDocument();
 
     rerender(
       <PortalProvider>
