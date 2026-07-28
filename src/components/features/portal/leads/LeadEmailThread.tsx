@@ -614,7 +614,7 @@ export function LeadEmailThread({
               variant="secondary"
               disabled={sendDisabled}
               onClick={() => void submit()}
-              className="bg-surface-container-highest font-label hover:bg-surface-variant rounded font-medium text-white shadow-sm"
+              className="rounded bg-white font-label font-medium text-background shadow-sm hover:bg-white/90 hover:text-background"
             >
               Send message
               <MaterialIcon name="send" className="text-sm" />

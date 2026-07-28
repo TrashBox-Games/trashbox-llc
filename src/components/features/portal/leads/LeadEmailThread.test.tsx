@@ -167,6 +167,17 @@ describe("LeadEmailThread", () => {
     ).toBeDisabled();
   });
 
+  it("styles the send button as white", () => {
+    renderConnected({
+      library: { templates: [], signatures: [], snippets: [] },
+    });
+
+    expect(screen.getByRole("button", { name: /send message/i })).toHaveClass(
+      "bg-white",
+      "text-background",
+    );
+  });
+
   it("seeds the default signature into a new reply", async () => {
     renderConnected();
 
