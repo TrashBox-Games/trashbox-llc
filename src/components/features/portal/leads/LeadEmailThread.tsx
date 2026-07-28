@@ -16,6 +16,12 @@ import {
   type RichTextValue,
 } from "@/components/atoms/RichTextEditor";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type {
   EmailSignature,
   EmailSnippet,
@@ -89,7 +95,7 @@ function TimelineNode({
       <span
         aria-hidden="true"
         className={cn(
-          "absolute -left-[25px] top-2 size-2 rounded-full ring-4 ring-surface-container-low",
+          "ring-surface-container-low absolute top-2 -left-[25px] size-2 rounded-full ring-4",
           accent === "primary" ? "bg-primary" : "bg-secondary-fixed-dim",
         )}
       />
@@ -99,17 +105,17 @@ function TimelineNode({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "h-auto w-full flex-col items-stretch justify-start whitespace-normal rounded p-4 text-left font-normal normal-case tracking-normal text-inherit",
+          "h-auto w-full flex-col items-stretch justify-start rounded p-4 text-left font-normal tracking-normal whitespace-normal text-inherit normal-case",
           open
             ? "bg-surface-container hover:bg-surface-variant"
             : "bg-surface-container-lowest hover:bg-surface-container",
         )}
       >
         <div className="mb-1 flex items-start justify-between gap-4">
-          <span className="font-label text-[9px] uppercase tracking-widest text-outline">
+          <span className="font-label text-outline text-[9px] tracking-widest uppercase">
             {eyebrow}
           </span>
-          <span className="font-mono text-[9px] uppercase text-outline-variant">
+          <span className="text-outline-variant font-mono text-[9px] uppercase">
             {day}
           </span>
         </div>
@@ -118,14 +124,14 @@ function TimelineNode({
           <MaterialIcon
             name="expand_more"
             className={cn(
-              "text-sm text-outline transition-transform",
+              "text-outline text-sm transition-transform",
               open && "rotate-180",
             )}
           />
         </div>
       </Button>
       {open && (
-        <div className="mt-3 rounded bg-surface-container/50 p-4 text-sm text-on-surface">
+        <div className="bg-surface-container/50 text-on-surface mt-3 rounded p-4 text-sm">
           {children}
         </div>
       )}
@@ -136,10 +142,10 @@ function TimelineNode({
 function MetaRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex gap-4">
-      <span className="w-12 shrink-0 font-label text-[10px] uppercase text-outline">
+      <span className="font-label text-outline w-12 shrink-0 text-[10px] uppercase">
         {label}
       </span>
-      <span className="min-w-0 text-on-surface">{value}</span>
+      <span className="text-on-surface min-w-0">{value}</span>
     </div>
   );
 }
@@ -149,12 +155,13 @@ function bodyTextLength(html: string): number {
   const match = html.match(
     /<div\s+data-trashbox-body\b[^>]*>([\s\S]*?)<\/div>/i,
   );
-  const source = match?.[1]
-    ?? html.replace(
-      /<div\s+data-trashbox-signature\b[^>]*>[\s\S]*?<\/div>/i,
-      "",
-    );
-  return source.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length;
+  const source =
+    match?.[1] ??
+    html.replace(/<div\s+data-trashbox-signature\b[^>]*>[\s\S]*?<\/div>/i, "");
+  return source
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim().length;
 }
 
 function defaultSignatureId(signatures: EmailSignature[]): string {
@@ -238,8 +245,6 @@ export function LeadEmailThread({
   const [signatureId, setSignatureId] = useState(() =>
     defaultSignatureId(signatures),
   );
-  const [templatePick, setTemplatePick] = useState("");
-  const [snippetPick, setSnippetPick] = useState("");
   const [editorKey, setEditorKey] = useState(0);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const seededForSignature = useRef<string | null>(null);
@@ -283,7 +288,14 @@ export function LeadEmailThread({
     );
     if (nextHtml === current) return;
     editorRef.current.setHtml(nextHtml);
-  }, [fromIdentityId, context.sender?.name, context.sender?.email, signatureId, signatures, context]);
+  }, [
+    fromIdentityId,
+    context.sender?.name,
+    context.sender?.email,
+    signatureId,
+    signatures,
+    context,
+  ]);
 
   const hasContent = bodyTextLength(draft.html) > 0;
 
@@ -307,7 +319,6 @@ export function LeadEmailThread({
       rendered.html,
     );
     editorRef.current.setHtml(next);
-    setTemplatePick("");
   }
 
   function applySignature(nextId: string) {
@@ -327,7 +338,6 @@ export function LeadEmailThread({
     if (!snippet || !editorRef.current) return;
     const rendered = renderContentForInsert(snippet, context);
     editorRef.current.insertHtml(rendered.html);
-    setSnippetPick("");
   }
 
   function expandSnippetShortcut(event: KeyboardEvent<HTMLDivElement>) {
@@ -363,15 +373,13 @@ export function LeadEmailThread({
 
   const sendDisabled = busy || !hasContent || !fromIdentityId;
   const libraryEmpty =
-    templates.length === 0 &&
-    signatures.length === 0 &&
-    snippets.length === 0;
+    templates.length === 0 && signatures.length === 0 && snippets.length === 0;
 
   return (
-    <div className="mt-10 border-t border-outline-variant/10 pt-6">
+    <div className="border-outline-variant/10 mt-10 border-t pt-6">
       <p className={labelClass}>Email thread</p>
 
-      <ol className="relative ml-1 space-y-4 border-l border-outline-variant/20 pl-6">
+      <ol className="border-outline-variant/20 relative ml-1 space-y-4 border-l pl-6">
         <TimelineNode
           eyebrow={`Form submission · ${formFrom}`}
           title={formMessage.split("\n")[0] || "Form submission"}
@@ -380,11 +388,11 @@ export function LeadEmailThread({
           defaultOpen
         >
           <div className="space-y-4">
-            <div className="grid gap-2 border-b border-outline-variant/10 pb-4">
+            <div className="border-outline-variant/10 grid gap-2 border-b pb-4">
               <MetaRow label="From" value={formFrom} />
               <MetaRow label="Date" value={formatWhen(formAt)} />
             </div>
-            <p className="whitespace-pre-wrap leading-relaxed text-on-surface">
+            <p className="text-on-surface leading-relaxed whitespace-pre-wrap">
               {formMessage}
             </p>
           </div>
@@ -405,12 +413,12 @@ export function LeadEmailThread({
               accent={outbound ? "primary" : "muted"}
             >
               <div className="space-y-4">
-                <div className="grid gap-1 border-b border-outline-variant/10 pb-3">
+                <div className="border-outline-variant/10 grid gap-1 border-b pb-3">
                   <MetaRow label="From" value={message.from} />
                   <MetaRow label="To" value={message.to} />
                   <MetaRow label="Date" value={formatWhen(message.createdAt)} />
                 </div>
-                <p className="whitespace-pre-wrap leading-relaxed text-on-surface">
+                <p className="text-on-surface leading-relaxed whitespace-pre-wrap">
                   {message.bodyText}
                 </p>
               </div>
@@ -419,19 +427,19 @@ export function LeadEmailThread({
         })}
       </ol>
 
-      {error && <p className="mt-4 text-sm text-error">{error}</p>}
+      {error && <p className="text-error mt-4 text-sm">{error}</p>}
 
       {mailboxConnected ? (
-        <div className="mt-8 overflow-hidden rounded-lg border border-outline-variant/10 bg-surface-container-low shadow-md">
-          <div className="space-y-3 bg-surface-container-lowest/50 p-4">
+        <div className="border-outline-variant/10 bg-surface-container-low mt-8 overflow-hidden rounded-lg border shadow-md">
+          <div className="bg-surface-container-lowest/50 space-y-3 p-4">
             <div className="flex flex-wrap items-center gap-4">
-              <span className="w-8 shrink-0 font-label text-[10px] uppercase text-outline">
+              <span className="font-label text-outline w-8 shrink-0 text-[10px] uppercase">
                 To
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded bg-surface-container px-2 py-1 text-xs text-white shadow-sm">
+              <span className="bg-surface-container inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-white shadow-sm">
                 {formFrom}
               </span>
-              <span className="w-10 shrink-0 font-label text-[10px] uppercase text-outline">
+              <span className="font-label text-outline w-10 shrink-0 text-[10px] uppercase">
                 From
               </span>
               <div className="min-w-[12rem] flex-1">
@@ -447,94 +455,13 @@ export function LeadEmailThread({
                     }))}
                   />
                 ) : (
-                  <p className="py-2 text-sm text-on-surface-variant">
-                    No Sender Display Name assigned. Ask an owner or admin to set
-                    one in Members.
+                  <p className="text-on-surface-variant py-2 text-sm">
+                    No Sender Display Name assigned. Ask an owner or admin to
+                    set one in Members.
                   </p>
                 )}
               </div>
             </div>
-          </div>
-
-          <div
-            role="toolbar"
-            aria-label="Email content"
-            className="flex flex-wrap items-center gap-3 border-b border-outline-variant/10 bg-surface-container/40 px-4 py-2"
-          >
-            <div className="min-w-[10rem] flex-1">
-              <Select
-                aria-label="Template"
-                value={templatePick}
-                disabled={busy || templates.length === 0}
-                onChange={(value) => {
-                  setTemplatePick(value);
-                  if (value) applyTemplate(value);
-                }}
-                options={[
-                  {
-                    value: "",
-                    label:
-                      templates.length === 0
-                        ? "No templates"
-                        : "Insert template…",
-                  },
-                  ...templates.map((template) => ({
-                    value: template.id,
-                    label: template.name,
-                  })),
-                ]}
-              />
-            </div>
-            <div className="min-w-[10rem] flex-1">
-              <Select
-                aria-label="Snippet"
-                value={snippetPick}
-                disabled={busy || snippets.length === 0}
-                onChange={(value) => {
-                  setSnippetPick(value);
-                  if (value) applySnippet(value);
-                }}
-                options={[
-                  {
-                    value: "",
-                    label:
-                      snippets.length === 0 ? "No snippets" : "Insert snippet…",
-                  },
-                  ...snippets.map((snippet) => ({
-                    value: snippet.id,
-                    label: snippet.shortcut
-                      ? `${snippet.name} (/${snippet.shortcut})`
-                      : snippet.name,
-                  })),
-                ]}
-              />
-            </div>
-            <div className="min-w-[10rem] flex-1">
-              <Select
-                aria-label="Signature"
-                value={signatureId}
-                disabled={busy || signatures.length === 0}
-                onChange={applySignature}
-                options={
-                  signatures.length === 0
-                    ? [{ value: "", label: "No signatures" }]
-                    : signatures.map((signature) => ({
-                        value: signature.id,
-                        label: signature.isDefault
-                          ? `${signature.name} (Default)`
-                          : signature.name,
-                      }))
-                }
-              />
-            </div>
-            {libraryEmpty && (
-              <a
-                href={settingsSectionPath("templates")}
-                className="font-label text-[10px] uppercase tracking-widest text-white underline"
-              >
-                Manage in Settings
-              </a>
-            )}
           </div>
 
           <RichTextEditor
@@ -547,12 +474,129 @@ export function LeadEmailThread({
             onChange={setDraft}
             onKeyDown={onEditorKeyDown}
             className="rounded-none border-0 bg-transparent"
+            toolbarStart={
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Template"
+                      title="Templates"
+                      disabled={busy || templates.length === 0}
+                      className="h-8 gap-0.5 rounded px-1.5 font-body text-xs font-normal normal-case tracking-normal text-outline hover:bg-surface-variant hover:text-white"
+                    >
+                      <MaterialIcon name="description" className="text-lg" />
+                      <MaterialIcon
+                        name="arrow_drop_down"
+                        className="text-base opacity-70"
+                      />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className="z-[100] max-h-64 border-outline-variant/20 bg-surface-container-high text-on-surface"
+                  >
+                    {templates.map((template) => (
+                      <DropdownMenuItem
+                        key={template.id}
+                        onSelect={() => applyTemplate(template.id)}
+                      >
+                        {template.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Snippet"
+                      title="Snippets"
+                      disabled={busy || snippets.length === 0}
+                      className="h-8 gap-0.5 rounded px-1.5 font-body text-xs font-normal normal-case tracking-normal text-outline hover:bg-surface-variant hover:text-white"
+                    >
+                      <MaterialIcon name="data_object" className="text-lg" />
+                      <MaterialIcon
+                        name="arrow_drop_down"
+                        className="text-base opacity-70"
+                      />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className="z-[100] max-h-64 border-outline-variant/20 bg-surface-container-high text-on-surface"
+                  >
+                    {snippets.map((snippet) => (
+                      <DropdownMenuItem
+                        key={snippet.id}
+                        onSelect={() => applySnippet(snippet.id)}
+                      >
+                        {snippet.shortcut
+                          ? `${snippet.name} (/${snippet.shortcut})`
+                          : snippet.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Signature"
+                      title="Signatures"
+                      disabled={busy || signatures.length === 0}
+                      className="h-8 gap-0.5 rounded px-1.5 font-body text-xs font-normal normal-case tracking-normal text-outline hover:bg-surface-variant hover:text-white"
+                    >
+                      <MaterialIcon name="draw" className="text-lg" />
+                      <MaterialIcon
+                        name="arrow_drop_down"
+                        className="text-base opacity-70"
+                      />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className="z-[100] max-h-64 border-outline-variant/20 bg-surface-container-high text-on-surface"
+                  >
+                    {signatures.map((signature) => (
+                      <DropdownMenuItem
+                        key={signature.id}
+                        onSelect={() => applySignature(signature.id)}
+                      >
+                        {signature.isDefault
+                          ? `${signature.name} (Default)`
+                          : signature.name}
+                        {signature.id === signatureId ? " ✓" : ""}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            }
+            toolbarEnd={
+              libraryEmpty ? (
+                <a
+                  href={settingsSectionPath("templates")}
+                  className="font-label ml-1 text-[10px] tracking-widest text-white uppercase underline"
+                >
+                  Manage in Settings
+                </a>
+              ) : null
+            }
           />
 
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-container/80 px-4 py-3">
+          <div className="bg-surface-container/80 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div className="flex items-center gap-3">
               {fromAddress && (
-                <span className="font-label text-[10px] uppercase text-outline-variant">
+                <span className="font-label text-outline-variant text-[10px] uppercase">
                   Replying as{" "}
                   <span className="font-medium text-white">
                     {resolvedPreview
@@ -561,7 +605,7 @@ export function LeadEmailThread({
                   </span>
                 </span>
               )}
-              <span className="font-mono text-[10px] text-outline-variant/60">
+              <span className="text-outline-variant/60 font-mono text-[10px]">
                 Cmd + Enter to send
               </span>
             </div>
@@ -570,7 +614,7 @@ export function LeadEmailThread({
               variant="secondary"
               disabled={sendDisabled}
               onClick={() => void submit()}
-              className="rounded bg-surface-container-highest font-label font-medium text-white shadow-sm hover:bg-surface-variant"
+              className="bg-surface-container-highest font-label hover:bg-surface-variant rounded font-medium text-white shadow-sm"
             >
               Send message
               <MaterialIcon name="send" className="text-sm" />
@@ -578,7 +622,7 @@ export function LeadEmailThread({
           </div>
         </div>
       ) : (
-        <p className="mt-6 text-sm text-on-surface-variant">
+        <p className="text-on-surface-variant mt-6 text-sm">
           Connect a business mailbox in{" "}
           <a
             href={settingsSectionPath("email-accounts")}

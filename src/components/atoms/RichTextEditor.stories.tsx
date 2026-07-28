@@ -8,7 +8,7 @@ const meta = {
   tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <div className="max-w-xl bg-background p-8">
+      <div className="max-w-2xl bg-background p-8">
         <Story />
       </div>
     ),
@@ -30,6 +30,24 @@ export const WithInitialContent: Story = {
     ariaLabel: "Body",
     initialHtml:
       "<p>Hi Dana,</p><p>Thanks for reaching out — we can pick up on Tuesday.</p><ul><li>Curbside pickup</li><li>Same-day haul away</li></ul>",
+  },
+};
+
+export const WithToolbarSlots: Story = {
+  args: {
+    toolbarStart: (
+      <button
+        type="button"
+        className="rounded px-2 py-1 text-[10px] uppercase tracking-widest text-outline"
+      >
+        Templates
+      </button>
+    ),
+    toolbarEnd: (
+      <span className="ml-1 text-[10px] uppercase tracking-widest text-outline">
+        Library
+      </span>
+    ),
   },
 };
 

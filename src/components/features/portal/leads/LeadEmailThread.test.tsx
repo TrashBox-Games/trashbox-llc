@@ -99,6 +99,15 @@ function renderConnected(
   );
 }
 
+async function pickMenuItem(
+  user: ReturnType<typeof userEvent.setup>,
+  menuLabel: RegExp,
+  itemName: RegExp,
+) {
+  await user.click(screen.getByRole("button", { name: menuLabel }));
+  await user.click(screen.getByRole("menuitem", { name: itemName }));
+}
+
 describe("LeadEmailThread", () => {
   it("shows settings CTA when mailbox is disconnected", () => {
     render(
@@ -124,8 +133,7 @@ describe("LeadEmailThread", () => {
 
     renderConnected({ onSend });
 
-    await user.click(screen.getByRole("button", { name: /template/i }));
-    await user.click(screen.getByRole("option", { name: /intro reply/i }));
+    await pickMenuItem(user, /^template$/i, /intro reply/i);
     await user.click(screen.getByRole("button", { name: /send message/i }));
 
     expect(onSend).toHaveBeenCalledWith(
@@ -173,8 +181,7 @@ describe("LeadEmailThread", () => {
     const user = userEvent.setup();
     renderConnected();
 
-    await user.click(screen.getByRole("button", { name: /template/i }));
-    await user.click(screen.getByRole("option", { name: /intro reply/i }));
+    await pickMenuItem(user, /^template$/i, /intro reply/i);
 
     await waitFor(() => {
       expect(screen.getByRole("textbox", { name: /reply/i }).textContent).toContain(
@@ -191,10 +198,8 @@ describe("LeadEmailThread", () => {
     const user = userEvent.setup();
     renderConnected();
 
-    await user.click(screen.getByRole("button", { name: /template/i }));
-    await user.click(screen.getByRole("option", { name: /intro reply/i }));
-    await user.click(screen.getByRole("button", { name: /signature/i }));
-    await user.click(screen.getByRole("option", { name: /^short$/i }));
+    await pickMenuItem(user, /^template$/i, /intro reply/i);
+    await pickMenuItem(user, /^signature$/i, /^short$/i);
 
     const editor = screen.getByRole("textbox", { name: /reply/i });
     await waitFor(() => {
@@ -210,8 +215,7 @@ describe("LeadEmailThread", () => {
       library: { templates: [], signatures: [], snippets },
     });
 
-    await user.click(screen.getByRole("button", { name: /snippet/i }));
-    await user.click(screen.getByRole("option", { name: /business hours/i }));
+    await pickMenuItem(user, /^snippet$/i, /business hours/i);
 
     await waitFor(() => {
       expect(screen.getByRole("textbox", { name: /reply/i }).textContent).toContain(
@@ -225,9 +229,24 @@ describe("LeadEmailThread", () => {
       library: { templates: [], signatures: [], snippets: [] },
     });
 
-    const toolbar = screen.getByRole("toolbar", { name: /email content/i });
+    const toolbar = screen.getByRole("toolbar", { name: /formatting/i });
     expect(
       within(toolbar).getByRole("link", { name: /manage in settings/i }),
     ).toHaveAttribute("href", expect.stringMatching(/templates/));
+  });
+
+  it("keeps library menus inside the formatting toolbar", () => {
+    renderConnected();
+
+    const toolbar = screen.getByRole("toolbar", { name: /formatting/i });
+    expect(
+      within(toolbar).getByRole("button", { name: /^template$/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(toolbar).getByRole("button", { name: /^snippet$/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(toolbar).getByRole("button", { name: /^signature$/i }),
+    ).toBeInTheDocument();
   });
 });

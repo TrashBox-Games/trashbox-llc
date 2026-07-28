@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-headline: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-label: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-headline: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-label: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: 0.125rem;
   --radius-DEFAULT: 0.125rem;

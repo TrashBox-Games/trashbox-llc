@@ -46,7 +46,11 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
         {/* precedence="low" so globals.css (1.25rem) wins over Google's default 24px */}
         <link
           rel="stylesheet"
@@ -56,13 +60,6 @@ export default function RootLayout({
       </head>
       <body
         className={`${spaceGrotesk.variable} ${manrope.variable} font-body antialiased`}
-        style={
-          {
-            "--font-headline": "var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif",
-            "--font-body": "var(--font-manrope), ui-sans-serif, system-ui, sans-serif",
-            "--font-label": "var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif",
-          } as React.CSSProperties
-        }
       >
         <AuthProvider>
           <MarketingLayout>{children}</MarketingLayout>
