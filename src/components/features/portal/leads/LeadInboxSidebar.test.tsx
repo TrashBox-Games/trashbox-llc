@@ -56,9 +56,10 @@ describe("LeadInboxSidebar", () => {
     render(<LeadInboxSidebar open onOpenChange={vi.fn()} {...baseProps} />);
 
     expect(screen.getByLabelText(/search/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^leads$/i)).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /hide leads panel/i }),
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /hide leads panel/i }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /ada lovelace/i }),
     ).toBeInTheDocument();
@@ -87,18 +88,6 @@ describe("LeadInboxSidebar", () => {
       "aria-hidden",
       "true",
     );
-  });
-
-  it("toggles closed via the hide icon", async () => {
-    const user = userEvent.setup();
-    const onOpenChange = vi.fn();
-
-    render(
-      <LeadInboxSidebar open onOpenChange={onOpenChange} {...baseProps} />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /hide leads panel/i }));
-    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it("LeadInboxSidebarToggle opens the panel when closed", async () => {

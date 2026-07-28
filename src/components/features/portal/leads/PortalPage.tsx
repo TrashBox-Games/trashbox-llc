@@ -479,28 +479,35 @@ export function PortalApp({ tab }: PortalAppProps) {
             <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
               <div
                 className={cn(
-                  "shrink-0",
+                  "shrink-0 lg:self-start",
                   inboxSidebarOpen &&
-                    "lg:sticky lg:top-32 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto lg:scrollbar-none",
+                    "lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)]",
                 )}
               >
-                <LeadInboxSidebar
-                  open={inboxSidebarOpen}
-                  onOpenChange={onInboxSidebarOpenChange}
-                  filters={portal.filters}
-                  members={portal.members}
-                  onFiltersChange={portal.setFilters}
-                  onApplyFilters={portal.applyFilters}
-                  items={portal.items}
-                  selectedId={portal.selectedId}
-                  onSelect={openLead}
-                  listBusy={portal.listBusy}
-                  listError={portal.listError}
-                  hasMore={Boolean(portal.nextCursor)}
-                  onLoadMore={() => void portal.loadMore()}
-                  width={inboxSidebarWidth}
-                  resizing={inboxResizing}
-                />
+                <div
+                  className={cn(
+                    inboxSidebarOpen &&
+                      "lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:scrollbar-none",
+                  )}
+                >
+                  <LeadInboxSidebar
+                    open={inboxSidebarOpen}
+                    onOpenChange={onInboxSidebarOpenChange}
+                    filters={portal.filters}
+                    members={portal.members}
+                    onFiltersChange={portal.setFilters}
+                    onApplyFilters={portal.applyFilters}
+                    items={portal.items}
+                    selectedId={portal.selectedId}
+                    onSelect={openLead}
+                    listBusy={portal.listBusy}
+                    listError={portal.listError}
+                    hasMore={Boolean(portal.nextCursor)}
+                    onLoadMore={() => void portal.loadMore()}
+                    width={inboxSidebarWidth}
+                    resizing={inboxResizing}
+                  />
+                </div>
               </div>
 
               <div className="relative min-w-0 flex-1">

@@ -182,19 +182,18 @@ export function LeadDetail({
                   </span>
                 }
               />
+              <MetaRow
+                label="Date"
+                value={
+                  <span className="font-medium text-white">
+                    {formatWhen(submission.submittedAt)}
+                  </span>
+                }
+              />
             </div>
           </div>
 
           <div className="space-y-6 md:col-span-4">
-            <div>
-              <p className="text-outline-variant font-mono text-[10px] uppercase">
-                Received
-              </p>
-              <p className="mt-1 text-sm font-medium text-white">
-                {formatWhen(submission.submittedAt)}
-              </p>
-            </div>
-
             <div>
               <label className={labelClass} htmlFor="detail-status">
                 Status

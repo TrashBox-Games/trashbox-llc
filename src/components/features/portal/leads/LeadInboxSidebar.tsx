@@ -207,7 +207,6 @@ export interface LeadInboxSidebarProps {
 
 export function LeadInboxSidebar({
   open,
-  onOpenChange,
   filters,
   members,
   onFiltersChange,
@@ -233,7 +232,7 @@ export function LeadInboxSidebar({
       data-state={open ? "open" : "closed"}
       aria-hidden={!open}
       className={cn(
-        "relative shrink-0 overflow-hidden",
+        "relative shrink-0 overflow-x-clip overflow-y-visible",
         !resizing &&
           "transition-[width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
         open ? "opacity-100" : "pointer-events-none opacity-0",
@@ -242,17 +241,6 @@ export function LeadInboxSidebar({
     >
       <div style={{ width }} className="pr-1">
         <aside className="flex flex-col gap-6">
-          <div className="flex items-center justify-between gap-3">
-            <p className="font-label text-outline text-[10px] tracking-widest uppercase">
-              Leads
-            </p>
-            <LeadInboxSidebarToggle
-              open
-              onOpenChange={onOpenChange}
-              tabIndex={open ? 0 : -1}
-            />
-          </div>
-
           <LeadInboxFilters
             value={filters}
             members={members}
