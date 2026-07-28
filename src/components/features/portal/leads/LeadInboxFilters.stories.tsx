@@ -35,7 +35,7 @@ const meta = {
   tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <div className="max-w-4xl bg-background p-8">
+      <div className="max-w-sm bg-background p-8">
         <Story />
       </div>
     ),

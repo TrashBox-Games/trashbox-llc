@@ -40,13 +40,13 @@ export function LeadInboxFilters({
 }: LeadInboxFiltersProps) {
   return (
     <form
-      className="grid grid-cols-1 gap-6 rounded bg-surface-container-low p-6 shadow-sm md:grid-cols-4"
+      className="grid grid-cols-1 gap-4 rounded bg-surface-container-low p-4 shadow-sm"
       onSubmit={(e) => {
         e.preventDefault();
         onApply();
       }}
     >
-      <div className="md:col-span-2">
+      <div>
         <label className={labelClass} htmlFor="lead-search">
           Search
         </label>
@@ -121,11 +121,11 @@ export function LeadInboxFilters({
           ]}
         />
       </div>
-      <div className="md:col-span-4">
+      <div>
         <Button
           type="submit"
           variant="secondary"
-          className="rounded bg-surface-container-highest font-label font-medium text-white shadow-sm hover:bg-surface-variant"
+          className="w-full rounded bg-white font-label font-medium text-background shadow-sm hover:bg-white/90 hover:text-background"
         >
           Apply filters
         </Button>

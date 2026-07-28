@@ -9,7 +9,7 @@ export default function PortalLayout({
   return (
     <PortalProvider>
       <PortalHeader />
-      <main className="mx-auto w-full max-w-screen-2xl flex-1 px-8 pt-32 pb-24">
+      <main className="mx-auto w-full max-w-screen-2xl flex-1 px-8 pt-16 pb-24">
         {children}
       </main>
     </PortalProvider>

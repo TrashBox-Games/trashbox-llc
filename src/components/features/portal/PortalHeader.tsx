@@ -6,20 +6,27 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Skeleton } from "@/components/atoms/Skeleton";
+import { PortalUserMenu } from "@/components/features/portal/PortalUserMenu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { teamMemberDisplayName } from "@/lib/api";
+import { usePortal } from "@/lib/portal";
 import { cn } from "@/lib/utils";
-import { PLATFORM_PATHS, PORTAL_PATHS } from "@/lib/sites";
+import { PORTAL_PATHS } from "@/lib/sites";
 
 const signedInLinks = [
-  { href: PORTAL_PATHS.inbox, label: "Inbox" },
-  { href: PORTAL_PATHS.settings, label: "Settings" },
-  { href: PORTAL_PATHS.membership, label: "Membership" },
+  { href: PORTAL_PATHS.inbox, label: "Inbox", icon: "inbox" },
+  { href: PORTAL_PATHS.settings, label: "Settings", icon: "settings" },
+  {
+    href: PORTAL_PATHS.membership,
+    label: "Membership",
+    icon: "workspace_premium",
+  },
 ] as const;
 
 function linkClass(active: boolean) {
   return cn(
-    "font-label text-[10px] uppercase tracking-widest transition-colors",
+    "inline-flex items-center justify-center transition-colors",
     active ? "text-white" : "text-outline hover:text-white",
   );
 }
@@ -31,6 +38,7 @@ const SCROLL_DELTA_THRESHOLD = 8;
 export function PortalHeader() {
   const pathname = usePathname() ?? "";
   const auth = useAuth();
+  const portal = usePortal();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -70,6 +78,14 @@ export function PortalHeader() {
   const signedIn = auth.status === "signedIn";
   const authLoading = auth.status === "loading";
   const headerHidden = hidden && !open;
+  const currentMember = auth.email
+    ? portal.members.find(
+        (member) => member.email.toLowerCase() === auth.email!.toLowerCase(),
+      )
+    : undefined;
+  const userName = currentMember
+    ? teamMemberDisplayName(currentMember)
+    : null;
 
   return (
     <header
@@ -86,69 +102,63 @@ export function PortalHeader() {
             : "border-outline-variant/10 bg-background/80",
         )}
       >
-        <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-4 px-8 py-5 md:py-6">
+        <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-6 py-2 md:px-8">
           <Link
-            href={signedIn ? PORTAL_PATHS.inbox : PORTAL_PATHS.login}
-            className="inline-flex items-center gap-3"
-            aria-label="Trashbox Portal home"
+            href="/"
+            className="inline-flex items-center gap-2.5"
+            aria-label="Trashbox home"
           >
             <Image
               src="/images/trashbox-logo-white.png"
               alt=""
-              width={120}
-              height={30}
-              className="h-7"
+              width={96}
+              height={24}
+              className="h-5"
               style={{ width: "auto" }}
               priority
             />
-            <span className="border-l border-outline-variant/30 pl-3 font-headline text-xs font-bold uppercase tracking-widest text-white">
+            <span className="border-l border-outline-variant/30 pl-2.5 font-headline text-[10px] font-bold uppercase tracking-widest text-white">
               Portal
             </span>
           </Link>
 
           {(signedIn || authLoading) && (
             <nav
-              className="hidden items-center gap-7 md:flex"
+              className="hidden items-center gap-5 md:flex"
               aria-label="Portal"
               aria-busy={authLoading}
             >
               {authLoading
                 ? signedInLinks.map((item) => (
-                    <Skeleton key={item.href} className="h-3 w-14" />
+                    <Skeleton key={item.href} className="size-5 rounded-md" />
                   ))
                 : signedInLinks.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
+                      aria-label={item.label}
                       className={linkClass(
                         pathname.startsWith(item.href.replace(/\/$/, "")),
                       )}
                     >
-                      {item.label}
+                      <MaterialIcon name={item.icon} className="text-[1.15rem]!" />
                     </Link>
                   ))}
             </nav>
           )}
 
-          <div className="flex min-w-[7.5rem] items-center justify-end gap-3">
-            <Link
-              href={PLATFORM_PATHS.hub}
-              className="hidden font-label text-[10px] uppercase tracking-widest text-outline transition-colors hover:text-white lg:inline"
-            >
-              Platform
-            </Link>
+          <div className="flex min-w-26 items-center justify-end gap-2">
             {authLoading ? (
-              <Skeleton className="h-8 w-20" />
-            ) : signedIn ? (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => void auth.signOutUser()}
-              >
-                Sign out
-              </Button>
+              <Skeleton className="size-8 rounded-full" />
+            ) : signedIn && auth.email ? (
+              <PortalUserMenu
+                email={auth.email}
+                name={userName}
+                clientName={portal.clientName}
+                onSignOut={() => auth.signOutUser()}
+              />
             ) : (
-              <Button asChild>
+              <Button asChild size="sm">
                 <Link href={PORTAL_PATHS.login}>Login</Link>
               </Button>
             )}
@@ -157,14 +167,14 @@ export function PortalHeader() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="text-white md:hidden"
+                className="size-8 text-white md:hidden"
                 aria-expanded={open}
                 aria-label={open ? "Close menu" : "Open menu"}
                 onClick={() => setOpen((v) => !v)}
               >
                 <MaterialIcon
                   name={open ? "close" : "menu"}
-                  className="text-[1.5rem]!"
+                  className="text-[1.25rem]!"
                 />
               </Button>
             )}
@@ -173,27 +183,25 @@ export function PortalHeader() {
       </div>
 
       {open && signedIn && (
-        <div className="fixed inset-0 top-[65px] z-40 bg-background/95 px-6 pb-10 pt-6 md:hidden">
+        <div className="fixed inset-0 top-11 z-40 bg-background/95 px-6 pb-10 pt-6 md:hidden">
           <div className="flex flex-col gap-6">
             {signedInLinks.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={linkClass(
-                  pathname.startsWith(item.href.replace(/\/$/, "")),
+                aria-label={item.label}
+                className={cn(
+                  linkClass(
+                    pathname.startsWith(item.href.replace(/\/$/, "")),
+                  ),
+                  "gap-3 font-label text-[10px] uppercase tracking-widest",
                 )}
                 onClick={() => setOpen(false)}
               >
-                {item.label}
+                <MaterialIcon name={item.icon} className="text-[1.35rem]!" />
+                <span>{item.label}</span>
               </Link>
             ))}
-            <Link
-              href={PLATFORM_PATHS.hub}
-              className="font-label text-[10px] uppercase tracking-widest text-outline"
-              onClick={() => setOpen(false)}
-            >
-              Back to Platform
-            </Link>
           </div>
         </div>
       )}

@@ -12,7 +12,7 @@ const meta = {
   decorators: [
     (Story) => (
       <AuthProvider>
-        <div className="mx-auto max-w-screen-2xl px-8 pt-32 pb-24">
+        <div className="mx-auto max-w-screen-2xl px-8 pt-16 pb-24">
           <Story />
         </div>
       </AuthProvider>

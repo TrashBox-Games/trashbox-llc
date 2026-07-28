@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { AuthProvider } from "@/lib/auth";
+import { StubAuthProvider } from "@/lib/auth";
+import { StubPortalProvider } from "@/lib/portal";
 import { PortalHeader } from "./PortalHeader";
 
 const meta = {
@@ -16,17 +17,40 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <AuthProvider>
-        <div className="min-h-[140vh] bg-background">
-          <Story />
-          <div className="space-y-6 px-8 pt-32 font-body text-on-surface-variant">
-            <p>Scroll down to hide the header; scroll up to reveal it again.</p>
-            {Array.from({ length: 12 }, (_, i) => (
-              <p key={i}>Placeholder content block {i + 1} for scroll demos.</p>
-            ))}
+      <StubAuthProvider
+        value={{
+          configured: true,
+          status: "signedIn",
+          email: "owner@example.com",
+        }}
+      >
+        <StubPortalProvider
+          value={{
+            clientName: "Acme Co",
+            ready: true,
+            members: [
+              {
+                email: "owner@example.com",
+                role: "owner",
+                joinedAt: "2024-01-01",
+                firstName: "Ada",
+                lastName: "Lovelace",
+                emailNotifications: true,
+              },
+            ],
+          }}
+        >
+          <div className="min-h-[140vh] bg-background">
+            <Story />
+            <div className="space-y-6 px-8 pt-16 font-body text-on-surface-variant">
+              <p>Scroll down to hide the header; scroll up to reveal it again.</p>
+              {Array.from({ length: 12 }, (_, i) => (
+                <p key={i}>Placeholder content block {i + 1} for scroll demos.</p>
+              ))}
+            </div>
           </div>
-        </div>
-      </AuthProvider>
+        </StubPortalProvider>
+      </StubAuthProvider>
     ),
   ],
 } satisfies Meta<typeof PortalHeader>;
@@ -34,7 +58,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Reflects local Amplify auth config — signed out when Cognito is not configured. */
 export const Default: Story = {};
 
 export const InboxPath: Story = {
@@ -45,4 +68,18 @@ export const InboxPath: Story = {
       },
     },
   },
+};
+
+export const SignedOut: Story = {
+  decorators: [
+    (Story) => (
+      <StubAuthProvider value={{ configured: true, status: "signedOut" }}>
+        <StubPortalProvider>
+          <div className="min-h-[280px] bg-background">
+            <Story />
+          </div>
+        </StubPortalProvider>
+      </StubAuthProvider>
+    ),
+  ],
 };

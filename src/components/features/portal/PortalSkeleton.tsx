@@ -31,12 +31,19 @@ export function PortalSkeleton({ variant = "inbox" }: PortalSkeletonProps) {
             <Skeleton className="h-4 w-40" />
           </div>
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-            <div className="space-y-2 lg:col-span-5">
+            <div className="space-y-4 lg:col-span-4">
+              <div className="space-y-3 rounded bg-surface-container-low p-4">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-9 w-28" />
+              </div>
               {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-28 w-full" />
               ))}
             </div>
-            <Skeleton className="min-h-72 w-full lg:col-span-7" />
+            <Skeleton className="min-h-72 w-full lg:col-span-8" />
           </div>
         </>
       )}
