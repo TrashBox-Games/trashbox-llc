@@ -127,11 +127,15 @@ export interface PortalContextValue {
   leadMessages: LeadMessage[];
   messageError: string | null;
   loadMore: () => Promise<void>;
-  onLeadUpdate: (patch: {
-    status?: LeadStatus;
-    tags?: LeadTag[];
-    assignedTo?: string | null;
-  }) => Promise<void>;
+  onLeadUpdate: (
+    patch: {
+      status?: LeadStatus;
+      tags?: LeadTag[];
+      assignedTo?: string | null;
+    },
+    /** Defaults to the currently selected lead when omitted. */
+    submissionId?: string,
+  ) => Promise<void>;
   onLeadNote: (body: string) => Promise<void>;
   onSendLeadMessage: (
     body: string,
@@ -481,16 +485,20 @@ export function PortalProvider({
   }, []);
 
   const onLeadUpdate = useCallback(
-    async (patch: {
-      status?: LeadStatus;
-      tags?: LeadTag[];
-      assignedTo?: string | null;
-    }) => {
-      if (!selectedId) return;
+    async (
+      patch: {
+        status?: LeadStatus;
+        tags?: LeadTag[];
+        assignedTo?: string | null;
+      },
+      submissionId?: string,
+    ) => {
+      const id = submissionId ?? selectedId;
+      if (!id) return;
       setCrmBusy(true);
       setListError(null);
       try {
-        const updated = await updateSubmission(selectedId, patch);
+        const updated = await updateSubmission(id, patch);
         replaceItem(updated);
       } catch (err) {
         setListError(

@@ -1,6 +1,25 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "storybook/test";
+import type { TeamMember } from "@/lib/api";
 import { LeadInboxCard } from "./LeadInboxCard";
+
+const members: TeamMember[] = [
+  {
+    email: "owner@example.com",
+    role: "owner",
+    joinedAt: "2026-01-01T00:00:00.000Z",
+    firstName: "Olivia",
+    lastName: "Owner",
+    emailNotifications: true,
+  },
+  {
+    email: "sales@example.com",
+    role: "member",
+    joinedAt: "2026-01-02T00:00:00.000Z",
+    name: "Sam Sales",
+    emailNotifications: true,
+  },
+];
 
 const meta = {
   title: "Features/Portal/Leads/LeadInboxCard",
@@ -21,6 +40,8 @@ const meta = {
     status: "new",
     active: false,
     replyCount: 0,
+    members,
+    onAssign: fn(),
     onSelect: fn(),
   },
 } satisfies Meta<typeof LeadInboxCard>;
@@ -40,6 +61,7 @@ export const WithAssignee: Story = {
   args: {
     assignedTo: "owner@example.com",
     status: "contacted",
+    replyCount: 2,
   },
 };
 
@@ -81,6 +103,7 @@ export const Won: Story = {
 export const Activity: Story = {
   args: {
     variant: "activity",
+    onAssign: undefined,
   },
 };
 
@@ -88,5 +111,6 @@ export const ActivityActive: Story = {
   args: {
     variant: "activity",
     active: true,
+    onAssign: undefined,
   },
 };

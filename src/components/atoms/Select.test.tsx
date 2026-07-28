@@ -142,4 +142,55 @@ describe("Select", () => {
     expect(trigger.className).toMatch(/\brounded-full\b/);
     expect(trigger.className).not.toMatch(/\bborder-b\b/);
   });
+
+  it("shows menuLabel in the list while keeping label on the trigger", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <Select
+        aria-label="Assignee"
+        variant="soft"
+        value="owner@example.com"
+        onChange={vi.fn()}
+        options={[
+          {
+            value: "owner@example.com",
+            label: "Olivia Owner",
+            menuLabel: "Olivia Owner (owner@example.com)",
+          },
+        ]}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /assignee/i });
+    expect(trigger).toHaveTextContent("Olivia Owner");
+    expect(trigger).not.toHaveTextContent("owner@example.com");
+
+    await user.click(trigger);
+    expect(
+      screen.getByRole("option", {
+        name: /olivia owner \(owner@example\.com\)/i,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("right-aligns the listbox when listboxAlign is end", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <Select
+        aria-label="Assignee"
+        variant="soft"
+        listboxAlign="end"
+        value=""
+        options={options}
+        onChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /assignee/i }));
+    const listbox = screen.getByRole("listbox");
+    expect(listbox.className).toMatch(/\bright-0\b/);
+    expect(listbox.className).toMatch(/\bleft-auto\b/);
+  });
 });

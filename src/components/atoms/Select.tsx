@@ -13,7 +13,10 @@ import { cn } from "@/lib/utils";
 
 export interface SelectOption {
   value: string;
+  /** Label shown on the closed trigger. */
   label: string;
+  /** Optional label for listbox rows; falls back to `label`. */
+  menuLabel?: string;
   /** Optional Tailwind class for a colored indicator dot. */
   indicatorClassName?: string;
 }
@@ -29,6 +32,8 @@ interface SelectProps {
   className?: string;
   /** `underline` for filter fields; `soft` for quieter pill triggers. */
   variant?: SelectVariant;
+  /** Horizontal anchor for the listbox. Defaults to `start`. */
+  listboxAlign?: "start" | "end";
   "aria-label"?: string;
 }
 
@@ -41,7 +46,7 @@ const triggerVariantClass: Record<SelectVariant, string> = {
 const listboxVariantClass: Record<SelectVariant, string> = {
   underline:
     "absolute z-50 mt-1 max-h-60 w-full overflow-auto border border-outline-variant/40 bg-surface-container-high py-1 shadow-lg focus:outline-none",
-  soft: "absolute z-50 mt-1.5 max-h-60 w-full overflow-auto rounded-2xl border border-outline-variant/30 bg-surface-container-high py-1.5 shadow-lg focus:outline-none",
+  soft: "absolute z-50 mt-1.5 max-h-60 overflow-auto rounded-2xl border border-outline-variant/30 bg-surface-container-high py-1.5 shadow-lg focus:outline-none",
 };
 
 export function Select({
@@ -52,6 +57,7 @@ export function Select({
   disabled = false,
   className,
   variant = "underline",
+  listboxAlign = "start",
   "aria-label": ariaLabel,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
@@ -176,7 +182,7 @@ export function Select({
         <MaterialIcon
           name="expand_more"
           className={cn(
-            "text-outline transition-transform",
+            "text-outline shrink-0 transition-transform",
             open && "rotate-180",
           )}
         />
@@ -190,7 +196,16 @@ export function Select({
           aria-activedescendant={`${listboxId}-option-${activeIndex}`}
           onKeyDown={onListKeyDown}
           ref={(node) => node?.focus()}
-          className={listboxVariantClass[variant]}
+          className={cn(
+            listboxVariantClass[variant],
+            variant === "soft" &&
+              (listboxAlign === "end"
+                ? "right-0 left-auto min-w-full w-max max-w-[14rem]"
+                : "w-full"),
+            variant === "underline" &&
+              listboxAlign === "end" &&
+              "right-0 left-auto",
+          )}
         >
           {options.map((option, index) => {
             const isSelected = option.value === value;
@@ -204,7 +219,7 @@ export function Select({
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => choose(option.value)}
                 className={cn(
-                  "flex cursor-pointer items-center gap-2 py-2 pl-4 pr-3 text-sm text-on-surface",
+                  "flex min-w-0 cursor-pointer items-center gap-2 py-2 pl-4 pr-3 text-sm text-on-surface",
                   variant === "soft" && "mx-1 rounded-full px-3",
                   isActive && "bg-surface-bright text-white",
                   isSelected && "font-medium text-white",
@@ -219,7 +234,9 @@ export function Select({
                     )}
                   />
                 )}
-                {option.label}
+                <span className="truncate">
+                  {option.menuLabel ?? option.label}
+                </span>
               </li>
             );
           })}
