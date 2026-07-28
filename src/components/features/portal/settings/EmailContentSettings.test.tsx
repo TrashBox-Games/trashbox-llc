@@ -1,0 +1,275 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import {
+  EmailContentSettings,
+  type EmailContentEntry,
+} from "./EmailContentSettings";
+
+const template: EmailContentEntry = {
+  id: "t1",
+  name: "Quote follow-up",
+  subject: "Your quote from {{business.name}}",
+  bodyText: "Hi {{lead.first_name}},\n\nHere is your quote.",
+  bodyHtml: "<p>Hi {{lead.first_name}},</p><p>Here is your quote.</p>",
+  updatedAt: "2026-07-20T10:00:00.000Z",
+};
+
+const signature: EmailContentEntry = {
+  id: "g1",
+  name: "Sales sign-off",
+  bodyText: "Thanks,\nSales Team",
+  isDefault: true,
+  updatedAt: "2026-07-20T10:00:00.000Z",
+};
+
+const snippet: EmailContentEntry = {
+  id: "s1",
+  name: "Business hours",
+  shortcut: "hours",
+  bodyText: "We are open 8am to 5pm, Monday through Friday.",
+  updatedAt: "2026-07-20T10:00:00.000Z",
+};
+
+function renderSettings(props: Partial<
+  React.ComponentProps<typeof EmailContentSettings>
+> = {}) {
+  const handlers = {
+    onCreate: vi.fn().mockResolvedValue(undefined),
+    onUpdate: vi.fn().mockResolvedValue(undefined),
+    onDelete: vi.fn().mockResolvedValue(undefined),
+    onMakeDefault: vi.fn().mockResolvedValue(undefined),
+  };
+  render(
+    <EmailContentSettings
+      kind="template"
+      items={[template]}
+      canManage
+      {...handlers}
+      {...props}
+    />,
+  );
+  return handlers;
+}
+
+describe("EmailContentSettings", () => {
+  it("lists templates with their subject", () => {
+    renderSettings();
+
+    expect(screen.getByText("Quote follow-up")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Your quote from \{\{business\.name\}\}/),
+    ).toBeInTheDocument();
+  });
+
+  it("documents the available merge fields", () => {
+    renderSettings();
+
+    expect(screen.getByText("{{lead.first_name}}")).toBeInTheDocument();
+    expect(screen.getByText("{{business.name}}")).toBeInTheDocument();
+  });
+
+  it("creates a template from the new form", async () => {
+    const user = userEvent.setup();
+    const { onCreate } = renderSettings({ items: [] });
+
+    await user.click(screen.getByRole("button", { name: /new template/i }));
+    await user.type(screen.getByLabelText(/^name$/i), "Welcome");
+    await user.type(screen.getByLabelText(/subject/i), "Hello");
+    await user.type(screen.getByRole("textbox", { name: /body/i }), "Hi there");
+    await user.click(screen.getByRole("button", { name: /save template/i }));
+
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({
+      name: "Welcome",
+      subject: "Hello",
+      bodyText: "Hi there",
+    });
+  });
+
+  it("cannot save until a name and body are filled in", async () => {
+    const user = userEvent.setup();
+    renderSettings({ items: [] });
+
+    await user.click(screen.getByRole("button", { name: /new template/i }));
+    expect(
+      screen.getByRole("button", { name: /save template/i }),
+    ).toBeDisabled();
+
+    await user.type(screen.getByLabelText(/^name$/i), "Welcome");
+    expect(
+      screen.getByRole("button", { name: /save template/i }),
+    ).toBeDisabled();
+
+    await user.type(screen.getByRole("textbox", { name: /body/i }), "Hi");
+    expect(screen.getByRole("button", { name: /save template/i })).toBeEnabled();
+  });
+
+  it("edits an existing template through the seeded form", async () => {
+    const user = userEvent.setup();
+    const { onUpdate } = renderSettings();
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const name = screen.getByLabelText(/^name$/i);
+    expect(name).toHaveValue("Quote follow-up");
+    await user.clear(name);
+    await user.type(name, "Quote follow-up v2");
+    await user.click(screen.getByRole("button", { name: /save template/i }));
+
+    expect(onUpdate).toHaveBeenCalledWith(
+      "t1",
+      expect.objectContaining({ name: "Quote follow-up v2" }),
+    );
+  });
+
+  it("closes the form without saving when cancelled", async () => {
+    const user = userEvent.setup();
+    const { onUpdate } = renderSettings();
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText(/^name$/i)).not.toBeInTheDocument();
+  });
+
+  it("duplicates a template into an unsaved copy", async () => {
+    const user = userEvent.setup();
+    const { onCreate, onUpdate } = renderSettings();
+
+    await user.click(screen.getByRole("button", { name: /duplicate/i }));
+    expect(screen.getByLabelText(/^name$/i)).toHaveValue(
+      "Quote follow-up (copy)",
+    );
+
+    await user.click(screen.getByRole("button", { name: /save template/i }));
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect(onUpdate).not.toHaveBeenCalled();
+  });
+
+  it("deletes only after the user confirms", async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const { onDelete } = renderSettings();
+
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+    expect(onDelete).not.toHaveBeenCalled();
+
+    confirm.mockReturnValue(true);
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+    expect(onDelete).toHaveBeenCalledWith("t1");
+  });
+
+  it("warns about merge fields that will not be substituted", async () => {
+    const user = userEvent.setup();
+    renderSettings({ items: [] });
+
+    await user.click(screen.getByRole("button", { name: /new template/i }));
+    // userEvent reads `{` as the start of a key descriptor, so `{{{{` types `{{`.
+    await user.type(
+      screen.getByRole("textbox", { name: /body/i }),
+      "Hi {{{{lead.nickname}}",
+    );
+
+    expect(screen.getByText(/not a supported merge field/i)).toHaveTextContent(
+      "{{lead.nickname}}",
+    );
+  });
+
+  it("previews a template body with merge fields resolved", async () => {
+    const user = userEvent.setup();
+    renderSettings({
+      previewContext: {
+        lead: { name: "Dana Brooks", email: "dana@example.com" },
+        business: { name: "Acme Hauling" },
+      },
+    });
+
+    await user.click(screen.getByRole("button", { name: /preview/i }));
+
+    expect(screen.getByText(/Hi Dana,/)).toBeInTheDocument();
+    expect(screen.getByText(/Your quote from Acme Hauling/)).toBeInTheDocument();
+  });
+
+  it("hides editing affordances without the manage permission", () => {
+    renderSettings({ canManage: false });
+
+    expect(screen.getByText("Quote follow-up")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /new template/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^edit$/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Manage Email Templates, Signatures And Snippets/i),
+    ).toBeInTheDocument();
+  });
+
+  it("explains the empty state per kind", () => {
+    renderSettings({ kind: "snippet", items: [] });
+
+    expect(screen.getByText(/no snippets yet/i)).toBeInTheDocument();
+  });
+
+  it("marks the default signature and lets managers change it", async () => {
+    const user = userEvent.setup();
+    const second: EmailContentEntry = {
+      ...signature,
+      id: "g2",
+      name: "Support sign-off",
+      isDefault: false,
+    };
+    const { onMakeDefault } = renderSettings({
+      kind: "signature",
+      items: [signature, second],
+    });
+
+    expect(screen.getByText(/^default$/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /make default/i }));
+    expect(onMakeDefault).toHaveBeenCalledWith("g2");
+  });
+
+  it("does not offer a subject field for signatures", async () => {
+    const user = userEvent.setup();
+    renderSettings({ kind: "signature", items: [] });
+
+    await user.click(screen.getByRole("button", { name: /new signature/i }));
+    expect(screen.queryByLabelText(/subject/i)).not.toBeInTheDocument();
+  });
+
+  it("shows a snippet shortcut and normalizes what is typed", async () => {
+    const user = userEvent.setup();
+    const { onCreate } = renderSettings({ kind: "snippet", items: [snippet] });
+
+    expect(screen.getByText("/hours")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /new snippet/i }));
+    await user.type(screen.getByLabelText(/^name$/i), "Pricing");
+    await user.type(screen.getByLabelText(/shortcut/i), "Base Pricing!");
+    await user.type(
+      screen.getByRole("textbox", { name: /body/i }),
+      "Our base rate is $99.",
+    );
+    expect(screen.getByLabelText(/shortcut/i)).toHaveValue("base-pricing");
+
+    await user.click(screen.getByRole("button", { name: /save snippet/i }));
+    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({
+      shortcut: "base-pricing",
+    });
+  });
+
+  it("surfaces errors and notices from the caller", () => {
+    renderSettings({ error: "Shortcut /hours is already in use" });
+    expect(
+      screen.getByText("Shortcut /hours is already in use"),
+    ).toBeInTheDocument();
+  });
+
+  it("disables the actions while a request is in flight", () => {
+    renderSettings({ busy: true });
+    expect(screen.getByRole("button", { name: /new template/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /delete/i })).toBeDisabled();
+  });
+});

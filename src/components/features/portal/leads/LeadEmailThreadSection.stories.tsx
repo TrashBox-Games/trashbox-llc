@@ -4,10 +4,8 @@ import type {
   EmailSignature,
   EmailSnippet,
   EmailTemplate,
-  FromIdentityOption,
-  LeadMessage,
 } from "@/lib/api";
-import { LeadEmailThread } from "./LeadEmailThread";
+import { LeadEmailThreadSection } from "./LeadEmailThreadSection";
 
 const templates: EmailTemplate[] = [
   {
@@ -51,31 +49,9 @@ const snippets: EmailSnippet[] = [
   },
 ];
 
-const outboundReply: LeadMessage = {
-  clientId: "c1",
-  submissionId: "s1",
-  messageId: "m1",
-  direction: "outbound",
-  from: "sales@example.com",
-  to: "ada@example.com",
-  subject: "Re: Need a quote",
-  bodyText: "Thanks for reaching out — happy to help.",
-  createdAt: "2026-07-15T13:00:00.000Z",
-  sentBy: "owner@example.com",
-};
-
-const fromOptions: FromIdentityOption[] = [
-  {
-    id: "s1",
-    label: "Sales Team (Default)",
-    displayName: "Sales Team",
-  },
-  { id: "s2", label: "Support", displayName: "Support" },
-];
-
 const meta = {
-  title: "Features/Portal/Leads/LeadEmailThread",
-  component: LeadEmailThread,
+  title: "Features/Portal/Leads/LeadEmailThreadSection",
+  component: LeadEmailThreadSection,
   tags: ["autodocs"],
   decorators: [
     (Story) => (
@@ -89,54 +65,31 @@ const meta = {
     formFrom: "ada@example.com",
     formAt: "2026-07-15T12:00:00.000Z",
     messages: [],
-    mailboxConnected: false,
-    fromOptions,
+    mailboxConnected: true,
+    fromAddress: "sales@example.com",
+    fromOptions: [
+      {
+        id: "s1",
+        label: "Sales Team (Default)",
+        displayName: "Sales Team",
+      },
+    ],
+    variableContext: {
+      lead: { name: "Ada Lovelace", email: "ada@example.com" },
+      business: { name: "Trashbox LLC" },
+    },
+    initialLibrary: { templates, signatures, snippets },
     onSend: fn().mockResolvedValue(undefined),
   },
-} satisfies Meta<typeof LeadEmailThread>;
+} satisfies Meta<typeof LeadEmailThreadSection>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Disconnected: Story = {};
+export const WithLibrary: Story = {};
 
-export const ConnectedEmpty: Story = {
+export const EmptyLibrary: Story = {
   args: {
-    mailboxConnected: true,
-    fromAddress: "sales@example.com",
-  },
-};
-
-export const WithContentLibrary: Story = {
-  args: {
-    mailboxConnected: true,
-    fromAddress: "sales@example.com",
-    library: { templates, signatures, snippets },
-    variableContext: {
-      lead: { name: "Ada Lovelace", email: "ada@example.com" },
-      business: { name: "Trashbox LLC" },
-      sender: { name: "Sales Team", email: "sales@example.com" },
-    },
-  },
-};
-
-export const WithOutboundReply: Story = {
-  args: {
-    mailboxConnected: true,
-    fromAddress: "sales@example.com",
-    messages: [outboundReply],
-    library: { templates, signatures, snippets },
-    variableContext: {
-      lead: { name: "Ada Lovelace", email: "ada@example.com" },
-      business: { name: "Trashbox LLC" },
-    },
-  },
-};
-
-export const NoAssignedNames: Story = {
-  args: {
-    mailboxConnected: true,
-    fromAddress: "sales@example.com",
-    fromOptions: [],
+    initialLibrary: { templates: [], signatures: [], snippets: [] },
   },
 };

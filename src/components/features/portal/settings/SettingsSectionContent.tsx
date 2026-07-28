@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  EmailContentSettingsSection,
+  type EmailContentSectionInitialState,
+} from "@/components/features/portal/settings/EmailContentSettingsSection";
+import type { EmailContentKind } from "@/components/features/portal/settings/EmailContentSettings";
 import { MailboxSettings } from "@/components/features/portal/settings/MailboxSettings";
 import { SendingPreferencesSettings } from "@/components/features/portal/settings/SendingPreferencesSettings";
 import { SettingsPlaceholder } from "@/components/features/portal/settings/SettingsPlaceholder";
@@ -21,17 +26,27 @@ import {
   type SettingsSectionId,
 } from "@/lib/portal-settings";
 
+const EMAIL_CONTENT_SECTIONS: Partial<
+  Record<SettingsSectionId, EmailContentKind>
+> = {
+  templates: "template",
+  signatures: "signature",
+  snippets: "snippet",
+};
+
 interface SettingsSectionContentProps {
   sectionId: SettingsSectionId;
   /** Storybook/demo seed for nested API-backed sections. */
   apiKeysInitialState?: ApiKeysSettingsInitialState;
   teamMembersInitialState?: TeamMembersSettingsInitialState;
+  emailContentInitialState?: EmailContentSectionInitialState;
 }
 
 export function SettingsSectionContent({
   sectionId,
   apiKeysInitialState,
   teamMembersInitialState,
+  emailContentInitialState,
 }: SettingsSectionContentProps) {
   const auth = useAuth();
   const portal = usePortal();
@@ -85,6 +100,16 @@ export function SettingsSectionContent({
         error={portal.mailboxError}
         notice={portal.mailboxNotice}
         onPatch={portal.onMailboxPatch}
+      />
+    );
+  }
+
+  const emailContentKind = EMAIL_CONTENT_SECTIONS[sectionId];
+  if (emailContentKind) {
+    return (
+      <EmailContentSettingsSection
+        kind={emailContentKind}
+        businessName={portal.account.clientName}
       />
     );
   }

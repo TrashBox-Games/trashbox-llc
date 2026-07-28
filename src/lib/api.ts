@@ -49,6 +49,7 @@ export type TeamRole = "owner" | "admin" | "member";
 export const PERMISSIONS = [
   "manage_sender_display_names",
   "allow_all_sender_display_names",
+  "manage_email_content",
   "manage_team_members",
   "manage_roles_and_permissions",
   "manage_api_keys",
@@ -59,6 +60,7 @@ export type Permission = (typeof PERMISSIONS)[number];
 export const PERMISSION_LABELS: Record<Permission, string> = {
   manage_sender_display_names: "Manage Email Sender Display Names",
   allow_all_sender_display_names: "Allow All Sender Display Names",
+  manage_email_content: "Manage Email Templates, Signatures And Snippets",
   manage_team_members: "Manage Team Members",
   manage_roles_and_permissions: "Manage Roles And Permissions",
   manage_api_keys: "Manage API Keys",
@@ -628,4 +630,173 @@ export async function sendLeadMessage(
       body: JSON.stringify(input),
     },
   )) as unknown as LeadMessage;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Email content library                                                      */
+/* -------------------------------------------------------------------------- */
+
+interface EmailContentBase {
+  clientId: string;
+  id: string;
+  name: string;
+  bodyText: string;
+  bodyHtml?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Full reply draft (subject + body) a member can load while composing. */
+export interface EmailTemplate extends EmailContentBase {
+  subject: string;
+}
+
+/** Sign-off block; at most one signature per account is the default. */
+export interface EmailSignature extends EmailContentBase {
+  isDefault: boolean;
+}
+
+/** Short reusable passage, optionally addressable by a `/shortcut`. */
+export interface EmailSnippet extends EmailContentBase {
+  shortcut: string;
+}
+
+/** List responses carry `canManage` so a section needs one request, not two. */
+export interface EmailContentListResponse<TItem> {
+  items: TItem[];
+  canManage: boolean;
+}
+
+export interface UpsertEmailTemplateInput {
+  name?: string;
+  subject?: string | null;
+  bodyText?: string;
+  bodyHtml?: string | null;
+}
+
+export interface UpsertEmailSignatureInput {
+  name?: string;
+  bodyText?: string;
+  bodyHtml?: string | null;
+  isDefault?: boolean;
+}
+
+export interface UpsertEmailSnippetInput {
+  name?: string;
+  shortcut?: string | null;
+  bodyText?: string;
+  bodyHtml?: string | null;
+}
+
+async function listContent<TItem>(
+  path: string,
+): Promise<EmailContentListResponse<TItem>> {
+  return (await authFetch(path)) as unknown as EmailContentListResponse<TItem>;
+}
+
+async function createContent<TItem>(
+  path: string,
+  input: unknown,
+): Promise<TItem> {
+  const data = (await authFetch(path, {
+    method: "POST",
+    body: JSON.stringify(input),
+  })) as unknown as { item: TItem };
+  return data.item;
+}
+
+async function updateContent<TItem>(
+  path: string,
+  patch: unknown,
+): Promise<TItem> {
+  const data = (await authFetch(path, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  })) as unknown as { item: TItem };
+  return data.item;
+}
+
+export async function listEmailTemplates(): Promise<
+  EmailContentListResponse<EmailTemplate>
+> {
+  return listContent<EmailTemplate>("/email-templates");
+}
+
+export async function createEmailTemplate(
+  input: UpsertEmailTemplateInput,
+): Promise<EmailTemplate> {
+  return createContent<EmailTemplate>("/email-templates", input);
+}
+
+export async function updateEmailTemplate(
+  templateId: string,
+  patch: UpsertEmailTemplateInput,
+): Promise<EmailTemplate> {
+  return updateContent<EmailTemplate>(
+    `/email-templates/${encodeURIComponent(templateId)}`,
+    patch,
+  );
+}
+
+export async function deleteEmailTemplate(templateId: string): Promise<void> {
+  await authFetch(`/email-templates/${encodeURIComponent(templateId)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function listEmailSignatures(): Promise<
+  EmailContentListResponse<EmailSignature>
+> {
+  return listContent<EmailSignature>("/signatures");
+}
+
+export async function createEmailSignature(
+  input: UpsertEmailSignatureInput,
+): Promise<EmailSignature> {
+  return createContent<EmailSignature>("/signatures", input);
+}
+
+export async function updateEmailSignature(
+  signatureId: string,
+  patch: UpsertEmailSignatureInput,
+): Promise<EmailSignature> {
+  return updateContent<EmailSignature>(
+    `/signatures/${encodeURIComponent(signatureId)}`,
+    patch,
+  );
+}
+
+export async function deleteEmailSignature(signatureId: string): Promise<void> {
+  await authFetch(`/signatures/${encodeURIComponent(signatureId)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function listEmailSnippets(): Promise<
+  EmailContentListResponse<EmailSnippet>
+> {
+  return listContent<EmailSnippet>("/snippets");
+}
+
+export async function createEmailSnippet(
+  input: UpsertEmailSnippetInput,
+): Promise<EmailSnippet> {
+  return createContent<EmailSnippet>("/snippets", input);
+}
+
+export async function updateEmailSnippet(
+  snippetId: string,
+  patch: UpsertEmailSnippetInput,
+): Promise<EmailSnippet> {
+  return updateContent<EmailSnippet>(
+    `/snippets/${encodeURIComponent(snippetId)}`,
+    patch,
+  );
+}
+
+export async function deleteEmailSnippet(snippetId: string): Promise<void> {
+  await authFetch(`/snippets/${encodeURIComponent(snippetId)}`, {
+    method: "DELETE",
+  });
 }

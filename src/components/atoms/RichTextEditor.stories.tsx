@@ -25,8 +25,24 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+export const WithInitialContent: Story = {
+  args: {
+    ariaLabel: "Body",
+    initialHtml:
+      "<p>Hi Dana,</p><p>Thanks for reaching out — we can pick up on Tuesday.</p><ul><li>Curbside pickup</li><li>Same-day haul away</li></ul>",
+  },
+};
+
 export const Disabled: Story = {
   args: {
     disabled: true,
+  },
+};
+
+export const DisabledWithContent: Story = {
+  args: {
+    ariaLabel: "Body",
+    disabled: true,
+    initialHtml: "<p>Read-only preview of a saved template.</p>",
   },
 };

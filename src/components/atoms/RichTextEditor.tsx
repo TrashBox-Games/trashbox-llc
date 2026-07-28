@@ -1,7 +1,10 @@
 "use client";
 
 import {
+  forwardRef,
   useCallback,
+  useEffect,
+  useImperativeHandle,
   useRef,
   useState,
   type KeyboardEvent,
@@ -15,6 +18,18 @@ export interface RichTextValue {
   text: string;
 }
 
+export interface RichTextEditorHandle {
+  /** Replace the entire document and emit onChange. */
+  setHtml: (html: string) => void;
+  /** Insert HTML at the caret (or at the end when there is no selection). */
+  insertHtml: (html: string) => void;
+  focus: () => void;
+  /** Plain text from the start of the document through the caret. */
+  textBeforeCursor: () => string;
+  /** Delete the last `count` characters before the caret, then insert HTML. */
+  replaceCharsBeforeCursor: (count: number, html: string) => void;
+}
+
 interface RichTextEditorProps {
   onChange: (value: RichTextValue) => void;
   ariaLabel: string;
@@ -22,6 +37,13 @@ interface RichTextEditorProps {
   disabled?: boolean;
   className?: string;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
+  /**
+   * Content to seed the editor with. The editor stays uncontrolled afterwards,
+   * so callers that need to replace the content later should also change `key`
+   * or call `setHtml` on the handle. No `onChange` fires for the seeded value —
+   * seed the caller's state to match.
+   */
+  initialHtml?: string;
 }
 
 interface ToolbarButton {
@@ -54,24 +76,177 @@ const FORMAT_GROUPS: ToolbarButton[][] = [
   [{ label: "Link", icon: "link", command: "createLink", prompt: true }],
 ];
 
-export function RichTextEditor({
-  onChange,
-  ariaLabel,
-  placeholder = "Write a message…",
-  disabled = false,
-  className,
-  onKeyDown,
-}: RichTextEditorProps) {
+function readValue(el: HTMLDivElement): RichTextValue {
+  return { html: el.innerHTML, text: el.textContent ?? "" };
+}
+
+function isVisuallyEmpty(el: HTMLDivElement): boolean {
+  return (
+    (el.textContent ?? "").trim().length === 0 && !el.querySelector("li, img")
+  );
+}
+
+/** Prefer execCommand; fall back to Range APIs for jsdom / older engines. */
+function insertHtmlAtSelection(html: string): boolean {
+  if (typeof document.execCommand === "function") {
+    const ok = document.execCommand("insertHTML", false, html);
+    if (ok) return true;
+  }
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return false;
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  const fragment = template.content;
+  const lastNode = fragment.lastChild;
+  range.insertNode(fragment);
+  if (lastNode) {
+    range.setStartAfter(lastNode);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+  return true;
+}
+
+function previousTextNode(node: Node, root: Node): Text | null {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  let current = walker.nextNode();
+  while (current) {
+    nodes.push(current as Text);
+    current = walker.nextNode();
+  }
+  if (node.nodeType === Node.TEXT_NODE) {
+    const index = nodes.indexOf(node as Text);
+    return index > 0 ? nodes[index - 1]! : null;
+  }
+  return nodes.at(-1) ?? null;
+}
+
+/** Select `count` characters immediately before the caret. */
+function extendSelectionBackward(
+  selection: Selection,
+  root: Node,
+  count: number,
+): void {
+  if (selection.rangeCount === 0 || count <= 0) return;
+  const caret = selection.getRangeAt(0);
+  let remaining = count;
+  let endNode: Node = caret.startContainer;
+  let endOffset = caret.startOffset;
+  let startNode: Node = endNode;
+  let startOffset = endOffset;
+
+  while (remaining > 0) {
+    if (startNode.nodeType === Node.TEXT_NODE) {
+      const take = Math.min(startOffset, remaining);
+      startOffset -= take;
+      remaining -= take;
+      if (remaining === 0) break;
+    }
+    const previous = previousTextNode(startNode, root);
+    if (!previous) break;
+    startNode = previous;
+    startOffset = previous.length;
+  }
+
+  const range = document.createRange();
+  range.setStart(startNode, startOffset);
+  range.setEnd(endNode, endOffset);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+export const RichTextEditor = forwardRef<
+  RichTextEditorHandle,
+  RichTextEditorProps
+>(function RichTextEditor(
+  {
+    onChange,
+    ariaLabel,
+    placeholder = "Write a message…",
+    disabled = false,
+    className,
+    onKeyDown,
+    initialHtml,
+  },
+  ref,
+) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isEmpty, setIsEmpty] = useState(true);
 
   const emit = useCallback(() => {
     const el = editorRef.current;
     if (!el) return;
-    const text = el.textContent ?? "";
-    setIsEmpty(text.trim().length === 0 && !el.querySelector("li, img"));
-    onChange({ html: el.innerHTML, text });
+    setIsEmpty(isVisuallyEmpty(el));
+    onChange(readValue(el));
   }, [onChange]);
+
+  useEffect(() => {
+    const el = editorRef.current;
+    if (!el || initialHtml === undefined) return;
+    el.innerHTML = initialHtml;
+    setIsEmpty(isVisuallyEmpty(el));
+  }, [initialHtml]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      setHtml(html: string) {
+        const el = editorRef.current;
+        if (!el) return;
+        el.innerHTML = html;
+        setIsEmpty(isVisuallyEmpty(el));
+        onChange(readValue(el));
+      },
+      insertHtml(html: string) {
+        const el = editorRef.current;
+        if (!el || disabled) return;
+        el.focus();
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+          el.innerHTML = `${el.innerHTML}${html}`;
+          emit();
+          return;
+        }
+        insertHtmlAtSelection(html);
+        emit();
+      },
+      focus() {
+        editorRef.current?.focus();
+      },
+      textBeforeCursor() {
+        const el = editorRef.current;
+        if (!el) return "";
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+          return el.textContent ?? "";
+        }
+        const range = selection.getRangeAt(0).cloneRange();
+        range.selectNodeContents(el);
+        range.setEnd(
+          selection.getRangeAt(0).endContainer,
+          selection.getRangeAt(0).endOffset,
+        );
+        return range.toString();
+      },
+      replaceCharsBeforeCursor(count: number, html: string) {
+        const el = editorRef.current;
+        if (!el || disabled || count <= 0) return;
+        el.focus();
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+
+        selection.collapseToEnd();
+        extendSelectionBackward(selection, el, count);
+        insertHtmlAtSelection(html);
+        emit();
+      },
+    }),
+    [disabled, emit, onChange],
+  );
 
   const runCommand = useCallback(
     (button: ToolbarButton) => {
@@ -163,6 +338,6 @@ export function RichTextEditor({
       </div>
     </div>
   );
-}
+});
 
 export type { RichTextEditorProps };

@@ -67,6 +67,13 @@ vi.mock("@/lib/api", async (importOriginal) => {
       items: [],
     }),
     listLeadMessages: vi.fn().mockResolvedValue({ submissionId: "", items: [] }),
+    listEmailTemplates: vi
+      .fn()
+      .mockResolvedValue({ items: [], canManage: true }),
+    listEmailSignatures: vi
+      .fn()
+      .mockResolvedValue({ items: [], canManage: true }),
+    listEmailSnippets: vi.fn().mockResolvedValue({ items: [], canManage: true }),
   };
 });
 
@@ -136,6 +143,20 @@ describe("SettingsSectionContent", () => {
     expect(
       await screen.findByText(/Create the Sender Display Names/i),
     ).toBeInTheDocument();
+  });
+
+  it.each([
+    ["templates", /email templates/i],
+    ["signatures", /^signatures$/i],
+    ["snippets", /^snippets$/i],
+  ] as const)("renders the %s section", async (sectionId, heading) => {
+    render(
+      <PortalProvider>
+        <SettingsSectionContent sectionId={sectionId} />
+      </PortalProvider>,
+    );
+
+    expect(await screen.findByText(heading)).toBeInTheDocument();
   });
 
   it("renders Roles & Permissions in the roles-permissions section", async () => {

@@ -1,19 +1,48 @@
 "use client";
 
-import { useState, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Select } from "@/components/atoms/Select";
 import {
   RichTextEditor,
+  type RichTextEditorHandle,
   type RichTextValue,
 } from "@/components/atoms/RichTextEditor";
 import { Button } from "@/components/ui/button";
-import type { FromIdentityOption, LeadMessage } from "@/lib/api";
+import type {
+  EmailSignature,
+  EmailSnippet,
+  EmailTemplate,
+  FromIdentityOption,
+  LeadMessage,
+} from "@/lib/api";
+import {
+  composeReplyHtml,
+  matchSnippetShortcut,
+  renderContentForInsert,
+  replaceReplyBody,
+  replaceReplySignature,
+  snippetTriggerAtEnd,
+  type TemplateVariableContext,
+} from "@/lib/email-content";
 import { settingsSectionPath } from "@/lib/portal-settings";
 import { cn } from "@/lib/utils";
 
 const labelClass =
   "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
+
+export interface LeadComposerLibrary {
+  templates: EmailTemplate[];
+  signatures: EmailSignature[];
+  snippets: EmailSnippet[];
+}
 
 function formatWhen(iso: string) {
   try {
@@ -115,6 +144,39 @@ function MetaRow({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
+/** Rough plain-text length of the body region (ignores the signature). */
+function bodyTextLength(html: string): number {
+  const match = html.match(
+    /<div\s+data-trashbox-body\b[^>]*>([\s\S]*?)<\/div>/i,
+  );
+  const source = match?.[1]
+    ?? html.replace(
+      /<div\s+data-trashbox-signature\b[^>]*>[\s\S]*?<\/div>/i,
+      "",
+    );
+  return source.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length;
+}
+
+function defaultSignatureId(signatures: EmailSignature[]): string {
+  return (
+    signatures.find((signature) => signature.isDefault)?.id ??
+    signatures[0]?.id ??
+    ""
+  );
+}
+
+function buildSeedHtml(
+  signatures: EmailSignature[],
+  signatureId: string,
+  context: TemplateVariableContext,
+): string {
+  const signature = signatures.find((item) => item.id === signatureId);
+  const signatureHtml = signature
+    ? renderContentForInsert(signature, context).html
+    : undefined;
+  return composeReplyHtml("<p><br></p>", signatureHtml);
+}
+
 export interface LeadEmailThreadProps {
   formMessage: string;
   formFrom: string;
@@ -125,6 +187,10 @@ export interface LeadEmailThreadProps {
   fromOptions?: FromIdentityOption[];
   busy?: boolean;
   error?: string | null;
+  /** Account email content library used while composing. */
+  library?: LeadComposerLibrary;
+  /** Values used to resolve merge fields on insert. */
+  variableContext?: TemplateVariableContext;
   onSend: (
     text: string,
     html?: string,
@@ -142,18 +208,84 @@ export function LeadEmailThread({
   fromOptions = [],
   busy = false,
   error,
+  library,
+  variableContext = {},
   onSend,
 }: LeadEmailThreadProps) {
+  const templates = library?.templates ?? [];
+  const signatures = library?.signatures ?? [];
+  const snippets = library?.snippets ?? [];
+
   const defaultOption =
     fromOptions.find((option) => option.label.includes("(Default)")) ??
     fromOptions[0];
-  const [draft, setDraft] = useState<RichTextValue>({ html: "", text: "" });
-  const [editorKey, setEditorKey] = useState(0);
   const [fromIdentityId, setFromIdentityId] = useState(defaultOption?.id ?? "");
-  const hasContent = draft.text.trim().length > 0;
   const selected = fromOptions.find((o) => o.id === fromIdentityId);
   const resolvedPreview = selected?.displayName || selected?.label || "";
   const hasFromOptions = fromOptions.length > 0;
+
+  const context = useMemo<TemplateVariableContext>(
+    () => ({
+      ...variableContext,
+      sender: {
+        name: selected?.displayName || variableContext.sender?.name,
+        email: fromAddress || variableContext.sender?.email,
+      },
+    }),
+    [variableContext, selected?.displayName, fromAddress],
+  );
+
+  const [signatureId, setSignatureId] = useState(() =>
+    defaultSignatureId(signatures),
+  );
+  const [templatePick, setTemplatePick] = useState("");
+  const [snippetPick, setSnippetPick] = useState("");
+  const [editorKey, setEditorKey] = useState(0);
+  const editorRef = useRef<RichTextEditorHandle>(null);
+  const seededForSignature = useRef<string | null>(null);
+  const draftRef = useRef<RichTextValue>({ html: "", text: "" });
+
+  const seedHtml = useMemo(
+    () => buildSeedHtml(signatures, signatureId, context),
+    [signatures, signatureId, context],
+  );
+
+  const [draft, setDraft] = useState<RichTextValue>(() => ({
+    html: seedHtml,
+    text: "",
+  }));
+  draftRef.current = draft;
+
+  // Seed once when the default signature first becomes available.
+  useEffect(() => {
+    if (!mailboxConnected) return;
+    const nextDefault = defaultSignatureId(signatures);
+    if (!nextDefault) return;
+    if (seededForSignature.current === nextDefault) return;
+    if (bodyTextLength(draftRef.current.html) > 0) return;
+
+    seededForSignature.current = nextDefault;
+    setSignatureId(nextDefault);
+    const html = buildSeedHtml(signatures, nextDefault, context);
+    setDraft({ html, text: "" });
+    setEditorKey((key) => key + 1);
+  }, [mailboxConnected, signatures, context]);
+
+  // Refresh merge fields inside the signature when the From identity changes.
+  useEffect(() => {
+    if (!signatureId || !editorRef.current) return;
+    const signature = signatures.find((item) => item.id === signatureId);
+    if (!signature) return;
+    const current = draftRef.current.html;
+    const nextHtml = replaceReplySignature(
+      current,
+      renderContentForInsert(signature, context).html,
+    );
+    if (nextHtml === current) return;
+    editorRef.current.setHtml(nextHtml);
+  }, [fromIdentityId, context.sender?.name, context.sender?.email, signatureId, signatures, context]);
+
+  const hasContent = bodyTextLength(draft.html) > 0;
 
   async function submit() {
     if (!hasContent || busy || !fromIdentityId) return;
@@ -161,18 +293,79 @@ export function LeadEmailThread({
     await onSend(draft.text, html ? html : undefined, {
       fromIdentityId,
     });
-    setDraft({ html: "", text: "" });
-    setEditorKey((k) => k + 1);
+    const htmlSeed = buildSeedHtml(signatures, signatureId, context);
+    setDraft({ html: htmlSeed, text: "" });
+    setEditorKey((key) => key + 1);
+  }
+
+  function applyTemplate(templateId: string) {
+    const template = templates.find((item) => item.id === templateId);
+    if (!template || !editorRef.current) return;
+    const rendered = renderContentForInsert(template, context);
+    const next = replaceReplyBody(
+      draftRef.current.html || seedHtml,
+      rendered.html,
+    );
+    editorRef.current.setHtml(next);
+    setTemplatePick("");
+  }
+
+  function applySignature(nextId: string) {
+    setSignatureId(nextId);
+    const signature = signatures.find((item) => item.id === nextId);
+    if (!editorRef.current) return;
+    const signatureHtml = signature
+      ? renderContentForInsert(signature, context).html
+      : "";
+    editorRef.current.setHtml(
+      replaceReplySignature(draftRef.current.html || seedHtml, signatureHtml),
+    );
+  }
+
+  function applySnippet(snippetId: string) {
+    const snippet = snippets.find((item) => item.id === snippetId);
+    if (!snippet || !editorRef.current) return;
+    const rendered = renderContentForInsert(snippet, context);
+    editorRef.current.insertHtml(rendered.html);
+    setSnippetPick("");
+  }
+
+  function expandSnippetShortcut(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== " " && event.key !== "Enter") return false;
+    if (event.metaKey || event.ctrlKey || event.altKey) return false;
+
+    const before = editorRef.current?.textBeforeCursor() ?? "";
+    const trigger = snippetTriggerAtEnd(before);
+    if (!trigger) return false;
+
+    const snippet = matchSnippetShortcut(snippets, trigger);
+    if (!snippet || !editorRef.current) return false;
+
+    event.preventDefault();
+    const rendered = renderContentForInsert(snippet, context);
+    const tokenLength = trigger.length + 1; // leading "/"
+    const suffix = event.key === " " ? " " : "<br />";
+    editorRef.current.replaceCharsBeforeCursor(
+      tokenLength,
+      `${rendered.html}${suffix}`,
+    );
+    return true;
   }
 
   function onEditorKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
       void submit();
+      return;
     }
+    expandSnippetShortcut(event);
   }
 
   const sendDisabled = busy || !hasContent || !fromIdentityId;
+  const libraryEmpty =
+    templates.length === 0 &&
+    signatures.length === 0 &&
+    snippets.length === 0;
 
   return (
     <div className="mt-10 border-t border-outline-variant/10 pt-6">
@@ -263,11 +456,94 @@ export function LeadEmailThread({
             </div>
           </div>
 
+          <div
+            role="toolbar"
+            aria-label="Email content"
+            className="flex flex-wrap items-center gap-3 border-b border-outline-variant/10 bg-surface-container/40 px-4 py-2"
+          >
+            <div className="min-w-[10rem] flex-1">
+              <Select
+                aria-label="Template"
+                value={templatePick}
+                disabled={busy || templates.length === 0}
+                onChange={(value) => {
+                  setTemplatePick(value);
+                  if (value) applyTemplate(value);
+                }}
+                options={[
+                  {
+                    value: "",
+                    label:
+                      templates.length === 0
+                        ? "No templates"
+                        : "Insert template…",
+                  },
+                  ...templates.map((template) => ({
+                    value: template.id,
+                    label: template.name,
+                  })),
+                ]}
+              />
+            </div>
+            <div className="min-w-[10rem] flex-1">
+              <Select
+                aria-label="Snippet"
+                value={snippetPick}
+                disabled={busy || snippets.length === 0}
+                onChange={(value) => {
+                  setSnippetPick(value);
+                  if (value) applySnippet(value);
+                }}
+                options={[
+                  {
+                    value: "",
+                    label:
+                      snippets.length === 0 ? "No snippets" : "Insert snippet…",
+                  },
+                  ...snippets.map((snippet) => ({
+                    value: snippet.id,
+                    label: snippet.shortcut
+                      ? `${snippet.name} (/${snippet.shortcut})`
+                      : snippet.name,
+                  })),
+                ]}
+              />
+            </div>
+            <div className="min-w-[10rem] flex-1">
+              <Select
+                aria-label="Signature"
+                value={signatureId}
+                disabled={busy || signatures.length === 0}
+                onChange={applySignature}
+                options={
+                  signatures.length === 0
+                    ? [{ value: "", label: "No signatures" }]
+                    : signatures.map((signature) => ({
+                        value: signature.id,
+                        label: signature.isDefault
+                          ? `${signature.name} (Default)`
+                          : signature.name,
+                      }))
+                }
+              />
+            </div>
+            {libraryEmpty && (
+              <a
+                href={settingsSectionPath("templates")}
+                className="font-label text-[10px] uppercase tracking-widest text-white underline"
+              >
+                Manage in Settings
+              </a>
+            )}
+          </div>
+
           <RichTextEditor
             key={editorKey}
+            ref={editorRef}
             ariaLabel="Reply"
-            placeholder="Type your reply here…"
+            placeholder="Type your reply here… Use /shortcut for snippets."
             disabled={busy}
+            initialHtml={draft.html}
             onChange={setDraft}
             onKeyDown={onEditorKeyDown}
             className="rounded-none border-0 bg-transparent"

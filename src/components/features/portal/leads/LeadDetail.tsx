@@ -2,7 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 import { Select } from "@/components/atoms/Select";
-import { LeadEmailThread } from "@/components/features/portal/leads/LeadEmailThread";
+import {
+  LeadEmailThreadSection,
+} from "@/components/features/portal/leads/LeadEmailThreadSection";
+import type { LeadComposerLibrary } from "@/components/features/portal/leads/LeadEmailThread";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -71,8 +74,12 @@ interface LeadDetailProps {
   fromAddress?: string;
   /** From identities the current user may use when replying. */
   fromOptions?: FromIdentityOption[];
+  /** Business name used for `{{business.name}}` merge fields. */
+  businessName?: string;
   messages?: LeadMessage[];
   messageError?: string | null;
+  /** Storybook/tests: seed the composer library without hitting the API. */
+  composerLibrary?: LeadComposerLibrary;
   onUpdate: (patch: {
     status?: LeadStatus;
     tags?: LeadTag[];
@@ -93,8 +100,10 @@ export function LeadDetail({
   mailboxConnected = false,
   fromAddress,
   fromOptions,
+  businessName,
   messages = [],
   messageError = null,
+  composerLibrary,
   onUpdate,
   onAddNote,
   onSendMessage,
@@ -260,7 +269,7 @@ export function LeadDetail({
       )}
 
       {onSendMessage && (
-        <LeadEmailThread
+        <LeadEmailThreadSection
           formMessage={submission.message}
           formFrom={submission.senderEmail}
           formAt={submission.submittedAt}
@@ -270,6 +279,15 @@ export function LeadDetail({
           fromOptions={fromOptions}
           busy={busy}
           error={messageError}
+          variableContext={{
+            lead: {
+              name: submission.senderName,
+              email: submission.senderEmail,
+            },
+            business: businessName ? { name: businessName } : undefined,
+            sender: fromAddress ? { email: fromAddress } : undefined,
+          }}
+          initialLibrary={composerLibrary}
           onSend={onSendMessage}
         />
       )}

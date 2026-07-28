@@ -485,6 +485,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                     mailboxConnected={Boolean(portal.mailbox?.connected)}
                     fromAddress={portal.mailbox?.email}
                     fromOptions={portal.mailbox?.fromOptions}
+                    businessName={portal.clientName ?? undefined}
                     messages={portal.leadMessages}
                     messageError={portal.messageError}
                     onUpdate={portal.onLeadUpdate}

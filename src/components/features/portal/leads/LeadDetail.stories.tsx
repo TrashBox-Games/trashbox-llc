@@ -91,6 +91,7 @@ export const WithEmailThread: Story = {
   args: {
     mailboxConnected: true,
     fromAddress: "sales@example.com",
+    businessName: "Trashbox LLC",
     fromOptions: [
       {
         id: "s1",
@@ -100,6 +101,47 @@ export const WithEmailThread: Story = {
       { id: "s2", label: "Support", displayName: "Support" },
     ],
     messages: [outboundReply],
+    composerLibrary: {
+      templates: [
+        {
+          clientId: "c1",
+          id: "t1",
+          name: "Intro reply",
+          subject: "Thanks for reaching out",
+          bodyText: "Hi {{lead.first_name}}, happy to help.",
+          bodyHtml: "<p>Hi {{lead.first_name}}, happy to help.</p>",
+          createdBy: "owner@example.com",
+          createdAt: "2026-07-01T00:00:00.000Z",
+          updatedAt: "2026-07-01T00:00:00.000Z",
+        },
+      ],
+      signatures: [
+        {
+          clientId: "c1",
+          id: "sig1",
+          name: "Default",
+          bodyText: "Thanks,\n{{sender.name}}",
+          bodyHtml: "<p>Thanks,<br />{{sender.name}}</p>",
+          isDefault: true,
+          createdBy: "owner@example.com",
+          createdAt: "2026-07-01T00:00:00.000Z",
+          updatedAt: "2026-07-01T00:00:00.000Z",
+        },
+      ],
+      snippets: [
+        {
+          clientId: "c1",
+          id: "sn1",
+          name: "Business hours",
+          shortcut: "hours",
+          bodyText: "We are open 8am–5pm.",
+          bodyHtml: "<p>We are open 8am–5pm.</p>",
+          createdBy: "owner@example.com",
+          createdAt: "2026-07-01T00:00:00.000Z",
+          updatedAt: "2026-07-01T00:00:00.000Z",
+        },
+      ],
+    },
     onSendMessage: fn().mockResolvedValue(undefined),
   },
 };
