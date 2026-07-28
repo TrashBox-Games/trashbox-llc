@@ -8,7 +8,7 @@ const meta = {
   tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <div className="max-w-md bg-background p-8">
+      <div className="bg-background max-w-md p-8">
         <Story />
       </div>
     ),
@@ -51,6 +51,21 @@ export const OneReply: Story = {
 
 export const ManyReplies: Story = {
   args: {
+    replyCount: 5,
+    status: "qualified",
+  },
+};
+
+export const StackedOneReply: Story = {
+  args: {
+    stacked: true,
+    replyCount: 1,
+  },
+};
+
+export const StackedManyReplies: Story = {
+  args: {
+    stacked: true,
     replyCount: 5,
     status: "qualified",
   },

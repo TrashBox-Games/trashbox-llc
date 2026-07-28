@@ -41,6 +41,11 @@ export interface LeadInboxCardProps {
    * compact horizontal card used in the Recent Activity rail.
    */
   variant?: "list" | "activity";
+  /**
+   * Opt-in stacked under-cards for list variant (based on replyCount).
+   * Off by default — single flat card.
+   */
+  stacked?: boolean;
   onSelect: () => void;
 }
 
@@ -54,6 +59,7 @@ export function LeadInboxCard({
   replyCount = 0,
   assignedTo,
   variant = "list",
+  stacked = false,
   onSelect,
 }: LeadInboxCardProps): JSX.Element {
   if (variant === "activity") {
@@ -64,30 +70,30 @@ export function LeadInboxCard({
         onClick={onSelect}
         aria-pressed={active}
         className={cn(
-          "h-auto w-[300px] shrink-0 snap-start flex-col items-stretch justify-start whitespace-normal rounded p-5 text-left font-normal normal-case tracking-normal text-inherit",
+          "h-auto w-[300px] shrink-0 snap-start flex-col items-stretch justify-start rounded p-5 text-left font-normal tracking-normal whitespace-normal text-inherit normal-case",
           active
-            ? "bg-surface-container-high shadow-md hover:bg-surface-container-high"
+            ? "bg-surface-container-high hover:bg-surface-container-high shadow-md"
             : "bg-surface-container-low hover:bg-surface-container",
         )}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate font-headline text-base font-bold text-white">
+            <p className="font-headline truncate text-base font-bold text-white">
               {senderName}
             </p>
-            <p className="mt-0.5 truncate text-xs text-outline">
+            <p className="text-outline mt-0.5 truncate text-xs">
               {senderEmail}
             </p>
           </div>
           <LeadStatusBadge status={status} />
         </div>
-        <p className="mt-2 line-clamp-2 text-sm text-on-surface">{message}</p>
+        <p className="text-on-surface mt-2 line-clamp-2 text-sm">{message}</p>
         {assignedTo && (
-          <p className="mt-2 truncate font-label text-[10px] uppercase tracking-widest text-outline-variant">
+          <p className="font-label text-outline-variant mt-2 truncate text-[10px] tracking-widest uppercase">
             Assigned: {assignedTo}
           </p>
         )}
-        <p className="mt-3 font-mono text-[10px] uppercase text-outline-variant">
+        <p className="text-outline-variant mt-3 font-mono text-[10px] uppercase">
           {formatWhen(submittedAt)}
           {replyCount > 0 && (
             <>
@@ -100,8 +106,63 @@ export function LeadInboxCard({
     );
   }
 
-  const depth = inboxCardStackDepth(replyCount);
+  const depth = stacked ? inboxCardStackDepth(replyCount) : 1;
   const behind = depth - 1;
+
+  const card = (
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={onSelect}
+      data-stack-depth={stacked ? depth : undefined}
+      aria-pressed={active}
+      className={cn(
+        "relative z-10 h-auto w-full flex-col items-stretch justify-start px-5 py-4 text-left font-normal tracking-normal whitespace-normal text-inherit normal-case",
+        active
+          ? "bg-surface-container-high hover:bg-surface-container-high"
+          : "bg-surface-container-low hover:bg-surface-container-high",
+        behind === 1 && "[box-shadow:var(--stack-1-fill)]",
+        behind >= 2 && "[box-shadow:var(--stack-1-fill),var(--stack-2-fill)]",
+      )}
+      style={
+        behind > 0
+          ? ({
+              "--stack-1-fill": `calc(${STACK_STEP} * -1) ${STACK_STEP} 0 0 var(--color-surface-container-high)`,
+              "--stack-2-fill": `calc(${STACK_STEP} * -2) calc(${STACK_STEP} * 2) 0 0 var(--color-surface-container-highest)`,
+            } as CSSProperties)
+          : undefined
+      }
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-headline text-sm font-bold text-white">
+          {senderName}
+        </p>
+        <LeadStatusBadge status={status} />
+      </div>
+      <p className="text-outline mt-1 text-xs">{senderEmail}</p>
+      <p className="text-on-surface-variant mt-2 line-clamp-2 text-sm">
+        {message}
+      </p>
+      {assignedTo && (
+        <p className="font-label text-outline mt-2 text-[10px] tracking-widest uppercase">
+          Assigned: {assignedTo}
+        </p>
+      )}
+      <p className="font-label text-outline mt-3 text-[10px] tracking-widest uppercase">
+        {formatWhen(submittedAt)}
+        {replyCount > 0 && (
+          <>
+            {" · "}
+            {replyCount} {replyCount === 1 ? "reply" : "replies"}
+          </>
+        )}
+      </p>
+    </Button>
+  );
+
+  if (!stacked || behind === 0) {
+    return card;
+  }
 
   return (
     <div
@@ -110,58 +171,10 @@ export function LeadInboxCard({
         behind === 1 && "pb-2 pl-2",
         behind >= 2 && "pb-4 pl-4",
       )}
-      data-testid={behind > 0 ? "inbox-card-stack" : undefined}
-      data-stack-behind={behind > 0 ? behind : undefined}
+      data-testid="inbox-card-stack"
+      data-stack-behind={behind}
     >
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={onSelect}
-        data-stack-depth={depth}
-        aria-pressed={active}
-        className={cn(
-          "relative z-10 h-auto w-full flex-col items-stretch justify-start whitespace-normal px-5 py-4 text-left font-normal normal-case tracking-normal text-inherit",
-          active
-            ? "bg-surface-container-high hover:bg-surface-container-high"
-            : "bg-surface-container-low hover:bg-surface-container-high",
-          behind === 1 && "[box-shadow:var(--stack-1-fill)]",
-          behind >= 2 &&
-            "[box-shadow:var(--stack-1-fill),var(--stack-2-fill)]",
-        )}
-        style={
-          behind > 0
-            ? ({
-                "--stack-1-fill": `calc(${STACK_STEP} * -1) ${STACK_STEP} 0 0 var(--color-surface-container-high)`,
-                "--stack-2-fill": `calc(${STACK_STEP} * -2) calc(${STACK_STEP} * 2) 0 0 var(--color-surface-container-highest)`,
-              } as CSSProperties)
-            : undefined
-        }
-      >
-        <div className="flex items-center justify-between gap-3">
-          <p className="font-headline text-sm font-bold text-white">
-            {senderName}
-          </p>
-          <LeadStatusBadge status={status} />
-        </div>
-        <p className="mt-1 text-xs text-outline">{senderEmail}</p>
-        <p className="mt-2 line-clamp-2 text-sm text-on-surface-variant">
-          {message}
-        </p>
-        {assignedTo && (
-          <p className="mt-2 font-label text-[10px] uppercase tracking-widest text-outline">
-            Assigned: {assignedTo}
-          </p>
-        )}
-        <p className="mt-3 font-label text-[10px] uppercase tracking-widest text-outline">
-          {formatWhen(submittedAt)}
-          {replyCount > 0 && (
-            <>
-              {" · "}
-              {replyCount} {replyCount === 1 ? "reply" : "replies"}
-            </>
-          )}
-        </p>
-      </Button>
+      {card}
     </div>
   );
 }

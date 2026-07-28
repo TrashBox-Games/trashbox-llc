@@ -57,8 +57,16 @@ describe("LeadInboxCard", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
-  it("shows no stack layers without replies", () => {
-    render(<LeadInboxCard {...base} replyCount={0} />);
+  it("renders a single card by default even when there are replies", () => {
+    render(<LeadInboxCard {...base} replyCount={5} />);
+
+    expect(screen.queryByTestId("inbox-card-stack")).not.toBeInTheDocument();
+    expect(screen.getByRole("button")).not.toHaveAttribute("data-stack-depth");
+    expect(screen.getByText(/5 replies/i)).toBeInTheDocument();
+  });
+
+  it("shows no stack layers without replies when stacked", () => {
+    render(<LeadInboxCard {...base} stacked replyCount={0} />);
 
     expect(screen.queryByTestId("inbox-card-stack")).not.toBeInTheDocument();
     expect(screen.getByRole("button")).toHaveAttribute(
@@ -67,8 +75,8 @@ describe("LeadInboxCard", () => {
     );
   });
 
-  it("shows one stack layer under the card for a single reply", () => {
-    render(<LeadInboxCard {...base} replyCount={1} />);
+  it("shows one stack layer under the card for a single reply when stacked", () => {
+    render(<LeadInboxCard {...base} stacked replyCount={1} />);
 
     const stack = screen.getByTestId("inbox-card-stack");
     expect(stack).toHaveAttribute("data-stack-behind", "1");
@@ -82,8 +90,8 @@ describe("LeadInboxCard", () => {
     );
   });
 
-  it("shows two stack layers under the card for multiple replies", () => {
-    render(<LeadInboxCard {...base} replyCount={5} />);
+  it("shows two stack layers under the card for multiple replies when stacked", () => {
+    render(<LeadInboxCard {...base} stacked replyCount={5} />);
 
     const stack = screen.getByTestId("inbox-card-stack");
     expect(stack).toHaveAttribute("data-stack-behind", "2");
