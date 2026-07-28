@@ -111,4 +111,35 @@ describe("Select", () => {
     const option = screen.getByRole("option", { name: /contacted/i });
     expect(option.className).toMatch(/\bpl-/);
   });
+
+  it("uses underline styling by default", () => {
+    render(
+      <Select
+        aria-label="Status"
+        value="new"
+        options={options}
+        onChange={vi.fn()}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /status/i });
+    expect(trigger.className).toMatch(/\bborder-b\b/);
+    expect(trigger.className).toMatch(/\brounded-none\b/);
+  });
+
+  it("uses a soft pill trigger for the soft variant", () => {
+    render(
+      <Select
+        aria-label="Status"
+        variant="soft"
+        value="new"
+        options={options}
+        onChange={vi.fn()}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /status/i });
+    expect(trigger.className).toMatch(/\brounded-full\b/);
+    expect(trigger.className).not.toMatch(/\bborder-b\b/);
+  });
 });

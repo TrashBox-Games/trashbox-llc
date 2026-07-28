@@ -9,6 +9,13 @@ import {
   LeadInboxSidebar,
   LeadInboxSidebarToggle,
 } from "@/components/features/portal/leads/LeadInboxSidebar";
+import { LeadThreadTabs } from "@/components/features/portal/leads/LeadThreadTabs";
+import {
+  closeLeadTab,
+  loadLeadThreadTabs,
+  openLeadTab,
+  saveLeadThreadTabs,
+} from "@/components/features/portal/leads/lead-thread-tabs";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -249,11 +256,59 @@ export function PortalApp({ tab }: PortalAppProps) {
     INBOX_SIDEBAR_SNAP_WIDTH,
   );
   const [inboxResizing, setInboxResizing] = useState(false);
+  const [openTabIds, setOpenTabIds] = useState<string[]>([]);
+  const [tabsReady, setTabsReady] = useState(false);
+
+  useEffect(() => {
+    if (!portal.ready) return;
+    const stored = loadLeadThreadTabs();
+    if (stored.openTabIds.length > 0) {
+      setOpenTabIds(stored.openTabIds);
+      portal.setSelectedId(stored.activeId);
+    }
+    setTabsReady(true);
+  }, [portal.ready, portal.setSelectedId]);
+
+  useEffect(() => {
+    if (!tabsReady || !portal.ready) return;
+    saveLeadThreadTabs({
+      openTabIds,
+      activeId: portal.selectedId,
+    });
+  }, [openTabIds, portal.selectedId, portal.ready, tabsReady]);
 
   function onInboxSidebarOpenChange(next: boolean) {
     if (next) setInboxSidebarWidth(INBOX_SIDEBAR_SNAP_WIDTH);
     setInboxSidebarOpen(next);
   }
+
+  function openLead(id: string) {
+    setOpenTabIds((ids) => {
+      let next = ids;
+      if (portal.selectedId) next = openLeadTab(next, portal.selectedId);
+      return openLeadTab(next, id);
+    });
+    portal.setSelectedId(id);
+  }
+
+  function closeLead(id: string) {
+    const sourceIds =
+      openTabIds.length > 0
+        ? openTabIds
+        : portal.selectedId
+          ? [portal.selectedId]
+          : [];
+    const result = closeLeadTab(sourceIds, portal.selectedId, id);
+    setOpenTabIds(result.openTabIds);
+    portal.setSelectedId(result.activeId);
+  }
+
+  const displayTabIds =
+    openTabIds.length > 0
+      ? openTabIds
+      : portal.selectedId
+        ? [portal.selectedId]
+        : [];
 
   if (!auth.configured) {
     return (
@@ -426,7 +481,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                 className={cn(
                   "shrink-0",
                   inboxSidebarOpen &&
-                    "lg:sticky lg:top-32 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto",
+                    "lg:sticky lg:top-32 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto lg:scrollbar-none",
                 )}
               >
                 <LeadInboxSidebar
@@ -438,7 +493,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                   onApplyFilters={portal.applyFilters}
                   items={portal.items}
                   selectedId={portal.selectedId}
-                  onSelect={portal.setSelectedId}
+                  onSelect={openLead}
                   listBusy={portal.listBusy}
                   listError={portal.listError}
                   hasMore={Boolean(portal.nextCursor)}
@@ -458,34 +513,72 @@ export function PortalApp({ tab }: PortalAppProps) {
                     className="hidden lg:flex"
                   />
                 )}
-                <div className="rounded bg-surface-container-low p-6 md:p-10">
-                  {!inboxSidebarOpen && (
-                    <div className="mb-4">
-                      <LeadInboxSidebarToggle
-                        open={false}
-                        onOpenChange={onInboxSidebarOpenChange}
-                      />
-                    </div>
-                  )}
-                  {portal.selected ? (
-                    <LeadDetail
-                      submission={portal.selected}
-                      members={portal.members}
-                      busy={portal.crmBusy}
-                      mailboxConnected={Boolean(portal.mailbox?.connected)}
-                      fromAddress={portal.mailbox?.email}
-                      fromOptions={portal.mailbox?.fromOptions}
-                      businessName={portal.clientName ?? undefined}
-                      messages={portal.leadMessages}
-                      messageError={portal.messageError}
-                      onUpdate={portal.onLeadUpdate}
-                      onAddNote={portal.onLeadNote}
-                      onSendMessage={portal.onSendLeadMessage}
+                {!inboxSidebarOpen && (
+                  <div className="mb-4">
+                    <LeadInboxSidebarToggle
+                      open={false}
+                      onOpenChange={onInboxSidebarOpenChange}
                     />
-                  ) : (
+                  </div>
+                )}
+                {displayTabIds.length > 0 ? (
+                  <div>
+                    <LeadThreadTabs
+                      tabs={displayTabIds.flatMap((id) => {
+                        const item = portal.items.find(
+                          (entry) => entry.submissionId === id,
+                        );
+                        if (!item) return [];
+                        return [{ id, label: item.senderName }];
+                      })}
+                      activeId={portal.selectedId}
+                      onSelect={openLead}
+                      onClose={closeLead}
+                    />
+                    <div className="bg-surface-container-low rounded-lg rounded-tl-none p-6 md:p-10">
+                      {displayTabIds.map((id) => {
+                        const submission = portal.items.find(
+                          (entry) => entry.submissionId === id,
+                        );
+                        if (!submission) return null;
+                        const active = id === portal.selectedId;
+                        return (
+                          <div
+                            key={id}
+                            className={cn(!active && "hidden")}
+                            aria-hidden={!active}
+                          >
+                            <LeadDetail
+                              submission={submission}
+                              members={portal.members}
+                              busy={portal.crmBusy}
+                              mailboxConnected={Boolean(
+                                portal.mailbox?.connected,
+                              )}
+                              fromAddress={portal.mailbox?.email}
+                              fromOptions={portal.mailbox?.fromOptions}
+                              businessName={portal.clientName ?? undefined}
+                              messages={
+                                portal.messagesById[submission.submissionId] ??
+                                []
+                              }
+                              messageError={
+                                active ? portal.messageError : null
+                              }
+                              onUpdate={portal.onLeadUpdate}
+                              onAddNote={portal.onLeadNote}
+                              onSendMessage={portal.onSendLeadMessage}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-surface-container-low rounded-lg p-6 md:p-10">
                     <p className="text-on-surface-variant">Select a lead.</p>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

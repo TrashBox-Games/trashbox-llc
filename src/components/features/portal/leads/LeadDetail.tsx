@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Select } from "@/components/atoms/Select";
 import {
   LeadEmailThreadSection,
@@ -52,6 +53,13 @@ function subjectOf(submission: Submission): string {
   const firstLine = submission.message.split("\n")[0]?.trim();
   if (firstLine) return firstLine.slice(0, 90);
   return `New lead from ${submission.senderName}`;
+}
+
+function sortLeadMessages(messages: LeadMessage[]): LeadMessage[] {
+  return [...messages].sort(
+    (a, b) =>
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
 }
 
 function MetaRow({ label, value }: { label: string; value: ReactNode }) {
@@ -109,9 +117,20 @@ export function LeadDetail({
   onSendMessage,
 }: LeadDetailProps) {
   const [noteDraft, setNoteDraft] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
   const status = leadStatusOf(submission);
   const tags = leadTagsOf(submission);
   const notes = leadNotesOf(submission);
+  const orderedMessages = sortLeadMessages(messages);
+  const latestMessage =
+    orderedMessages.length > 0
+      ? orderedMessages[orderedMessages.length - 1]
+      : null;
+  const featuredBody = latestMessage?.bodyText ?? submission.message;
+  const showFormMetadata =
+    !latestMessage &&
+    Boolean(submission.metadata && Object.keys(submission.metadata).length > 0);
+  const hasHistory = orderedMessages.length > 0;
 
   async function toggleTag(tag: LeadTag) {
     const next = tags.includes(tag)
@@ -122,150 +141,179 @@ export function LeadDetail({
 
   return (
     <div>
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
-        <div className="space-y-8 md:col-span-8">
-          <div>
-            <p className="font-label text-[10px] uppercase tracking-widest text-outline">
-              Lead
-            </p>
-            <h2 className="mt-2 font-headline text-3xl font-bold tracking-tighter text-white">
-              {submission.senderName}
-            </h2>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="rounded bg-surface-container-highest px-2 py-0.5 font-label text-[10px] uppercase tracking-widest text-white">
-                {LEAD_STATUS_LABELS[status]}
-              </span>
-              <span className="font-mono text-[10px] uppercase text-outline-variant">
-                ID: #{submission.submissionId.slice(0, 8)}
-              </span>
+      <div className="bg-surface-container -mx-6 -mt-6 rounded-t-lg px-6 pt-6 pb-8 md:-mx-10 md:-mt-10 md:rounded-tl-none md:px-10 md:pt-10 md:pb-10">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
+          <div className="space-y-8 md:col-span-8">
+            <div>
+              <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+                Lead
+              </p>
+              <h2 className="mt-2 font-headline text-3xl font-bold tracking-tighter text-white">
+                {submission.senderName}
+              </h2>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="rounded bg-surface-container-highest px-2 py-0.5 font-label text-[10px] uppercase tracking-widest text-white">
+                  {LEAD_STATUS_LABELS[status]}
+                </span>
+                <span className="font-mono text-[10px] uppercase text-outline-variant">
+                  ID: #{submission.submissionId.slice(0, 8)}
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-3 border-t border-outline-variant/10 pt-4">
-            <MetaRow
-              label="From"
-              value={
-                <span className="flex items-center gap-2">
-                  <span
-                    aria-hidden="true"
-                    className="flex size-6 items-center justify-center rounded-full bg-surface-container-highest text-[10px] font-bold text-white"
-                  >
-                    {initialsOf(submission.senderName)}
+            <div className="space-y-3 pt-1">
+              <MetaRow
+                label="From"
+                value={
+                  <span className="flex items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="flex size-6 items-center justify-center rounded-full bg-surface-container-highest text-[10px] font-bold text-white"
+                    >
+                      {initialsOf(submission.senderName)}
+                    </span>
+                    <span className="text-white">{submission.senderEmail}</span>
                   </span>
-                  <span className="text-white">{submission.senderEmail}</span>
-                </span>
-              }
-            />
-            {fromAddress && <MetaRow label="To" value={fromAddress} />}
-            <MetaRow
-              label="Subject"
-              value={
-                <span className="font-medium text-white">
-                  {subjectOf(submission)}
-                </span>
-              }
-            />
-          </div>
-        </div>
-
-        <div className="space-y-6 md:col-span-4">
-          <div>
-            <p className="font-mono text-[10px] uppercase text-outline-variant">
-              Received
-            </p>
-            <p className="mt-1 text-sm font-medium text-white">
-              {formatWhen(submission.submittedAt)}
-            </p>
+                }
+              />
+              {fromAddress && <MetaRow label="To" value={fromAddress} />}
+              <MetaRow
+                label="Subject"
+                value={
+                  <span className="font-medium text-white">
+                    {subjectOf(submission)}
+                  </span>
+                }
+              />
+            </div>
           </div>
 
-          <div>
-            <label className={labelClass} htmlFor="detail-status">
-              Status
-            </label>
-            <Select
-              id="detail-status"
-              value={status}
-              disabled={busy}
-              onChange={(next) => void onUpdate({ status: next as LeadStatus })}
-              options={LEAD_STATUSES.map((s) => ({
-                value: s,
-                label: LEAD_STATUS_LABELS[s],
-                indicatorClassName: LEAD_STATUS_DOT_CLASS[s],
-              }))}
-            />
-          </div>
+          <div className="space-y-6 md:col-span-4">
+            <div>
+              <p className="font-mono text-[10px] uppercase text-outline-variant">
+                Received
+              </p>
+              <p className="mt-1 text-sm font-medium text-white">
+                {formatWhen(submission.submittedAt)}
+              </p>
+            </div>
 
-          <div>
-            <label className={labelClass} htmlFor="detail-assignee">
-              Assigned to
-            </label>
-            <Select
-              id="detail-assignee"
-              value={submission.assignedTo ?? ""}
-              disabled={busy}
-              onChange={(next) =>
-                void onUpdate({ assignedTo: next ? next : null })
-              }
-              options={[
-                { value: "", label: "Unassigned" },
-                ...members.map((member) => {
-                  const label = teamMemberDisplayName(member);
-                  return {
-                    value: member.email,
-                    label:
-                      label === member.email
-                        ? member.email
-                        : `${label} (${member.email})`,
-                  };
-                }),
-              ]}
-            />
-          </div>
+            <div>
+              <label className={labelClass} htmlFor="detail-status">
+                Status
+              </label>
+              <Select
+                id="detail-status"
+                variant="soft"
+                value={status}
+                disabled={busy}
+                onChange={(next) =>
+                  void onUpdate({ status: next as LeadStatus })
+                }
+                options={LEAD_STATUSES.map((s) => ({
+                  value: s,
+                  label: LEAD_STATUS_LABELS[s],
+                  indicatorClassName: LEAD_STATUS_DOT_CLASS[s],
+                }))}
+              />
+            </div>
 
-          <div>
-            <p className={labelClass}>Tags</p>
-            <div className="flex flex-wrap gap-1.5">
-              {LEAD_TAGS.map((tag) => {
-                const active = tags.includes(tag);
-                return (
-                  <Button
-                    key={tag}
-                    type="button"
-                    variant="outline"
-                    size="xs"
-                    disabled={busy}
-                    onClick={() => void toggleTag(tag)}
-                    className={cn(
-                      "rounded font-label text-[9px] font-medium tracking-wider",
-                      active
-                        ? "border-white bg-white text-background hover:bg-white hover:text-background"
-                        : "border-outline-variant/40 text-outline hover:border-white hover:text-white",
-                    )}
-                  >
-                    {LEAD_TAG_LABELS[tag]}
-                  </Button>
-                );
-              })}
+            <div>
+              <label className={labelClass} htmlFor="detail-assignee">
+                Assigned to
+              </label>
+              <Select
+                id="detail-assignee"
+                variant="soft"
+                value={submission.assignedTo ?? ""}
+                disabled={busy}
+                onChange={(next) =>
+                  void onUpdate({ assignedTo: next ? next : null })
+                }
+                options={[
+                  { value: "", label: "Unassigned" },
+                  ...members.map((member) => {
+                    const label = teamMemberDisplayName(member);
+                    return {
+                      value: member.email,
+                      label:
+                        label === member.email
+                          ? member.email
+                          : `${label} (${member.email})`,
+                    };
+                  }),
+                ]}
+              />
+            </div>
+
+            <div>
+              <p className={labelClass}>Tags</p>
+              <div className="flex flex-wrap gap-1.5">
+                {LEAD_TAGS.map((tag) => {
+                  const active = tags.includes(tag);
+                  return (
+                    <Button
+                      key={tag}
+                      type="button"
+                      variant="outline"
+                      size="xs"
+                      disabled={busy}
+                      onClick={() => void toggleTag(tag)}
+                      className={cn(
+                        "rounded font-label text-[9px] font-medium tracking-wider",
+                        active
+                          ? "border-white bg-white text-background hover:bg-white hover:text-background"
+                          : "border-outline-variant/40 text-outline hover:border-white hover:text-white",
+                      )}
+                    >
+                      {LEAD_TAG_LABELS[tag]}
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
+
+        {!hasHistory && (
+          <>
+            <p className="mt-8 whitespace-pre-wrap text-lg leading-relaxed text-on-surface-variant">
+              {featuredBody}
+            </p>
+            {showFormMetadata && submission.metadata && (
+              <dl className="mt-8 space-y-2">
+                {Object.entries(submission.metadata).map(([key, value]) => (
+                  <div key={key} className="flex gap-4 text-sm">
+                    <dt className="font-label uppercase tracking-widest text-outline">
+                      {key}
+                    </dt>
+                    <dd className="text-white">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </>
+        )}
       </div>
 
-      <p className="mt-8 whitespace-pre-wrap text-lg leading-relaxed text-on-surface-variant">
-        {submission.message}
-      </p>
-
-      {submission.metadata && Object.keys(submission.metadata).length > 0 && (
-        <dl className="mt-10 space-y-2 border-t border-outline-variant/10 pt-6">
-          {Object.entries(submission.metadata).map(([key, value]) => (
-            <div key={key} className="flex gap-4 text-sm">
-              <dt className="font-label uppercase tracking-widest text-outline">
-                {key}
-              </dt>
-              <dd className="text-white">{value}</dd>
-            </div>
-          ))}
-        </dl>
+      {hasHistory && (
+        <div className="flex justify-center py-6">
+          <button
+            type="button"
+            aria-expanded={historyOpen}
+            onClick={() => setHistoryOpen((open) => !open)}
+            className="font-label text-outline hover:text-white inline-flex items-center gap-1 text-[10px] tracking-widest uppercase transition-colors"
+          >
+            <MaterialIcon
+              name="expand_more"
+              className={cn(
+                "text-base transition-transform duration-300 ease-out",
+                historyOpen && "rotate-180",
+              )}
+            />
+            {historyOpen ? "Hide history" : "Show history"}
+          </button>
+        </div>
       )}
 
       {onSendMessage && (
@@ -273,7 +321,15 @@ export function LeadDetail({
           formMessage={submission.message}
           formFrom={submission.senderEmail}
           formAt={submission.submittedAt}
-          messages={messages}
+          messages={orderedMessages}
+          showHistory={historyOpen}
+          featuredContent={
+            hasHistory ? (
+              <p className="whitespace-pre-wrap text-lg leading-relaxed text-on-surface-variant">
+                {featuredBody}
+              </p>
+            ) : undefined
+          }
           mailboxConnected={mailboxConnected}
           fromAddress={fromAddress}
           fromOptions={fromOptions}
@@ -292,7 +348,7 @@ export function LeadDetail({
         />
       )}
 
-      <div className="mt-10 border-t border-outline-variant/10 pt-6">
+      <div className={cn("pt-2", hasHistory ? "mt-6" : "mt-10")}>
         <p className={labelClass}>Notes</p>
         <ul className="space-y-4">
           {notes.length === 0 && (

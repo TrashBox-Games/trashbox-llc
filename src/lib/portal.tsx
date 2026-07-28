@@ -121,6 +121,9 @@ export interface PortalContextValue {
   mailboxBusy: boolean;
   mailboxError: string | null;
   mailboxNotice: string | null;
+  /** Cached message threads keyed by submission id (survives tab switches). */
+  messagesById: Record<string, LeadMessage[]>;
+  /** Messages for the currently selected lead (convenience over messagesById). */
   leadMessages: LeadMessage[];
   messageError: string | null;
   loadMore: () => Promise<void>;
@@ -186,6 +189,7 @@ export function StubPortalProvider({
     mailboxBusy: false,
     mailboxError: null,
     mailboxNotice: null,
+    messagesById: {},
     leadMessages: [],
     messageError: null,
     loadMore: portalNoop,
@@ -241,7 +245,9 @@ export function PortalProvider({
   const [mailboxBusy, setMailboxBusy] = useState(false);
   const [mailboxError, setMailboxError] = useState<string | null>(null);
   const [mailboxNotice, setMailboxNotice] = useState<string | null>(null);
-  const [leadMessages, setLeadMessages] = useState<LeadMessage[]>([]);
+  const [messagesById, setMessagesById] = useState<
+    Record<string, LeadMessage[]>
+  >({});
   const [messageError, setMessageError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -300,6 +306,7 @@ export function PortalProvider({
       setMembers([]);
       setPermissions([]);
       setRoles([]);
+      setMessagesById({});
       setReady(false);
       return;
     }
@@ -517,7 +524,6 @@ export function PortalProvider({
 
   useEffect(() => {
     if (!selectedId || !account?.linked) {
-      setLeadMessages([]);
       setMessageError(null);
       return;
     }
@@ -527,7 +533,10 @@ export function PortalProvider({
       try {
         const res = await listLeadMessages(selectedId!);
         if (!cancelled) {
-          setLeadMessages(res.items);
+          setMessagesById((prev) => ({
+            ...prev,
+            [selectedId!]: res.items,
+          }));
           setItems((prev) =>
             prev.map((item) =>
               item.submissionId === selectedId
@@ -538,7 +547,6 @@ export function PortalProvider({
         }
       } catch (err) {
         if (!cancelled) {
-          setLeadMessages([]);
           setMessageError(
             err instanceof ApiError
               ? err.message
@@ -570,7 +578,10 @@ export function PortalProvider({
             ? { fromIdentityId: from.fromIdentityId }
             : {}),
         });
-        setLeadMessages((prev) => [...prev, message]);
+        setMessagesById((prev) => ({
+          ...prev,
+          [selectedId]: [...(prev[selectedId] ?? []), message],
+        }));
         setItems((items) =>
           items.map((item) =>
             item.submissionId === selectedId
@@ -641,7 +652,10 @@ export function PortalProvider({
       if (selectedId) {
         try {
           const res = await listLeadMessages(selectedId);
-          setLeadMessages(res.items);
+          setMessagesById((prev) => ({
+            ...prev,
+            [selectedId]: res.items,
+          }));
           setItems((prev) =>
             prev.map((item) =>
               item.submissionId === selectedId
@@ -759,6 +773,7 @@ export function PortalProvider({
   }, [filters]);
 
   const selected = items.find((s) => s.submissionId === selectedId) ?? null;
+  const leadMessages = selectedId ? (messagesById[selectedId] ?? []) : [];
   const isOwner = teamRole === "owner";
   const checkPermission = useCallback(
     (permission: Permission) =>
@@ -797,6 +812,7 @@ export function PortalProvider({
       mailboxBusy,
       mailboxError,
       mailboxNotice,
+      messagesById,
       leadMessages,
       messageError,
       loadMore,
@@ -838,6 +854,7 @@ export function PortalProvider({
       mailboxBusy,
       mailboxError,
       mailboxNotice,
+      messagesById,
       leadMessages,
       messageError,
       loadMore,

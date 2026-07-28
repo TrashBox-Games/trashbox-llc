@@ -74,6 +74,32 @@ const snippets: EmailSnippet[] = [
 
 const library = { templates, signatures, snippets };
 
+const sampleReply: LeadMessage = {
+  clientId: "c1",
+  submissionId: "s1",
+  messageId: "m1",
+  direction: "outbound",
+  from: "sales@acme.test",
+  to: "ada@example.com",
+  subject: "Re: Need a quote",
+  bodyText: "Happy to help.",
+  createdAt: "2026-07-15T18:00:00.000Z",
+  sentBy: "owner@example.com",
+};
+
+/** Appended so earlier replies stay in History (latest is featured above). */
+const featuredLatest: LeadMessage = {
+  clientId: "c1",
+  submissionId: "s1",
+  messageId: "m-latest",
+  direction: "inbound",
+  from: "ada@example.com",
+  to: "sales@acme.test",
+  subject: "Featured",
+  bodyText: "Featured above history.",
+  createdAt: "2099-01-01T00:00:00.000Z",
+};
+
 const variableContext = {
   lead: { name: "Ada Lovelace", email: "ada@example.com" },
   business: { name: "Acme Hauling" },
@@ -83,18 +109,20 @@ const variableContext = {
 function renderConnected(
   props: Partial<ComponentProps<typeof LeadEmailThread>> = {},
 ) {
+  const messages = props.messages ?? [];
   return render(
     <LeadEmailThread
       formMessage="Need a quote"
       formFrom="ada@example.com"
       formAt="2026-07-15T12:00:00.000Z"
-      messages={[]}
       mailboxConnected
       fromOptions={fromOptions}
       fromAddress="sales@acme.test"
       library={library}
       variableContext={variableContext}
       onSend={vi.fn().mockResolvedValue(undefined)}
+      showHistory={messages.length > 0}
+      messages={messages}
       {...props}
     />,
   );
@@ -179,7 +207,7 @@ describe("LeadEmailThread", () => {
     );
   });
 
-  it("segments the timeline by date with a labeled divider", () => {
+  it("segments the timeline by date with labeled day headings", () => {
     const laterDayReply: LeadMessage = {
       clientId: "c1",
       submissionId: "s1",
@@ -204,9 +232,20 @@ describe("LeadEmailThread", () => {
       createdAt: "2026-07-15T18:00:00.000Z",
       sentBy: "owner@example.com",
     };
+    const newestReply: LeadMessage = {
+      clientId: "c1",
+      submissionId: "s1",
+      messageId: "m3",
+      direction: "inbound",
+      from: "ada@example.com",
+      to: "sales@acme.test",
+      subject: "Latest",
+      bodyText: "Featured above history.",
+      createdAt: "2026-07-16T18:00:00.000Z",
+    };
 
     renderConnected({
-      messages: [sameDayReply, laterDayReply],
+      messages: [sameDayReply, laterDayReply, newestReply],
       library: { templates: [], signatures: [], snippets: [] },
     });
 
@@ -234,10 +273,63 @@ describe("LeadEmailThread", () => {
     expect(
       screen.getByRole("button", { name: /^Follow-up$/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Latest$/i }),
+    ).not.toBeInTheDocument();
+
+    const daySections = screen.getAllByLabelText(/^Messages on /i);
+    expect(daySections).toHaveLength(2);
+    expect(daySections[0]?.parentElement?.className).toMatch(/\bborder-l\b/);
+  });
+
+  it("hides the timeline when showHistory is false", () => {
+    renderConnected({
+      messages: [sampleReply],
+      showHistory: false,
+      library: { templates: [], signatures: [], snippets: [] },
+    });
+
+    expect(
+      screen.queryByRole("heading", { name: /^history$/i }),
+    ).not.toBeInTheDocument();
+    const history = document.querySelector('[aria-label="Message history"]');
+    expect(history).toHaveAttribute("aria-hidden", "true");
+    expect(history?.className).toMatch(/grid-rows-\[0fr\]/);
+    expect(
+      screen.getByRole("button", { name: /send message/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the timeline when there is only the form submission", () => {
+    renderConnected({
+      library: { templates: [], signatures: [], snippets: [] },
+    });
+
+    expect(screen.queryByText(/^history$/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/form submission event/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /send message/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows prior messages in history and omits the latest reply", () => {
+    renderConnected({
+      messages: [sampleReply],
+      library: { templates: [], signatures: [], snippets: [] },
+    });
+
+    expect(screen.getByRole("heading", { name: /^history$/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/form submission event/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Re: Need a quote$/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows prevalent timeline icons for each node", () => {
     renderConnected({
+      messages: [sampleReply],
       library: { templates: [], signatures: [], snippets: [] },
     });
 
@@ -249,6 +341,7 @@ describe("LeadEmailThread", () => {
 
   it("places the event time on the horizontal connector", () => {
     renderConnected({
+      messages: [sampleReply],
       library: { templates: [], signatures: [], snippets: [] },
     });
 
@@ -291,7 +384,7 @@ describe("LeadEmailThread", () => {
     };
 
     renderConnected({
-      messages: [outbound, inbound],
+      messages: [outbound, inbound, featuredLatest],
       library: { templates: [], signatures: [], snippets: [] },
     });
 
@@ -321,7 +414,7 @@ describe("LeadEmailThread", () => {
     };
 
     renderConnected({
-      messages: [reply],
+      messages: [reply, featuredLatest],
       library: { templates: [], signatures: [], snippets: [] },
     });
 
@@ -348,7 +441,7 @@ describe("LeadEmailThread", () => {
     };
 
     renderConnected({
-      messages: [reply],
+      messages: [reply, featuredLatest],
       library: { templates: [], signatures: [], snippets: [] },
     });
 
@@ -383,7 +476,7 @@ describe("LeadEmailThread", () => {
     };
 
     renderConnected({
-      messages: [reply],
+      messages: [reply, featuredLatest],
       library: { templates: [], signatures: [], snippets: [] },
     });
 
@@ -412,7 +505,7 @@ describe("LeadEmailThread", () => {
     };
 
     renderConnected({
-      messages: [reply],
+      messages: [reply, featuredLatest],
       library: { templates: [], signatures: [], snippets: [] },
     });
 
@@ -448,7 +541,7 @@ describe("LeadEmailThread", () => {
     };
 
     renderConnected({
-      messages: [reply],
+      messages: [reply, featuredLatest],
       library: { templates: [], signatures: [], snippets: [] },
     });
 

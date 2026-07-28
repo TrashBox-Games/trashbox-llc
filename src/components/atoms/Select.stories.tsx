@@ -70,3 +70,11 @@ export const EmptyValue: Story = {
     value: "",
   },
 };
+
+export const Soft: Story = {
+  ...Default,
+  args: {
+    variant: "soft",
+    value: "qualified",
+  },
+};

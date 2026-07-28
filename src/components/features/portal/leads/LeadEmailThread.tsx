@@ -224,7 +224,7 @@ function TimelineNode({
         </time>
         <span
           aria-hidden="true"
-          className="bg-outline-variant/40 absolute top-0 right-0 left-0 h-0.5 -translate-y-1/2"
+          className="absolute top-0 right-0 left-0 h-px -translate-y-1/2 bg-white/40"
         />
       </div>
       <span
@@ -233,7 +233,7 @@ function TimelineNode({
         className={cn(
           "ring-background absolute top-6 -left-1 z-10 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ring-4 select-none",
           accent === "primary"
-            ? "bg-white text-background"
+            ? "text-background bg-white"
             : "bg-surface-container-highest text-white",
         )}
       >
@@ -249,7 +249,7 @@ function TimelineNode({
           onPointerDown={onCardPointerDown}
           onClick={onCardClick}
           onKeyDown={onCardKeyDown}
-          className="bg-surface-container-lowest peer cursor-pointer overflow-hidden rounded text-left outline-none select-text focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="bg-surface-container-lowest peer focus-visible:ring-primary/40 cursor-pointer overflow-hidden rounded text-left outline-none select-text focus-visible:ring-2"
         >
           <div className="flex items-start justify-between gap-4 px-4 pt-4 pr-10">
             <span className="font-label text-outline text-[9px] tracking-widest uppercase">
@@ -290,7 +290,7 @@ function TimelineNode({
               <button
                 type="button"
                 aria-label={`Details for ${title}`}
-                className="text-outline hover:text-white inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-colors select-none"
+                className="text-outline inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-colors select-none hover:text-white"
               >
                 <MaterialIcon name="info" className="text-sm" />
               </button>
@@ -381,6 +381,10 @@ export interface LeadEmailThreadProps {
   formFrom: string;
   formAt: string;
   messages: LeadMessage[];
+  /** When true, render prior messages in the History timeline. */
+  showHistory?: boolean;
+  /** Latest message shown below History and above the composer. */
+  featuredContent?: ReactNode;
   mailboxConnected: boolean;
   fromAddress?: string;
   fromOptions?: FromIdentityOption[];
@@ -402,6 +406,8 @@ export function LeadEmailThread({
   formFrom,
   formAt,
   messages,
+  showHistory = false,
+  featuredContent,
   mailboxConnected,
   fromAddress,
   fromOptions = [],
@@ -568,6 +574,14 @@ export function LeadEmailThread({
     templates.length === 0 && signatures.length === 0 && snippets.length === 0;
 
   const timelineGroups = useMemo(() => {
+    const ordered = [...messages].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    // Latest reply is featured above History; timeline keeps older entries only.
+    const historyMessages =
+      ordered.length > 0 ? ordered.slice(0, -1) : ordered;
+
     const entries: TimelineEntry[] = [
       {
         id: "form",
@@ -586,7 +600,7 @@ export function LeadEmailThread({
           </p>
         ),
       },
-      ...messages.map((message) => {
+      ...historyMessages.map((message) => {
         const outbound = message.direction === "outbound";
         const counterpart = outbound ? message.to : message.from;
         return {
@@ -619,260 +633,288 @@ export function LeadEmailThread({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="border-outline-variant/10 mt-10 border-t pt-6">
-      <p className={labelClass}>Email thread</p>
+      <div className="mt-2 pt-2">
+        {messages.length > 0 && (
+          <div
+            role="region"
+            aria-label="Message history"
+            aria-hidden={!showHistory}
+            inert={!showHistory ? true : undefined}
+            className={cn(
+              "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
+              showHistory
+                ? "mb-8 grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0",
+            )}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <div className="ml-4">
+                <h3 className="font-headline mb-8 text-center text-3xl font-bold tracking-tighter text-white">
+                  History
+                </h3>
 
-      <div className="space-y-8">
-        {timelineGroups.map((group) => (
-          <section key={group.key} aria-label={`Messages on ${group.label}`}>
-            <div className="mb-4 flex items-center gap-3">
-              <div
-                aria-hidden="true"
-                className="bg-outline-variant/40 h-px min-w-4 flex-1"
-              />
-              <time
-                dateTime={group.key}
-                className="font-label text-outline shrink-0 text-[10px] tracking-widest uppercase"
-              >
-                {group.label}
-              </time>
-              <div
-                aria-hidden="true"
-                className="bg-outline-variant/40 h-px min-w-4 flex-1"
-              />
-            </div>
+                <div className="relative space-y-8 border-l border-white/40 pt-2">
+                  {timelineGroups.map((group) => (
+                    <section
+                      key={group.key}
+                      aria-label={`Messages on ${group.label}`}
+                    >
+                      <div className="mb-4 flex items-center gap-3">
+                        <div
+                          aria-hidden="true"
+                          className="h-px min-w-4 flex-1 bg-white/40"
+                        />
+                        <time
+                          dateTime={group.key}
+                          className="font-label shrink-0 text-[10px] tracking-widest text-white uppercase"
+                        >
+                          {group.label}
+                        </time>
+                        <div
+                          aria-hidden="true"
+                          className="h-px min-w-4 flex-1 bg-white/40"
+                        />
+                      </div>
 
-            <ol className="border-outline-variant/30 relative ml-4 space-y-6 border-l-2 pt-2 pl-28">
-              {group.entries.map((entry) => (
-                <TimelineNode
-                  key={entry.id}
-                  id={entry.id}
-                  eyebrow={entry.eyebrow}
-                  title={entry.title}
-                  preview={entry.preview}
-                  time={formatTime(entry.at)}
-                  at={entry.at}
-                  accent={entry.accent}
-                  icon={entry.icon}
-                  iconLabel={entry.iconLabel}
-                  meta={entry.meta}
-                  defaultOpen={entry.defaultOpen}
-                >
-                  {entry.body}
-                </TimelineNode>
-              ))}
-            </ol>
-          </section>
-        ))}
-      </div>
-
-      {error && <p className="text-error mt-4 text-sm">{error}</p>}
-
-      {mailboxConnected ? (
-        <div className="border-outline-variant/10 bg-surface-container-low mt-8 overflow-hidden rounded-lg border shadow-md">
-          <div className="bg-surface-container-lowest/50 space-y-3 p-4">
-            <div className="flex flex-wrap items-center gap-4">
-              <span className="font-label text-outline w-8 shrink-0 text-[10px] uppercase">
-                To
-              </span>
-              <span className="bg-surface-container inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-white shadow-sm">
-                {formFrom}
-              </span>
-              <span className="font-label text-outline w-10 shrink-0 text-[10px] uppercase">
-                From
-              </span>
-              <div className="min-w-[12rem] flex-1">
-                {hasFromOptions ? (
-                  <Select
-                    aria-label="Sender Display Name"
-                    value={fromIdentityId}
-                    onChange={setFromIdentityId}
-                    disabled={busy}
-                    options={fromOptions.map((option) => ({
-                      value: option.id,
-                      label: option.label,
-                    }))}
-                  />
-                ) : (
-                  <p className="text-on-surface-variant py-2 text-sm">
-                    No Sender Display Name assigned. Ask an owner or admin to
-                    set one in Members.
-                  </p>
-                )}
+                      <ol className="space-y-6 pl-28">
+                        {group.entries.map((entry) => (
+                          <TimelineNode
+                            key={entry.id}
+                            id={entry.id}
+                            eyebrow={entry.eyebrow}
+                            title={entry.title}
+                            preview={entry.preview}
+                            time={formatTime(entry.at)}
+                            at={entry.at}
+                            accent={entry.accent}
+                            icon={entry.icon}
+                            iconLabel={entry.iconLabel}
+                            meta={entry.meta}
+                            defaultOpen={entry.defaultOpen}
+                          >
+                            {entry.body}
+                          </TimelineNode>
+                        ))}
+                      </ol>
+                    </section>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
+        )}
 
-          <RichTextEditor
-            key={editorKey}
-            ref={editorRef}
-            ariaLabel="Reply"
-            placeholder="Type your reply here… Use /shortcut for snippets."
-            disabled={busy}
-            initialHtml={draft.html}
-            onChange={setDraft}
-            onKeyDown={onEditorKeyDown}
-            className="rounded-none border-0 bg-transparent"
-            toolbarStart={
-              <>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Template"
-                      title="Templates"
-                      disabled={busy || templates.length === 0}
-                      className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
-                    >
-                      <MaterialIcon name="description" className="text-lg" />
-                      <MaterialIcon
-                        name="arrow_drop_down"
-                        className="text-base opacity-70"
-                      />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
-                  >
-                    {templates.map((template) => (
-                      <DropdownMenuItem
-                        key={template.id}
-                        onSelect={() => applyTemplate(template.id)}
-                      >
-                        {template.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+        {featuredContent && (
+          <div className="mt-2 mb-2">{featuredContent}</div>
+        )}
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Snippet"
-                      title="Snippets"
-                      disabled={busy || snippets.length === 0}
-                      className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
-                    >
-                      <MaterialIcon name="data_object" className="text-lg" />
-                      <MaterialIcon
-                        name="arrow_drop_down"
-                        className="text-base opacity-70"
-                      />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
-                  >
-                    {snippets.map((snippet) => (
-                      <DropdownMenuItem
-                        key={snippet.id}
-                        onSelect={() => applySnippet(snippet.id)}
-                      >
-                        {snippet.shortcut
-                          ? `${snippet.name} (/${snippet.shortcut})`
-                          : snippet.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+        {error && <p className="text-error mt-4 text-sm">{error}</p>}
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Signature"
-                      title="Signatures"
-                      disabled={busy || signatures.length === 0}
-                      className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
-                    >
-                      <MaterialIcon name="draw" className="text-lg" />
-                      <MaterialIcon
-                        name="arrow_drop_down"
-                        className="text-base opacity-70"
-                      />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
-                  >
-                    {signatures.map((signature) => (
-                      <DropdownMenuItem
-                        key={signature.id}
-                        onSelect={() => applySignature(signature.id)}
-                      >
-                        {signature.isDefault
-                          ? `${signature.name} (Default)`
-                          : signature.name}
-                        {signature.id === signatureId ? " ✓" : ""}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            }
-            toolbarEnd={
-              libraryEmpty ? (
-                <a
-                  href={settingsSectionPath("templates")}
-                  className="font-label ml-1 text-[10px] tracking-widest text-white uppercase underline"
-                >
-                  Manage in Settings
-                </a>
-              ) : null
-            }
-          />
-
-          <div className="bg-surface-container/80 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <div className="flex items-center gap-3">
-              {fromAddress && (
-                <span className="font-label text-outline-variant text-[10px] uppercase">
-                  Replying as{" "}
-                  <span className="font-medium text-white">
-                    {resolvedPreview
-                      ? `${resolvedPreview} <${fromAddress}>`
-                      : fromAddress}
-                  </span>
+        {mailboxConnected ? (
+          <div className="border-outline-variant/10 bg-surface-container-low mt-8 overflow-hidden rounded-lg border shadow-md">
+            <div className="bg-surface-container-lowest/50 space-y-3 p-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="font-label text-outline w-8 shrink-0 text-[10px] uppercase">
+                  To
                 </span>
-              )}
-              <span className="text-outline-variant/60 font-mono text-[10px]">
-                Cmd + Enter to send
-              </span>
+                <span className="bg-surface-container inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-white shadow-sm">
+                  {formFrom}
+                </span>
+                <span className="font-label text-outline w-10 shrink-0 text-[10px] uppercase">
+                  From
+                </span>
+                <div className="min-w-[12rem] flex-1">
+                  {hasFromOptions ? (
+                    <Select
+                      aria-label="Sender Display Name"
+                      value={fromIdentityId}
+                      onChange={setFromIdentityId}
+                      disabled={busy}
+                      options={fromOptions.map((option) => ({
+                        value: option.id,
+                        label: option.label,
+                      }))}
+                    />
+                  ) : (
+                    <p className="text-on-surface-variant py-2 text-sm">
+                      No Sender Display Name assigned. Ask an owner or admin to
+                      set one in Members.
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={sendDisabled}
-              onClick={() => void submit()}
-              className="font-label text-background hover:text-background rounded bg-white font-medium shadow-sm hover:bg-white/90"
-            >
-              Send message
-              <MaterialIcon name="send" className="text-sm" />
-            </Button>
+
+            <RichTextEditor
+              key={editorKey}
+              ref={editorRef}
+              ariaLabel="Reply"
+              placeholder="Type your reply here… Use /shortcut for snippets."
+              disabled={busy}
+              initialHtml={draft.html}
+              onChange={setDraft}
+              onKeyDown={onEditorKeyDown}
+              className="rounded-none border-0 bg-transparent"
+              toolbarStart={
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Template"
+                        title="Templates"
+                        disabled={busy || templates.length === 0}
+                        className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                      >
+                        <MaterialIcon name="description" className="text-lg" />
+                        <MaterialIcon
+                          name="arrow_drop_down"
+                          className="text-base opacity-70"
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
+                    >
+                      {templates.map((template) => (
+                        <DropdownMenuItem
+                          key={template.id}
+                          onSelect={() => applyTemplate(template.id)}
+                        >
+                          {template.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Snippet"
+                        title="Snippets"
+                        disabled={busy || snippets.length === 0}
+                        className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                      >
+                        <MaterialIcon name="data_object" className="text-lg" />
+                        <MaterialIcon
+                          name="arrow_drop_down"
+                          className="text-base opacity-70"
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
+                    >
+                      {snippets.map((snippet) => (
+                        <DropdownMenuItem
+                          key={snippet.id}
+                          onSelect={() => applySnippet(snippet.id)}
+                        >
+                          {snippet.shortcut
+                            ? `${snippet.name} (/${snippet.shortcut})`
+                            : snippet.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Signature"
+                        title="Signatures"
+                        disabled={busy || signatures.length === 0}
+                        className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                      >
+                        <MaterialIcon name="draw" className="text-lg" />
+                        <MaterialIcon
+                          name="arrow_drop_down"
+                          className="text-base opacity-70"
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
+                    >
+                      {signatures.map((signature) => (
+                        <DropdownMenuItem
+                          key={signature.id}
+                          onSelect={() => applySignature(signature.id)}
+                        >
+                          {signature.isDefault
+                            ? `${signature.name} (Default)`
+                            : signature.name}
+                          {signature.id === signatureId ? " ✓" : ""}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              }
+              toolbarEnd={
+                libraryEmpty ? (
+                  <a
+                    href={settingsSectionPath("templates")}
+                    className="font-label ml-1 text-[10px] tracking-widest text-white uppercase underline"
+                  >
+                    Manage in Settings
+                  </a>
+                ) : null
+              }
+            />
+
+            <div className="bg-surface-container/80 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+              <div className="flex items-center gap-3">
+                {fromAddress && (
+                  <span className="font-label text-outline-variant text-[10px] uppercase">
+                    Replying as{" "}
+                    <span className="font-medium text-white">
+                      {resolvedPreview
+                        ? `${resolvedPreview} <${fromAddress}>`
+                        : fromAddress}
+                    </span>
+                  </span>
+                )}
+                <span className="text-outline-variant/60 font-mono text-[10px]">
+                  Cmd + Enter to send
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={sendDisabled}
+                onClick={() => void submit()}
+                className="font-label text-background hover:text-background rounded bg-white font-medium shadow-sm hover:bg-white/90"
+              >
+                Send message
+                <MaterialIcon name="send" className="text-sm" />
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <p className="text-on-surface-variant mt-6 text-sm">
-          Connect a business mailbox in{" "}
-          <a
-            href={settingsSectionPath("email-accounts")}
-            className="text-white underline"
-          >
-            Settings
-          </a>{" "}
-          to reply from the portal.
-        </p>
-      )}
-    </div>
+        ) : (
+          <p className="text-on-surface-variant mt-6 text-sm">
+            Connect a business mailbox in{" "}
+            <a
+              href={settingsSectionPath("email-accounts")}
+              className="text-white underline"
+            >
+              Settings
+            </a>{" "}
+            to reply from the portal.
+          </p>
+        )}
+      </div>
     </TooltipProvider>
   );
 }
