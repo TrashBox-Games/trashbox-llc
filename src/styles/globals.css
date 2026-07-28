@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-headline: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-headline:
+    var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-label: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
 
@@ -68,7 +69,7 @@
     scrollbar-gutter: stable;
   }
   body {
-    @apply bg-background text-on-background font-body antialiased selection:bg-primary selection:text-on-primary;
+    @apply bg-background text-on-background font-body selection:bg-primary selection:text-on-primary antialiased;
   }
 }
 
@@ -105,6 +106,60 @@
 .glass-panel {
   background: rgba(53, 53, 52, 0.6);
   backdrop-filter: blur(24px);
+}
+
+/* Chrome-style color picker: split saturation square from hue/alpha sliders. */
+.chrome-color-sat-only .react-colorful {
+  width: 100% !important;
+  height: 216px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.chrome-color-sat-only .react-colorful__saturation {
+  flex-grow: 1 !important;
+  height: 100% !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+}
+
+.chrome-color-sat-only .react-colorful__hue,
+.chrome-color-sat-only .react-colorful__alpha {
+  display: none !important;
+}
+
+.chrome-color-sliders-only .react-colorful {
+  width: 100% !important;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.chrome-color-sliders-only .react-colorful__saturation {
+  display: none !important;
+}
+
+.chrome-color-sliders-only .react-colorful__hue,
+.chrome-color-sliders-only .react-colorful__alpha {
+  height: 12px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+}
+
+.chrome-color-sat-only .react-colorful__pointer,
+.chrome-color-sliders-only .react-colorful__pointer {
+  box-sizing: border-box !important;
+  width: 18px !important;
+  height: 18px !important;
+  border: 3px solid #fff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.chrome-color-sat-only .react-colorful__saturation-pointer {
+  background-color: transparent !important;
 }
 
 /* Native search clear uses the OS accent (often blue); replace with muted outline X. */

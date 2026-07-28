@@ -97,7 +97,7 @@ describe("RichTextEditor", () => {
     );
   });
 
-  it("offers hex rgb hsl and hsv color format tabs", async () => {
+  it("renders a chrome-style color picker with format and presets", async () => {
     const user = userEvent.setup();
     render(<RichTextEditor ariaLabel="Reply" onChange={vi.fn()} />);
 
@@ -106,30 +106,33 @@ describe("RichTextEditor", () => {
       await screen.findByLabelText(/text color color picker/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("tablist", { name: /text color color format/i }),
+      screen.getByRole("combobox", { name: /text color color format/i }),
+    ).toHaveValue("css");
+    expect(
+      screen.getByRole("textbox", { name: /text color color value/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /^hex$/i })).toHaveAttribute(
-      "aria-selected",
-      "true",
+    expect(
+      screen.getByRole("button", { name: /text color eyedropper/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: /text color palette/i }),
+    ).toBeInTheDocument();
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /text color color format/i }),
+      "hex",
     );
     expect(
-      screen.getByRole("textbox", { name: /text color hex color/i }),
-    ).toBeInTheDocument();
+      screen.getByRole("combobox", { name: /text color color format/i }),
+    ).toHaveValue("hex");
 
-    await user.click(screen.getByRole("tab", { name: /^rgb$/i }));
-    expect(screen.getByRole("spinbutton", { name: /text color r/i })).toBeInTheDocument();
-    expect(screen.getByRole("spinbutton", { name: /text color g/i })).toBeInTheDocument();
-    expect(screen.getByRole("spinbutton", { name: /text color b/i })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("tab", { name: /^hsl$/i }));
-    expect(screen.getByRole("spinbutton", { name: /text color h/i })).toBeInTheDocument();
-    expect(screen.getByRole("spinbutton", { name: /text color s/i })).toBeInTheDocument();
-    expect(screen.getByRole("spinbutton", { name: /text color l/i })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("tab", { name: /^hsv$/i }));
-    expect(screen.getByRole("spinbutton", { name: /text color h/i })).toBeInTheDocument();
-    expect(screen.getByRole("spinbutton", { name: /text color s/i })).toBeInTheDocument();
-    expect(screen.getByRole("spinbutton", { name: /text color v/i })).toBeInTheDocument();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /text color color format/i }),
+      "rgb",
+    );
+    expect(
+      screen.getByRole("combobox", { name: /text color color format/i }),
+    ).toHaveValue("rgb");
 
     expect(
       screen.getByRole("button", { name: /text color #e53935/i }),
@@ -139,20 +142,22 @@ describe("RichTextEditor", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows an inline color picker under format fields and above presets", async () => {
+  it("keeps picker above presets and confirms selection", async () => {
     const user = userEvent.setup();
     render(<RichTextEditor ariaLabel="Reply" onChange={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: /^text color$/i }));
-    const hex = await screen.findByRole("textbox", {
-      name: /text color hex color/i,
+    const picker = await screen.findByLabelText(/text color color picker/i);
+    const value = screen.getByRole("textbox", {
+      name: /text color color value/i,
     });
-    const picker = screen.getByLabelText(/text color color picker/i);
     const preset = screen.getByRole("button", { name: /text color #e53935/i });
 
-    expect(hex.compareDocumentPosition(picker) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(
-      picker.compareDocumentPosition(preset) & Node.DOCUMENT_POSITION_FOLLOWING,
+      picker.compareDocumentPosition(value) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      value.compareDocumentPosition(preset) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
     await user.click(preset);

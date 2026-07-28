@@ -27,7 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { HexColorPicker } from "react-colorful";
+import { HexAlphaColorPicker } from "react-colorful";
 
 export interface RichTextValue {
   html: string;
@@ -103,43 +103,70 @@ const COLOR_PALETTE = [
   "#00acc1",
 ] as const;
 
-const DEFAULT_TEXT_COLOR = "#ffffff";
-const DEFAULT_HIGHLIGHT_COLOR = "#fdd835";
+const DEFAULT_TEXT_COLOR = "#ffffffff";
+const DEFAULT_HIGHLIGHT_COLOR = "#fdd835ff";
 
-type ColorFormat = "hex" | "rgb" | "hsl" | "hsv";
+type ColorFormat = "css" | "hex" | "rgb" | "hsl";
 
 const COLOR_FORMATS: { id: ColorFormat; label: string }[] = [
+  { id: "css", label: "CSS" },
   { id: "hex", label: "Hex" },
   { id: "rgb", label: "RGB" },
   { id: "hsl", label: "HSL" },
-  { id: "hsv", label: "HSV" },
 ];
 
-function normalizeHexColor(value: string): string | null {
-  const trimmed = value.trim();
-  const withHash = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
-  if (!/^#[0-9a-fA-F]{6}$/.test(withHash)) return null;
-  return withHash.toLowerCase();
-}
+type Rgba = { r: number; g: number; b: number; a: number };
 
 function clampChannel(value: number, min: number, max: number): number {
   if (Number.isNaN(value)) return min;
   return Math.min(max, Math.max(min, Math.round(value)));
 }
 
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
+function clampAlpha(value: number): number {
+  if (Number.isNaN(value)) return 1;
+  return Math.min(1, Math.max(0, value));
+}
+
+function normalizeHexColor(value: string): string | null {
+  const trimmed = value.trim();
+  const withHash = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+  if (/^#[0-9a-fA-F]{8}$/.test(withHash)) return withHash.toLowerCase();
+  if (/^#[0-9a-fA-F]{6}$/.test(withHash)) return `${withHash.toLowerCase()}ff`;
+  if (/^#[0-9a-fA-F]{3}$/.test(withHash)) {
+    const [, r, g, b] = withHash;
+    return `#${r}${r}${g}${g}${b}${b}ff`.toLowerCase();
+  }
+  return null;
+}
+
+function hexToRgba(hex: string): Rgba {
   const normalized = normalizeHexColor(hex) ?? DEFAULT_TEXT_COLOR;
   return {
     r: Number.parseInt(normalized.slice(1, 3), 16),
     g: Number.parseInt(normalized.slice(3, 5), 16),
     b: Number.parseInt(normalized.slice(5, 7), 16),
+    a: Number.parseInt(normalized.slice(7, 9), 16) / 255,
   };
 }
 
-function rgbToHex(r: number, g: number, b: number): string {
+function rgbaToHex({ r, g, b, a }: Rgba): string {
   const toHex = (channel: number) =>
     clampChannel(channel, 0, 255).toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  const alpha = Math.round(clampAlpha(a) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}${alpha}`;
+}
+
+function solidHex(hex: string): string {
+  return (normalizeHexColor(hex) ?? DEFAULT_TEXT_COLOR).slice(0, 7);
+}
+
+function colorToCss(hex: string): string {
+  const { r, g, b, a } = hexToRgba(hex);
+  const alpha = Math.round(a * 1000) / 1000;
+  if (alpha >= 1) return `rgb(${r}, ${g}, ${b})`;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function rgbToHsl(
@@ -153,7 +180,7 @@ function rgbToHsl(
   const max = Math.max(rn, gn, bn);
   const min = Math.min(rn, gn, bn);
   const l = (max + min) / 2;
-  if (max === min) return { h: 0, s: 0, l: Math.round(l * 100) };
+  if (max === min) return { h: 0, s: 0, l: Math.round(l * 1000) / 10 };
 
   const d = max - min;
   const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -171,101 +198,93 @@ function rgbToHsl(
   }
   return {
     h: Math.round(h * 60),
-    s: Math.round(s * 100),
-    l: Math.round(l * 100),
+    s: Math.round(s * 1000) / 10,
+    l: Math.round(l * 1000) / 10,
   };
 }
 
-function hslToRgb(
-  h: number,
-  s: number,
-  l: number,
-): { r: number; g: number; b: number } {
-  const hn = ((h % 360) + 360) % 360;
-  const sn = clampChannel(s, 0, 100) / 100;
-  const ln = clampChannel(l, 0, 100) / 100;
-  if (sn === 0) {
-    const gray = Math.round(ln * 255);
-    return { r: gray, g: gray, b: gray };
+function formatColorValue(hex: string, format: ColorFormat): string {
+  const { r, g, b, a } = hexToRgba(hex);
+  const alpha = Math.round(a * 1000) / 1000;
+  const hsl = rgbToHsl(r, g, b);
+  switch (format) {
+    case "hex":
+      return alpha >= 1 ? solidHex(hex) : (normalizeHexColor(hex) ?? hex);
+    case "rgb":
+      return alpha >= 1
+        ? `rgb(${r}, ${g}, ${b})`
+        : `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    case "hsl":
+      return alpha >= 1
+        ? `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`
+        : `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, ${alpha})`;
+    case "css":
+    default:
+      return colorToCss(hex);
+  }
+}
+
+function parseColorInput(raw: string): string | null {
+  const trimmed = raw.trim();
+  const asHex = normalizeHexColor(trimmed);
+  if (asHex) return asHex;
+
+  const rgbaMatch = trimmed.match(
+    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i,
+  );
+  if (rgbaMatch) {
+    return rgbaToHex({
+      r: Number(rgbaMatch[1]),
+      g: Number(rgbaMatch[2]),
+      b: Number(rgbaMatch[3]),
+      a: rgbaMatch[4] === undefined ? 1 : Number(rgbaMatch[4]),
+    });
   }
 
-  const hue2rgb = (p: number, q: number, t: number) => {
-    let tt = t;
-    if (tt < 0) tt += 1;
-    if (tt > 1) tt -= 1;
-    if (tt < 1 / 6) return p + (q - p) * 6 * tt;
-    if (tt < 1 / 2) return q;
-    if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
-    return p;
-  };
+  const hslMatch = trimmed.match(
+    /^hsla?\(\s*([\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%(?:\s*,\s*([\d.]+))?\s*\)$/i,
+  );
+  if (hslMatch) {
+    const h = Number(hslMatch[1]);
+    const s = Number(hslMatch[2]) / 100;
+    const l = Number(hslMatch[3]) / 100;
+    const a = hslMatch[4] === undefined ? 1 : Number(hslMatch[4]);
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const hue2rgb = (t: number) => {
+      let tt = t;
+      if (tt < 0) tt += 1;
+      if (tt > 1) tt -= 1;
+      if (tt < 1 / 6) return p + (q - p) * 6 * tt;
+      if (tt < 1 / 2) return q;
+      if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
+      return p;
+    };
+    const hk = (((h % 360) + 360) % 360) / 360;
+    return rgbaToHex({
+      r: Math.round(hue2rgb(hk + 1 / 3) * 255),
+      g: Math.round(hue2rgb(hk) * 255),
+      b: Math.round(hue2rgb(hk - 1 / 3) * 255),
+      a,
+    });
+  }
 
-  const q = ln < 0.5 ? ln * (1 + sn) : ln + sn - ln * sn;
-  const p = 2 * ln - q;
-  const hk = hn / 360;
-  return {
-    r: Math.round(hue2rgb(p, q, hk + 1 / 3) * 255),
-    g: Math.round(hue2rgb(p, q, hk) * 255),
-    b: Math.round(hue2rgb(p, q, hk - 1 / 3) * 255),
-  };
+  return null;
 }
 
-function rgbToHsv(
-  r: number,
-  g: number,
-  b: number,
-): { h: number; s: number; v: number } {
-  const rn = r / 255;
-  const gn = g / 255;
-  const bn = b / 255;
-  const max = Math.max(rn, gn, bn);
-  const min = Math.min(rn, gn, bn);
-  const d = max - min;
-  let h = 0;
-  if (d !== 0) {
-    switch (max) {
-      case rn:
-        h = ((gn - bn) / d + (gn < bn ? 6 : 0)) * 60;
-        break;
-      case gn:
-        h = ((bn - rn) / d + 2) * 60;
-        break;
-      default:
-        h = ((rn - gn) / d + 4) * 60;
-        break;
+async function pickScreenColor(): Promise<string | null> {
+  const EyeDropperCtor = (
+    window as Window & {
+      EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> };
     }
+  ).EyeDropper;
+  if (!EyeDropperCtor) return null;
+  try {
+    const result = await new EyeDropperCtor().open();
+    return normalizeHexColor(result.sRGBHex);
+  } catch {
+    return null;
   }
-  return {
-    h: Math.round(h),
-    s: Math.round(max === 0 ? 0 : (d / max) * 100),
-    v: Math.round(max * 100),
-  };
-}
-
-function hsvToRgb(
-  h: number,
-  s: number,
-  v: number,
-): { r: number; g: number; b: number } {
-  const hn = (((h % 360) + 360) % 360) / 60;
-  const sn = clampChannel(s, 0, 100) / 100;
-  const vn = clampChannel(v, 0, 100) / 100;
-  const c = vn * sn;
-  const x = c * (1 - Math.abs((hn % 2) - 1));
-  const m = vn - c;
-  let rn = 0;
-  let gn = 0;
-  let bn = 0;
-  if (hn >= 0 && hn < 1) [rn, gn, bn] = [c, x, 0];
-  else if (hn < 2) [rn, gn, bn] = [x, c, 0];
-  else if (hn < 3) [rn, gn, bn] = [0, c, x];
-  else if (hn < 4) [rn, gn, bn] = [0, x, c];
-  else if (hn < 5) [rn, gn, bn] = [x, 0, c];
-  else [rn, gn, bn] = [c, 0, x];
-  return {
-    r: Math.round((rn + m) * 255),
-    g: Math.round((gn + m) * 255),
-    b: Math.round((bn + m) * 255),
-  };
 }
 
 const EMOJIS = [
@@ -592,40 +611,6 @@ function ToolbarGroup({
   );
 }
 
-function ColorChannelInput({
-  label,
-  value,
-  min,
-  max,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <label className="flex min-w-0 flex-1 flex-col gap-0.5">
-      <span className="font-label text-[10px] uppercase tracking-widest text-outline">
-        {label}
-      </span>
-      <Input
-        type="number"
-        inputMode="numeric"
-        min={min}
-        max={max}
-        aria-label={label}
-        value={value}
-        onChange={(event) =>
-          onChange(clampChannel(Number(event.target.value), min, max))
-        }
-        className="h-8 border-outline-variant/30 bg-surface-container-lowest px-2 py-1 font-mono text-xs"
-      />
-    </label>
-  );
-}
-
 function ColorPickerPanel({
   labelPrefix,
   value,
@@ -637,189 +622,142 @@ function ColorPickerPanel({
   onChange: (color: string) => void;
   onCancel: () => void;
 }) {
-  const [draft, setDraft] = useState(value);
-  const [format, setFormat] = useState<ColorFormat>("hex");
+  const initial = normalizeHexColor(value) ?? DEFAULT_TEXT_COLOR;
+  const [draft, setDraft] = useState(initial);
+  const [format, setFormat] = useState<ColorFormat>("css");
+  const [inputValue, setInputValue] = useState(formatColorValue(initial, "css"));
+  const [eyedropperSupported, setEyedropperSupported] = useState(false);
 
   useEffect(() => {
-    setDraft(value);
+    setEyedropperSupported(
+      typeof window !== "undefined" && "EyeDropper" in window,
+    );
+  }, []);
+
+  useEffect(() => {
+    const next = normalizeHexColor(value) ?? DEFAULT_TEXT_COLOR;
+    setDraft(next);
+    setInputValue(formatColorValue(next, format));
   }, [value]);
 
-  const draftHex = normalizeHexColor(draft) ?? value;
-  const rgb = hexToRgb(draftHex);
-  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-  const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+  useEffect(() => {
+    setInputValue(formatColorValue(draft, format));
+  }, [draft, format]);
+
+  function updateDraft(next: string) {
+    const normalized = normalizeHexColor(next);
+    if (!normalized) return;
+    setDraft(normalized);
+  }
 
   function confirm() {
-    const next = normalizeHexColor(draft);
+    const fromInput = parseColorInput(inputValue);
+    const next = fromInput ?? normalizeHexColor(draft);
     if (!next) return;
     onChange(next);
   }
 
-  function setFromRgb(next: { r: number; g: number; b: number }) {
-    setDraft(rgbToHex(next.r, next.g, next.b));
+  async function onEyedropper() {
+    const picked = await pickScreenColor();
+    if (picked) updateDraft(picked);
+  }
+
+  function onInputCommit() {
+    const parsed = parseColorInput(inputValue);
+    if (parsed) updateDraft(parsed);
+    else setInputValue(formatColorValue(draft, format));
   }
 
   return (
     <div className="space-y-3">
-      <div
-        role="tablist"
-        aria-label={`${labelPrefix} color format`}
-        className="bg-surface-container-lowest/60 flex gap-0.5 rounded-sm p-0.5"
-      >
-        {COLOR_FORMATS.map((option) => (
+      <div aria-label={`${labelPrefix} color picker`} className="space-y-3">
+        <div className="chrome-color-sat-only">
+          <HexAlphaColorPicker color={draft} onChange={updateDraft} />
+        </div>
+        <div className="flex items-center gap-2.5">
           <button
-            key={option.id}
             type="button"
-            role="tab"
-            aria-selected={format === option.id}
-            className={cn(
-              "font-label flex-1 rounded-sm px-1.5 py-1 text-[10px] uppercase tracking-widest transition-colors",
-              format === option.id
-                ? "bg-surface-bright text-white"
-                : "text-outline hover:text-white",
-            )}
+            aria-label={`${labelPrefix} eyedropper`}
+            disabled={!eyedropperSupported}
+            className="flex size-8 shrink-0 items-center justify-center rounded-sm text-white hover:bg-white/10 disabled:opacity-40"
             onMouseDown={(event) => event.preventDefault()}
-            onClick={() => setFormat(option.id)}
+            onClick={() => void onEyedropper()}
           >
-            {option.label}
+            <MaterialIcon name="colorize" className="text-[20px]" />
           </button>
-        ))}
+          <div className="chrome-color-sliders-only min-w-0 flex-1">
+            <HexAlphaColorPicker color={draft} onChange={updateDraft} />
+          </div>
+        </div>
       </div>
 
-      <div className="flex items-end gap-2">
-        {format === "hex" ? (
-          <Input
-            aria-label={`${labelPrefix} hex color`}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="#ffffff"
-            className="h-8 border-outline-variant/30 bg-surface-container-lowest px-2 py-1 font-mono text-xs"
+      <div className="flex items-center gap-2">
+        <label className="relative shrink-0">
+          <span className="sr-only">{labelPrefix} color format</span>
+          <select
+            aria-label={`${labelPrefix} color format`}
+            value={format}
+            onChange={(event) => setFormat(event.target.value as ColorFormat)}
+            className="h-8 appearance-none rounded-md border-0 bg-[#3c3c3c] py-1 pl-2.5 pr-7 text-xs text-white outline-none"
+          >
+            {COLOR_FORMATS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <MaterialIcon
+            name="arrow_drop_down"
+            className="pointer-events-none absolute top-1/2 right-0.5 -translate-y-1/2 text-base text-white/70"
           />
-        ) : null}
-        {format === "rgb" ? (
-          <>
-            <ColorChannelInput
-              label={`${labelPrefix} R`}
-              value={rgb.r}
-              min={0}
-              max={255}
-              onChange={(r) => setFromRgb({ ...rgb, r })}
-            />
-            <ColorChannelInput
-              label={`${labelPrefix} G`}
-              value={rgb.g}
-              min={0}
-              max={255}
-              onChange={(g) => setFromRgb({ ...rgb, g })}
-            />
-            <ColorChannelInput
-              label={`${labelPrefix} B`}
-              value={rgb.b}
-              min={0}
-              max={255}
-              onChange={(b) => setFromRgb({ ...rgb, b })}
-            />
-          </>
-        ) : null}
-        {format === "hsl" ? (
-          <>
-            <ColorChannelInput
-              label={`${labelPrefix} H`}
-              value={hsl.h}
-              min={0}
-              max={360}
-              onChange={(h) => {
-                const next = hslToRgb(h, hsl.s, hsl.l);
-                setFromRgb(next);
-              }}
-            />
-            <ColorChannelInput
-              label={`${labelPrefix} S`}
-              value={hsl.s}
-              min={0}
-              max={100}
-              onChange={(s) => {
-                const next = hslToRgb(hsl.h, s, hsl.l);
-                setFromRgb(next);
-              }}
-            />
-            <ColorChannelInput
-              label={`${labelPrefix} L`}
-              value={hsl.l}
-              min={0}
-              max={100}
-              onChange={(l) => {
-                const next = hslToRgb(hsl.h, hsl.s, l);
-                setFromRgb(next);
-              }}
-            />
-          </>
-        ) : null}
-        {format === "hsv" ? (
-          <>
-            <ColorChannelInput
-              label={`${labelPrefix} H`}
-              value={hsv.h}
-              min={0}
-              max={360}
-              onChange={(h) => {
-                const next = hsvToRgb(h, hsv.s, hsv.v);
-                setFromRgb(next);
-              }}
-            />
-            <ColorChannelInput
-              label={`${labelPrefix} S`}
-              value={hsv.s}
-              min={0}
-              max={100}
-              onChange={(s) => {
-                const next = hsvToRgb(hsv.h, s, hsv.v);
-                setFromRgb(next);
-              }}
-            />
-            <ColorChannelInput
-              label={`${labelPrefix} V`}
-              value={hsv.v}
-              min={0}
-              max={100}
-              onChange={(v) => {
-                const next = hsvToRgb(hsv.h, hsv.s, v);
-                setFromRgb(next);
-              }}
-            />
-          </>
-        ) : null}
-        <span
-          aria-hidden="true"
-          className="border-outline-variant/30 size-8 shrink-0 rounded-sm border"
-          style={{ backgroundColor: draftHex }}
+        </label>
+        <Input
+          aria-label={`${labelPrefix} color value`}
+          value={inputValue}
+          onChange={(event) => setInputValue(event.target.value)}
+          onBlur={onInputCommit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              onInputCommit();
+            }
+          }}
+          className="h-8 flex-1 rounded-md border-0 bg-[#3c3c3c] px-2.5 py-1 font-mono text-xs text-white shadow-none"
         />
       </div>
 
-      <div
-        aria-label={`${labelPrefix} color picker`}
-        className="[&_.react-colorful]:h-[140px] [&_.react-colorful]:w-full"
-      >
-        <HexColorPicker color={draftHex} onChange={setDraft} />
-      </div>
-
-      <div className="grid grid-cols-6 gap-1">
-        {COLOR_PALETTE.map((color) => (
-          <button
-            key={`${labelPrefix}-${color}`}
-            type="button"
-            aria-label={`${labelPrefix} ${color}`}
-            title={color}
-            className={cn(
-              "border-outline-variant/30 size-6 rounded-sm border",
-              color.toLowerCase() === draftHex.toLowerCase() &&
-                "ring-1 ring-primary ring-offset-1 ring-offset-surface-container-high",
-            )}
-            style={{ backgroundColor: color }}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => setDraft(color)}
+      <div className="border-t border-white/10 pt-3">
+        <div className="relative mb-2">
+          <select
+            aria-label={`${labelPrefix} palette`}
+            defaultValue="presets"
+            className="h-8 w-full appearance-none rounded-md border-0 bg-[#3c3c3c] py-1 pl-2.5 pr-7 text-xs text-white outline-none"
+          >
+            <option value="presets">Presets</option>
+          </select>
+          <MaterialIcon
+            name="arrow_drop_down"
+            className="pointer-events-none absolute top-1/2 right-1 -translate-y-1/2 text-base text-white/70"
           />
-        ))}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {COLOR_PALETTE.map((color) => (
+            <button
+              key={`${labelPrefix}-${color}`}
+              type="button"
+              aria-label={`${labelPrefix} ${color}`}
+              title={color}
+              className={cn(
+                "size-6 rounded-[4px] border border-black/20 shadow-sm",
+                solidHex(draft).toLowerCase() === color.toLowerCase() &&
+                  "ring-1 ring-white ring-offset-1 ring-offset-[#2b2b2b]",
+              )}
+              style={{ backgroundColor: color }}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => updateDraft(color)}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="flex justify-end gap-2">
@@ -1048,7 +986,7 @@ export const RichTextEditor = forwardRef<
   const applyTextColor = useCallback(
     (color: string) => {
       setTextColor(color);
-      runCommand("foreColor", color);
+      runCommand("foreColor", colorToCss(color));
       onMenuOpenChange(false);
       setTextColorOpen(false);
     },
@@ -1057,12 +995,13 @@ export const RichTextEditor = forwardRef<
 
   const applyHighlightColor = useCallback(
     (color: string) => {
+      const css = colorToCss(color);
       setHighlightColor(color);
       restoreSelection();
       editorRef.current?.focus();
       if (typeof document.execCommand === "function") {
-        const ok = document.execCommand("hiliteColor", false, color);
-        if (!ok) document.execCommand("backColor", false, color);
+        const ok = document.execCommand("hiliteColor", false, css);
+        if (!ok) document.execCommand("backColor", false, css);
       }
       emit();
       onMenuOpenChange(false);
@@ -1215,13 +1154,13 @@ export const RichTextEditor = forwardRef<
               <ToolbarMenuButton
                 label="Text color"
                 icon="format_color_text"
-                swatchColor={textColor}
+                swatchColor={solidHex(textColor)}
                 disabled={disabled}
               />
             </PopoverTrigger>
             <PopoverContent
               align="start"
-              className="z-[100] w-64 border-outline-variant/20 bg-surface-container-high p-3"
+              className="z-[100] w-[240px] border-white/10 bg-[#2b2b2b] p-3 text-white shadow-xl"
               onOpenAutoFocus={(event) => event.preventDefault()}
             >
               <ColorPickerPanel
@@ -1238,13 +1177,13 @@ export const RichTextEditor = forwardRef<
               <ToolbarMenuButton
                 label="Highlight"
                 icon="border_color"
-                swatchColor={highlightColor}
+                swatchColor={solidHex(highlightColor)}
                 disabled={disabled}
               />
             </PopoverTrigger>
             <PopoverContent
               align="start"
-              className="z-[100] w-64 border-outline-variant/20 bg-surface-container-high p-3"
+              className="z-[100] w-[240px] border-white/10 bg-[#2b2b2b] p-3 text-white shadow-xl"
               onOpenAutoFocus={(event) => event.preventDefault()}
             >
               <ColorPickerPanel
