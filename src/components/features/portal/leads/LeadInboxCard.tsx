@@ -12,7 +12,7 @@ export function inboxCardStackDepth(replyCount: number): number {
   return Math.min(3, replyCount + 1);
 }
 
-/** Equal step for each under-card (down + right). */
+/** Equal step for each under-card (down + left). */
 const STACK_STEP = "0.5rem";
 
 function formatWhen(iso: string): string {
@@ -107,8 +107,8 @@ export function LeadInboxCard({
     <div
       className={cn(
         // Clearance for the offset stack shadows so list gap stays even.
-        behind === 1 && "pb-2 pr-2",
-        behind >= 2 && "pb-4 pr-4",
+        behind === 1 && "pb-2 pl-2",
+        behind >= 2 && "pb-4 pl-4",
       )}
       data-testid={behind > 0 ? "inbox-card-stack" : undefined}
       data-stack-behind={behind > 0 ? behind : undefined}
@@ -131,8 +131,8 @@ export function LeadInboxCard({
         style={
           behind > 0
             ? ({
-                "--stack-1-fill": `${STACK_STEP} ${STACK_STEP} 0 0 var(--color-surface-container-high)`,
-                "--stack-2-fill": `calc(${STACK_STEP} * 2) calc(${STACK_STEP} * 2) 0 0 var(--color-surface-container-highest)`,
+                "--stack-1-fill": `calc(${STACK_STEP} * -1) ${STACK_STEP} 0 0 var(--color-surface-container-high)`,
+                "--stack-2-fill": `calc(${STACK_STEP} * -2) calc(${STACK_STEP} * 2) 0 0 var(--color-surface-container-highest)`,
               } as CSSProperties)
             : undefined
         }

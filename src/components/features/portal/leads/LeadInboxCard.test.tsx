@@ -72,9 +72,13 @@ describe("LeadInboxCard", () => {
 
     const stack = screen.getByTestId("inbox-card-stack");
     expect(stack).toHaveAttribute("data-stack-behind", "1");
+    expect(stack.className).toMatch(/\bpl-2\b/);
     expect(screen.getByRole("button")).toHaveAttribute(
       "data-stack-depth",
       "2",
+    );
+    expect(screen.getByRole("button").getAttribute("style") ?? "").toContain(
+      "* -1)",
     );
   });
 
@@ -83,9 +87,13 @@ describe("LeadInboxCard", () => {
 
     const stack = screen.getByTestId("inbox-card-stack");
     expect(stack).toHaveAttribute("data-stack-behind", "2");
+    expect(stack.className).toMatch(/\bpl-4\b/);
     expect(screen.getByRole("button")).toHaveAttribute(
       "data-stack-depth",
       "3",
+    );
+    expect(screen.getByRole("button").getAttribute("style") ?? "").toContain(
+      "* -2)",
     );
   });
 
