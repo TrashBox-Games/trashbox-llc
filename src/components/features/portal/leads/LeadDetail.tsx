@@ -3,9 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Select } from "@/components/atoms/Select";
-import {
-  LeadEmailThreadSection,
-} from "@/components/features/portal/leads/LeadEmailThreadSection";
+import { LeadEmailThreadSection } from "@/components/features/portal/leads/LeadEmailThreadSection";
 import type { LeadComposerLibrary } from "@/components/features/portal/leads/LeadEmailThread";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -57,18 +55,17 @@ function subjectOf(submission: Submission): string {
 
 function sortLeadMessages(messages: LeadMessage[]): LeadMessage[] {
   return [...messages].sort(
-    (a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 }
 
 function MetaRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center gap-4">
-      <span className="w-14 shrink-0 font-label text-[10px] uppercase text-outline">
+      <span className="font-label text-outline w-14 shrink-0 text-[10px] uppercase">
         {label}
       </span>
-      <div className="min-w-0 text-sm text-on-surface">{value}</div>
+      <div className="text-on-surface min-w-0 text-sm">{value}</div>
     </div>
   );
 }
@@ -145,17 +142,17 @@ export function LeadDetail({
         <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
           <div className="space-y-8 md:col-span-8">
             <div>
-              <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+              <p className="font-label text-outline text-[10px] tracking-widest uppercase">
                 Lead
               </p>
-              <h2 className="mt-2 font-headline text-3xl font-bold tracking-tighter text-white">
+              <h2 className="font-headline mt-2 text-3xl font-bold tracking-tighter text-white">
                 {submission.senderName}
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="rounded bg-surface-container-highest px-2 py-0.5 font-label text-[10px] uppercase tracking-widest text-white">
+                <span className="bg-surface-container-highest font-label rounded px-2 py-0.5 text-[10px] tracking-widest text-white uppercase">
                   {LEAD_STATUS_LABELS[status]}
                 </span>
-                <span className="font-mono text-[10px] uppercase text-outline-variant">
+                <span className="text-outline-variant font-mono text-[10px] uppercase">
                   ID: #{submission.submissionId.slice(0, 8)}
                 </span>
               </div>
@@ -168,7 +165,7 @@ export function LeadDetail({
                   <span className="flex items-center gap-2">
                     <span
                       aria-hidden="true"
-                      className="flex size-6 items-center justify-center rounded-full bg-surface-container-highest text-[10px] font-bold text-white"
+                      className="bg-surface-container-highest flex size-6 items-center justify-center rounded-full text-[10px] font-bold text-white"
                     >
                       {initialsOf(submission.senderName)}
                     </span>
@@ -190,7 +187,7 @@ export function LeadDetail({
 
           <div className="space-y-6 md:col-span-4">
             <div>
-              <p className="font-mono text-[10px] uppercase text-outline-variant">
+              <p className="text-outline-variant font-mono text-[10px] uppercase">
                 Received
               </p>
               <p className="mt-1 text-sm font-medium text-white">
@@ -260,9 +257,9 @@ export function LeadDetail({
                       disabled={busy}
                       onClick={() => void toggleTag(tag)}
                       className={cn(
-                        "rounded font-label text-[9px] font-medium tracking-wider",
+                        "font-label rounded text-[9px] font-medium tracking-wider",
                         active
-                          ? "border-white bg-white text-background hover:bg-white hover:text-background"
+                          ? "text-background hover:text-background border-white bg-white hover:bg-white"
                           : "border-outline-variant/40 text-outline hover:border-white hover:text-white",
                       )}
                     >
@@ -274,26 +271,6 @@ export function LeadDetail({
             </div>
           </div>
         </div>
-
-        {!hasHistory && (
-          <>
-            <p className="mt-8 whitespace-pre-wrap text-lg leading-relaxed text-on-surface-variant">
-              {featuredBody}
-            </p>
-            {showFormMetadata && submission.metadata && (
-              <dl className="mt-8 space-y-2">
-                {Object.entries(submission.metadata).map(([key, value]) => (
-                  <div key={key} className="flex gap-4 text-sm">
-                    <dt className="font-label uppercase tracking-widest text-outline">
-                      {key}
-                    </dt>
-                    <dd className="text-white">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-          </>
-        )}
       </div>
 
       {hasHistory && (
@@ -302,7 +279,7 @@ export function LeadDetail({
             type="button"
             aria-expanded={historyOpen}
             onClick={() => setHistoryOpen((open) => !open)}
-            className="font-label text-outline hover:text-white inline-flex items-center gap-1 text-[10px] tracking-widest uppercase transition-colors"
+            className="font-label text-outline inline-flex items-center gap-1 text-[10px] tracking-widest uppercase transition-colors hover:text-white"
           >
             <MaterialIcon
               name="expand_more"
@@ -316,48 +293,43 @@ export function LeadDetail({
         </div>
       )}
 
-      {onSendMessage && (
-        <LeadEmailThreadSection
-          formMessage={submission.message}
-          formFrom={submission.senderEmail}
-          formAt={submission.submittedAt}
-          messages={orderedMessages}
-          showHistory={historyOpen}
-          featuredContent={
-            hasHistory ? (
-              <p className="whitespace-pre-wrap text-lg leading-relaxed text-on-surface-variant">
-                {featuredBody}
-              </p>
-            ) : undefined
-          }
-          mailboxConnected={mailboxConnected}
-          fromAddress={fromAddress}
-          fromOptions={fromOptions}
-          busy={busy}
-          error={messageError}
-          variableContext={{
-            lead: {
-              name: submission.senderName,
-              email: submission.senderEmail,
-            },
-            business: businessName ? { name: businessName } : undefined,
-            sender: fromAddress ? { email: fromAddress } : undefined,
-          }}
-          initialLibrary={composerLibrary}
-          onSend={onSendMessage}
-        />
-      )}
+      <LeadEmailThreadSection
+        formMessage={submission.message}
+        formFrom={submission.senderEmail}
+        formAt={submission.submittedAt}
+        messages={orderedMessages}
+        showHistory={historyOpen}
+        featuredBody={featuredBody}
+        featuredMetadata={
+          showFormMetadata ? submission.metadata : undefined
+        }
+        mailboxConnected={mailboxConnected}
+        fromAddress={fromAddress}
+        fromOptions={fromOptions}
+        busy={busy}
+        error={messageError}
+        variableContext={{
+          lead: {
+            name: submission.senderName,
+            email: submission.senderEmail,
+          },
+          business: businessName ? { name: businessName } : undefined,
+          sender: fromAddress ? { email: fromAddress } : undefined,
+        }}
+        initialLibrary={composerLibrary}
+        onSend={onSendMessage}
+      />
 
       <div className={cn("pt-2", hasHistory ? "mt-6" : "mt-10")}>
         <p className={labelClass}>Notes</p>
         <ul className="space-y-4">
           {notes.length === 0 && (
-            <li className="text-sm text-on-surface-variant">No notes yet.</li>
+            <li className="text-on-surface-variant text-sm">No notes yet.</li>
           )}
           {notes.map((note) => (
             <li key={note.id} className="text-sm">
               <p className="text-white">{note.body}</p>
-              <p className="mt-1 font-label text-[10px] uppercase tracking-widest text-outline">
+              <p className="font-label text-outline mt-1 text-[10px] tracking-widest uppercase">
                 {note.authorEmail} · {formatWhen(note.createdAt)}
               </p>
             </li>
@@ -380,7 +352,7 @@ export function LeadDetail({
             rows={3}
             value={noteDraft}
             onChange={(e) => setNoteDraft(e.target.value)}
-            className="min-h-0 border border-outline-variant/20 px-3 py-3 placeholder:text-outline focus-visible:border-primary"
+            className="border-outline-variant/20 placeholder:text-outline focus-visible:border-primary min-h-0 border px-3 py-3"
             placeholder="Add a note…"
             disabled={busy}
           />

@@ -115,6 +115,7 @@ function renderConnected(
       formMessage="Need a quote"
       formFrom="ada@example.com"
       formAt="2026-07-15T12:00:00.000Z"
+      featuredBody="Need a quote"
       mailboxConnected
       fromOptions={fromOptions}
       fromAddress="sales@acme.test"
@@ -144,6 +145,7 @@ describe("LeadEmailThread", () => {
         formMessage="Need a quote"
         formFrom="ada@example.com"
         formAt="2026-07-15T12:00:00.000Z"
+        featuredBody="Need a quote"
         messages={[]}
         mailboxConnected={false}
         onSend={vi.fn()}

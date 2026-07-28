@@ -77,7 +77,7 @@ export interface LeadInboxResizeHandleProps {
   className?: string;
 }
 
-/** Handle on the email pane’s left edge — click or drag closes the leads panel. */
+/** Handle on the email pane’s left edge — click closes; drag resizes. */
 export function LeadInboxResizeHandle({
   width,
   onWidthChange,
@@ -88,6 +88,8 @@ export function LeadInboxResizeHandle({
   const dragRef = useRef<{
     startX: number;
     startWidth: number;
+    moved: boolean;
+    lastWidth: number;
   } | null>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -103,9 +105,12 @@ export function LeadInboxResizeHandle({
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     event.preventDefault();
+    const startWidth = clampInboxSidebarDragWidth(width);
     dragRef.current = {
       startX: event.clientX,
-      startWidth: clampInboxSidebarDragWidth(width),
+      startWidth,
+      moved: false,
+      lastWidth: startWidth,
     };
     setDraggingState(true);
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -114,10 +119,12 @@ export function LeadInboxResizeHandle({
   function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
     const drag = dragRef.current;
     if (!drag) return;
-    // Dragging left shrinks toward closed; any drag still closes on release.
-    const next = clampInboxSidebarDragWidth(
-      drag.startWidth + (event.clientX - drag.startX),
-    );
+    const delta = event.clientX - drag.startX;
+    if (Math.abs(delta) >= 3) {
+      drag.moved = true;
+    }
+    const next = clampInboxSidebarDragWidth(drag.startWidth + delta);
+    drag.lastWidth = next;
     onWidthChange(next);
   }
 
@@ -125,9 +132,21 @@ export function LeadInboxResizeHandle({
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    const drag = dragRef.current;
     dragRef.current = null;
     setDraggingState(false);
-    closeToSnap();
+
+    if (!drag || !drag.moved) {
+      closeToSnap();
+      return;
+    }
+
+    if (drag.lastWidth < INBOX_SIDEBAR_MIN_WIDTH) {
+      closeToSnap();
+      return;
+    }
+
+    onWidthChange(clampInboxSidebarWidth(drag.lastWidth));
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -145,7 +164,7 @@ export function LeadInboxResizeHandle({
     <div
       role="separator"
       aria-orientation="vertical"
-      aria-label="Close leads panel"
+      aria-label="Resize leads panel"
       aria-valuenow={Math.round(width)}
       aria-valuemin={0}
       aria-valuemax={INBOX_SIDEBAR_MAX_WIDTH}

@@ -116,7 +116,7 @@ function ControlledSidebar(args: LeadInboxSidebarProps) {
             <LeadInboxSidebarToggle open={false} onOpenChange={onOpenChange} />
           </div>
         )}
-        Detail pane (click or drag the left edge to close)
+        Detail pane (drag the left edge to resize; click to close)
       </div>
     </div>
   );

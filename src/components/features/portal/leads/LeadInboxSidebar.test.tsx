@@ -156,7 +156,7 @@ describe("LeadInboxSidebar", () => {
 });
 
 describe("LeadInboxResizeHandle", () => {
-  it("closes on click", () => {
+  it("closes on click without dragging", () => {
     const onWidthChange = vi.fn();
     const onOpenChange = vi.fn();
 
@@ -169,7 +169,7 @@ describe("LeadInboxResizeHandle", () => {
     );
 
     const handle = screen.getByRole("separator", {
-      name: /close leads panel/i,
+      name: /resize leads panel/i,
     });
 
     fireEvent.pointerDown(handle, { clientX: 320, pointerId: 1 });
@@ -179,7 +179,7 @@ describe("LeadInboxResizeHandle", () => {
     expect(onWidthChange).toHaveBeenCalledWith(INBOX_SIDEBAR_SNAP_WIDTH);
   });
 
-  it("closes when dragged at all", () => {
+  it("keeps the panel open when dragged to a valid width", () => {
     const onWidthChange = vi.fn();
     const onOpenChange = vi.fn();
 
@@ -192,11 +192,35 @@ describe("LeadInboxResizeHandle", () => {
     );
 
     const handle = screen.getByRole("separator", {
-      name: /close leads panel/i,
+      name: /resize leads panel/i,
     });
 
     fireEvent.pointerDown(handle, { clientX: 320, pointerId: 1 });
     fireEvent.pointerMove(handle, { clientX: 400, pointerId: 1 });
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(onWidthChange).toHaveBeenLastCalledWith(400);
+  });
+
+  it("closes when dragged below the minimum width", () => {
+    const onWidthChange = vi.fn();
+    const onOpenChange = vi.fn();
+
+    render(
+      <LeadInboxResizeHandle
+        width={320}
+        onWidthChange={onWidthChange}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    const handle = screen.getByRole("separator", {
+      name: /resize leads panel/i,
+    });
+
+    fireEvent.pointerDown(handle, { clientX: 320, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 100, pointerId: 1 });
     fireEvent.pointerUp(handle, { pointerId: 1 });
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -217,7 +241,7 @@ describe("LeadInboxResizeHandle", () => {
     );
 
     const handle = screen.getByRole("separator", {
-      name: /close leads panel/i,
+      name: /resize leads panel/i,
     });
     handle.focus();
     await user.keyboard("{Enter}");

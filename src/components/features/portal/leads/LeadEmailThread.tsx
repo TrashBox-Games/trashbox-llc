@@ -383,8 +383,10 @@ export interface LeadEmailThreadProps {
   messages: LeadMessage[];
   /** When true, render prior messages in the History timeline. */
   showHistory?: boolean;
-  /** Latest message shown below History and above the composer. */
-  featuredContent?: ReactNode;
+  /** Latest message body shown below History (and for single-message leads). */
+  featuredBody: string;
+  /** Optional form metadata shown with the featured body. */
+  featuredMetadata?: Record<string, string>;
   mailboxConnected: boolean;
   fromAddress?: string;
   fromOptions?: FromIdentityOption[];
@@ -394,7 +396,7 @@ export interface LeadEmailThreadProps {
   library?: LeadComposerLibrary;
   /** Values used to resolve merge fields on insert. */
   variableContext?: TemplateVariableContext;
-  onSend: (
+  onSend?: (
     text: string,
     html?: string,
     from?: { fromIdentityId?: string },
@@ -407,7 +409,8 @@ export function LeadEmailThread({
   formAt,
   messages,
   showHistory = false,
-  featuredContent,
+  featuredBody,
+  featuredMetadata,
   mailboxConnected,
   fromAddress,
   fromOptions = [],
@@ -498,7 +501,7 @@ export function LeadEmailThread({
   const hasContent = bodyTextLength(draft.html) > 0;
 
   async function submit() {
-    if (!hasContent || busy || !fromIdentityId) return;
+    if (!onSend || !hasContent || busy || !fromIdentityId) return;
     const html = draft.html.trim();
     await onSend(draft.text, html ? html : undefined, {
       fromIdentityId,
@@ -704,13 +707,30 @@ export function LeadEmailThread({
           </div>
         )}
 
-        {featuredContent && (
-          <div className="mt-2 mb-2">{featuredContent}</div>
+        {featuredBody.trim().length > 0 && (
+          <div className="bg-surface-container-low -mx-6 px-6 py-8 md:-mx-10 md:px-10">
+            <p className="text-on-surface-variant text-lg leading-relaxed whitespace-pre-wrap">
+              {featuredBody}
+            </p>
+            {featuredMetadata && Object.keys(featuredMetadata).length > 0 && (
+              <dl className="mt-8 space-y-2">
+                {Object.entries(featuredMetadata).map(([key, value]) => (
+                  <div key={key} className="flex gap-4 text-sm">
+                    <dt className="font-label text-outline tracking-widest uppercase">
+                      {key}
+                    </dt>
+                    <dd className="text-white">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
         )}
 
         {error && <p className="text-error mt-4 text-sm">{error}</p>}
 
-        {mailboxConnected ? (
+        {onSend &&
+          (mailboxConnected ? (
           <div className="border-outline-variant/10 bg-surface-container-low mt-8 overflow-hidden rounded-lg border shadow-md">
             <div className="bg-surface-container-lowest/50 space-y-3 p-4">
               <div className="flex flex-wrap items-center gap-4">
@@ -913,7 +933,7 @@ export function LeadEmailThread({
             </a>{" "}
             to reply from the portal.
           </p>
-        )}
+        ))}
       </div>
     </TooltipProvider>
   );
