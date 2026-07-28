@@ -17,10 +17,13 @@ const meta = {
   decorators: [
     (Story) => (
       <AuthProvider>
-        <div className="min-h-[280px] bg-background">
+        <div className="min-h-[140vh] bg-background">
           <Story />
-          <div className="px-8 pt-32 font-body text-on-surface-variant">
-            Page content sits below the fixed portal header.
+          <div className="space-y-6 px-8 pt-32 font-body text-on-surface-variant">
+            <p>Scroll down to hide the header; scroll up to reveal it again.</p>
+            {Array.from({ length: 12 }, (_, i) => (
+              <p key={i}>Placeholder content block {i + 1} for scroll demos.</p>
+            ))}
           </div>
         </div>
       </AuthProvider>

@@ -24,15 +24,37 @@ function linkClass(active: boolean) {
   );
 }
 
+const SCROLL_TOP_THRESHOLD = 12;
+const SCROLL_DELTA_THRESHOLD = 8;
+
 /** Standalone chrome for /portal — separate from marketing SiteHeader. */
 export function PortalHeader() {
   const pathname = usePathname() ?? "";
   const auth = useAuth();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    let lastY = window.scrollY;
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > SCROLL_TOP_THRESHOLD);
+
+      if (y <= SCROLL_TOP_THRESHOLD) {
+        setHidden(false);
+        lastY = y;
+        return;
+      }
+
+      const delta = y - lastY;
+      if (Math.abs(delta) < SCROLL_DELTA_THRESHOLD) return;
+
+      setHidden(delta > 0);
+      lastY = y;
+    };
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -47,9 +69,15 @@ export function PortalHeader() {
 
   const signedIn = auth.status === "signedIn";
   const authLoading = auth.status === "loading";
+  const headerHidden = hidden && !open;
 
   return (
-    <header className="fixed top-0 z-50 w-full">
+    <header
+      className={cn(
+        "fixed top-0 z-50 w-full transition-transform duration-300 ease-out",
+        headerHidden ? "-translate-y-full" : "translate-y-0",
+      )}
+    >
       <div
         className={cn(
           "border-b backdrop-blur-xl transition-colors duration-300",
