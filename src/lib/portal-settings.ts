@@ -189,6 +189,50 @@ export function settingsSectionPath(section: SettingsSectionId): string {
   return `${PORTAL_PATHS.settings}${section}/`;
 }
 
+/** Gallery / starter picker before opening the full-page builder. */
+export function templateBuilderNewPath(): string {
+  return `${PORTAL_PATHS.settings}templates/new/`;
+}
+
+/** Full-page create builder. Pass a catalog starter id, or `draft=1` after HTML paste. */
+export function templateBuilderCreatePath(options?: {
+  starterId?: string;
+  draft?: boolean;
+}): string {
+  const base = `${PORTAL_PATHS.settings}templates/builder/`;
+  const params = new URLSearchParams();
+  if (options?.starterId) params.set("starter", options.starterId);
+  if (options?.draft) params.set("draft", "1");
+  const query = params.toString();
+  return query ? `${base}?${query}` : base;
+}
+
+export function templateBuilderEditPath(id: string): string {
+  return `${PORTAL_PATHS.settings}templates/edit/?id=${encodeURIComponent(id)}`;
+}
+
+/** True when Settings chrome should hide for a Zoho-style full-page builder. */
+export function isTemplateBuilderImmersivePath(
+  pathname: string | null | undefined,
+): boolean {
+  if (!pathname) return false;
+  const normalized = pathname.replace(/\/$/, "");
+  return (
+    normalized.endsWith("/templates/builder") ||
+    normalized.endsWith("/templates/edit") ||
+    normalized.endsWith("/templates/new")
+  );
+}
+
+export const TEMPLATE_BUILDER_DRAFT_STORAGE_KEY =
+  "trashbox.emailTemplateBuilderDraft";
+
+export interface TemplateBuilderDraftPayload {
+  name: string;
+  subject: string;
+  document: unknown;
+}
+
 export function settingsGroupForSection(section: SettingsSectionId) {
   return PORTAL_SETTINGS_NAV.find((group) =>
     group.items.some((item) => item.id === section),

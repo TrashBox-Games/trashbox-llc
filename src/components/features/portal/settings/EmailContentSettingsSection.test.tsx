@@ -99,20 +99,30 @@ describe("EmailContentSettingsSection", () => {
     expect(listEmailTemplates).not.toHaveBeenCalled();
   });
 
-  it("creates a template and reloads the list", async () => {
-    vi.mocked(createEmailTemplate).mockResolvedValue(template);
+  it("links New template to the builder route", async () => {
+    render(<EmailContentSettingsSection kind="template" />);
+
+    await screen.findByText("Quote follow-up");
+    expect(
+      screen.getByRole("link", { name: /new template/i }),
+    ).toHaveAttribute("href", expect.stringMatching(/templates\/new\/?$/));
+  });
+
+  it("duplicates a template through the create API", async () => {
+    vi.mocked(createEmailTemplate).mockResolvedValue({
+      ...template,
+      id: "t2",
+      name: "Quote follow-up (copy)",
+    });
     const user = userEvent.setup();
     render(<EmailContentSettingsSection kind="template" />);
 
     await screen.findByText("Quote follow-up");
-    await user.click(screen.getByRole("button", { name: /new template/i }));
-    await user.type(screen.getByLabelText(/^name$/i), "Welcome");
-    await user.type(screen.getByRole("textbox", { name: /body/i }), "Hello");
-    await user.click(screen.getByRole("button", { name: /save template/i }));
+    await user.click(screen.getByRole("button", { name: /duplicate/i }));
 
     await waitFor(() =>
       expect(createEmailTemplate).toHaveBeenCalledWith(
-        expect.objectContaining({ name: "Welcome", bodyText: "Hello" }),
+        expect.objectContaining({ name: "Quote follow-up (copy)" }),
       ),
     );
     expect(listEmailTemplates).toHaveBeenCalledTimes(2);
@@ -127,10 +137,7 @@ describe("EmailContentSettingsSection", () => {
     render(<EmailContentSettingsSection kind="template" />);
 
     await screen.findByText("Quote follow-up");
-    await user.click(screen.getByRole("button", { name: /new template/i }));
-    await user.type(screen.getByLabelText(/^name$/i), "Welcome");
-    await user.type(screen.getByRole("textbox", { name: /body/i }), "Hello");
-    await user.click(screen.getByRole("button", { name: /save template/i }));
+    await user.click(screen.getByRole("button", { name: /duplicate/i }));
 
     expect(
       await screen.findByText("Shortcut /hours is already in use"),

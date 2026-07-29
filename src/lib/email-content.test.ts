@@ -4,7 +4,12 @@ import {
   TEMPLATE_VARIABLES,
   composeReplyHtml,
   contentBodyToHtml,
+  decorateMergeFieldsHtml,
+  isMergeFieldVariant,
   matchSnippetShortcut,
+  mergeFieldChipHtml,
+  mergeFieldVariantId,
+  parseMergeFieldVariant,
   plainTextToHtml,
   renderContentForInsert,
   renderTemplateVariables,
@@ -86,6 +91,33 @@ describe("unknownTemplateVariables", () => {
     expect(
       unknownTemplateVariables("{{lead.nickname}} {{lead.nickname}} {{oops}}"),
     ).toEqual(["{{lead.nickname}}", "{{oops}}"]);
+  });
+
+  it("builds merge-field palette variant ids and chip html", () => {
+    expect(mergeFieldVariantId("{{lead.first_name}}")).toBe(
+      "merge-lead.first_name",
+    );
+    expect(isMergeFieldVariant("merge-lead.first_name")).toBe(true);
+    expect(parseMergeFieldVariant("merge-lead.first_name")?.label).toBe(
+      "Lead first name",
+    );
+    expect(mergeFieldChipHtml("{{lead.first_name}}")).toContain(
+      'data-tb-merge="lead.first_name"',
+    );
+    expect(mergeFieldChipHtml("{{lead.first_name}}")).toContain(
+      "{{lead.first_name}}",
+    );
+    expect(mergeFieldChipHtml("{{lead.first_name}}")).toContain(
+      'contenteditable="false"',
+    );
+  });
+
+  it("decorates bare merge tokens without double-wrapping chips", () => {
+    const decorated = decorateMergeFieldsHtml(
+      "<p>Hi {{lead.first_name}}</p>",
+    );
+    expect(decorated).toContain('data-tb-merge="lead.first_name"');
+    expect(decorateMergeFieldsHtml(decorated)).toBe(decorated);
   });
 });
 

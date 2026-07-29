@@ -87,6 +87,72 @@ export const TEMPLATE_VARIABLES: readonly TemplateVariable[] = [
 
 const TOKEN_PATTERN = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
 
+/** Variant id prefix for palette merge-field tiles (`merge-lead.first_name`). */
+export const MERGE_FIELD_VARIANT_PREFIX = "merge-";
+
+export function mergeFieldKeyFromToken(token: string): string | null {
+  const match = token.trim().match(/^\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}$/);
+  return match?.[1] ?? null;
+}
+
+export function mergeFieldVariantId(tokenOrKey: string): string {
+  const key =
+    mergeFieldKeyFromToken(tokenOrKey) ??
+    tokenOrKey.replace(/^\{\{|\}\}$/g, "").trim();
+  return `${MERGE_FIELD_VARIANT_PREFIX}${key}`;
+}
+
+export function isMergeFieldVariant(variantId: string): boolean {
+  return variantId.startsWith(MERGE_FIELD_VARIANT_PREFIX);
+}
+
+export function parseMergeFieldVariant(
+  variantId: string,
+): TemplateVariable | null {
+  if (!isMergeFieldVariant(variantId)) return null;
+  const key = variantId.slice(MERGE_FIELD_VARIANT_PREFIX.length);
+  const token = `{{${key}}}`;
+  return TEMPLATE_VARIABLES.find((variable) => variable.token === token) ?? null;
+}
+
+/** Builder chip markup for a merge token (highlight via `[data-tb-merge]` CSS). */
+export function mergeFieldChipHtml(token: string): string {
+  const key = mergeFieldKeyFromToken(token);
+  if (!key || !VARIABLE_RESOLVERS[key]) {
+    return token;
+  }
+  const safeToken = `{{${key}}}`;
+  return `<span data-tb-merge="${key}" contenteditable="false" class="tb-merge-field">${safeToken}</span>`;
+}
+
+/**
+ * Wrap bare `{{tokens}}` in chip spans for the builder canvas. Already-wrapped
+ * chips are left alone.
+ */
+export function decorateMergeFieldsHtml(html: string): string {
+  if (!html || !html.includes("{{")) return html;
+  // Clone a fresh regex — the module-level pattern is /g and stateful.
+  const pattern = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
+  return html.replace(pattern, (match, key: string, offset: number, full: string) => {
+    if (!VARIABLE_RESOLVERS[key]) return match;
+    const before = full.slice(Math.max(0, offset - 200), offset);
+    const marker = `data-tb-merge="${key}"`;
+    const markerIdx = before.lastIndexOf(marker);
+    if (markerIdx >= 0) {
+      const afterMarker = before.slice(markerIdx);
+      if (!afterMarker.includes("</span>")) {
+        return match;
+      }
+    }
+    return mergeFieldChipHtml(`{{${key}}}`);
+  });
+}
+
+export function mergeFieldChipHtmlFromVariant(variantId: string): string | null {
+  const variable = parseMergeFieldVariant(variantId);
+  return variable ? mergeFieldChipHtml(variable.token) : null;
+}
+
 function firstWord(value: string | undefined): string {
   return value?.trim().split(/\s+/)[0] ?? "";
 }

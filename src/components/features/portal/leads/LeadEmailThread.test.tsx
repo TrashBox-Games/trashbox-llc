@@ -138,6 +138,17 @@ async function pickMenuItem(
   await user.click(screen.getByRole("menuitem", { name: itemName }));
 }
 
+async function pickTemplate(
+  user: ReturnType<typeof userEvent.setup>,
+  itemName: RegExp,
+) {
+  await user.click(screen.getByRole("button", { name: /^template$/i }));
+  const gallery = await screen.findByRole("dialog", {
+    name: /template gallery/i,
+  });
+  await user.click(within(gallery).getByRole("button", { name: itemName }));
+}
+
 describe("LeadEmailThread", () => {
   it("shows settings CTA when mailbox is disconnected", () => {
     render(
@@ -164,7 +175,7 @@ describe("LeadEmailThread", () => {
 
     renderConnected({ onSend });
 
-    await pickMenuItem(user, /^template$/i, /intro reply/i);
+    await pickTemplate(user, /intro reply/i);
     await user.click(screen.getByRole("button", { name: /send message/i }));
 
     expect(onSend).toHaveBeenCalledWith(
@@ -580,7 +591,7 @@ describe("LeadEmailThread", () => {
     const user = userEvent.setup();
     renderConnected();
 
-    await pickMenuItem(user, /^template$/i, /intro reply/i);
+    await pickTemplate(user, /intro reply/i);
 
     await waitFor(() => {
       expect(
@@ -593,11 +604,29 @@ describe("LeadEmailThread", () => {
     ).toContain("Sales Team");
   });
 
+  it("applies a gallery starter into the reply body", async () => {
+    const user = userEvent.setup();
+    renderConnected({
+      library: { templates: [], signatures, snippets: [] },
+    });
+
+    await pickTemplate(user, /follow-up check-in/i);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("textbox", { name: /reply/i }).textContent,
+      ).toContain("Just checking in on your recent inquiry");
+    });
+    expect(
+      screen.getByRole("textbox", { name: /reply/i }).textContent,
+    ).toContain("Ada");
+  });
+
   it("switches the signature without wiping the body", async () => {
     const user = userEvent.setup();
     renderConnected();
 
-    await pickMenuItem(user, /^template$/i, /intro reply/i);
+    await pickTemplate(user, /intro reply/i);
     await pickMenuItem(user, /^signature$/i, /^short$/i);
 
     const editor = screen.getByRole("textbox", { name: /reply/i });

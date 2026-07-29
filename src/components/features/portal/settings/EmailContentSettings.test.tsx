@@ -69,82 +69,33 @@ describe("EmailContentSettings", () => {
     expect(screen.getByText("{{business.name}}")).toBeInTheDocument();
   });
 
-  it("creates a template from the new form", async () => {
-    const user = userEvent.setup();
-    const { onCreate } = renderSettings({ items: [] });
-
-    await user.click(screen.getByRole("button", { name: /new template/i }));
-    await user.type(screen.getByLabelText(/^name$/i), "Welcome");
-    await user.type(screen.getByLabelText(/subject/i), "Hello");
-    await user.type(screen.getByRole("textbox", { name: /body/i }), "Hi there");
-    await user.click(screen.getByRole("button", { name: /save template/i }));
-
-    expect(onCreate).toHaveBeenCalledTimes(1);
-    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({
-      name: "Welcome",
-      subject: "Hello",
-      bodyText: "Hi there",
-    });
-  });
-
-  it("cannot save until a name and body are filled in", async () => {
-    const user = userEvent.setup();
+  it("links New template to the visual builder", () => {
     renderSettings({ items: [] });
 
-    await user.click(screen.getByRole("button", { name: /new template/i }));
     expect(
-      screen.getByRole("button", { name: /save template/i }),
-    ).toBeDisabled();
-
-    await user.type(screen.getByLabelText(/^name$/i), "Welcome");
-    expect(
-      screen.getByRole("button", { name: /save template/i }),
-    ).toBeDisabled();
-
-    await user.type(screen.getByRole("textbox", { name: /body/i }), "Hi");
-    expect(screen.getByRole("button", { name: /save template/i })).toBeEnabled();
+      screen.getByRole("link", { name: /new template/i }),
+    ).toHaveAttribute("href", expect.stringMatching(/templates\/new\/?$/));
   });
 
-  it("edits an existing template through the seeded form", async () => {
-    const user = userEvent.setup();
-    const { onUpdate } = renderSettings();
+  it("links Edit to the template builder edit route", () => {
+    renderSettings();
 
-    await user.click(screen.getByRole("button", { name: /edit/i }));
-
-    const name = screen.getByLabelText(/^name$/i);
-    expect(name).toHaveValue("Quote follow-up");
-    await user.clear(name);
-    await user.type(name, "Quote follow-up v2");
-    await user.click(screen.getByRole("button", { name: /save template/i }));
-
-    expect(onUpdate).toHaveBeenCalledWith(
-      "t1",
-      expect.objectContaining({ name: "Quote follow-up v2" }),
+    expect(screen.getByRole("link", { name: /^edit$/i })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/templates\/edit\/\?id=t1$/),
     );
   });
 
-  it("closes the form without saving when cancelled", async () => {
-    const user = userEvent.setup();
-    const { onUpdate } = renderSettings();
-
-    await user.click(screen.getByRole("button", { name: /edit/i }));
-    await user.click(screen.getByRole("button", { name: /cancel/i }));
-
-    expect(onUpdate).not.toHaveBeenCalled();
-    expect(screen.queryByLabelText(/^name$/i)).not.toBeInTheDocument();
-  });
-
-  it("duplicates a template into an unsaved copy", async () => {
+  it("duplicates a template immediately via onCreate", async () => {
     const user = userEvent.setup();
     const { onCreate, onUpdate } = renderSettings();
 
     await user.click(screen.getByRole("button", { name: /duplicate/i }));
-    expect(screen.getByLabelText(/^name$/i)).toHaveValue(
-      "Quote follow-up (copy)",
-    );
-
-    await user.click(screen.getByRole("button", { name: /save template/i }));
     expect(onCreate).toHaveBeenCalledTimes(1);
+    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({
+      name: "Quote follow-up (copy)",
+      subject: template.subject,
+    });
     expect(onUpdate).not.toHaveBeenCalled();
   });
 
@@ -161,23 +112,7 @@ describe("EmailContentSettings", () => {
     expect(onDelete).toHaveBeenCalledWith("t1");
   });
 
-  it("warns about merge fields that will not be substituted", async () => {
-    const user = userEvent.setup();
-    renderSettings({ items: [] });
-
-    await user.click(screen.getByRole("button", { name: /new template/i }));
-    // userEvent reads `{` as the start of a key descriptor, so `{{{{` types `{{`.
-    await user.type(
-      screen.getByRole("textbox", { name: /body/i }),
-      "Hi {{{{lead.nickname}}",
-    );
-
-    expect(screen.getByText(/not a supported merge field/i)).toHaveTextContent(
-      "{{lead.nickname}}",
-    );
-  });
-
-  it("previews a template body with merge fields resolved", async () => {
+  it("previews a template body as HTML", async () => {
     const user = userEvent.setup();
     renderSettings({
       previewContext: {
@@ -188,8 +123,10 @@ describe("EmailContentSettings", () => {
 
     await user.click(screen.getByRole("button", { name: /preview/i }));
 
-    expect(screen.getByText(/Hi Dana,/)).toBeInTheDocument();
     expect(screen.getByText(/Your quote from Acme Hauling/)).toBeInTheDocument();
+    expect(
+      screen.getByTitle("Preview of Quote follow-up"),
+    ).toBeInTheDocument();
   });
 
   it("hides editing affordances without the manage permission", () => {
@@ -197,10 +134,10 @@ describe("EmailContentSettings", () => {
 
     expect(screen.getByText("Quote follow-up")).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /new template/i }),
+      screen.queryByRole("link", { name: /new template/i }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /^edit$/i }),
+      screen.queryByRole("link", { name: /^edit$/i }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByText(/Manage Email Templates, Signatures And Snippets/i),
@@ -239,6 +176,35 @@ describe("EmailContentSettings", () => {
     expect(screen.queryByLabelText(/subject/i)).not.toBeInTheDocument();
   });
 
+  it("warns about merge fields that will not be substituted for signatures", async () => {
+    const user = userEvent.setup();
+    renderSettings({ kind: "signature", items: [] });
+
+    await user.click(screen.getByRole("button", { name: /new signature/i }));
+    await user.type(
+      screen.getByRole("textbox", { name: /body/i }),
+      "Hi {{{{lead.nickname}}",
+    );
+
+    expect(screen.getByText(/not a supported merge field/i)).toHaveTextContent(
+      "{{lead.nickname}}",
+    );
+  });
+
+  it("closes the signature form without saving when cancelled", async () => {
+    const user = userEvent.setup();
+    const { onUpdate } = renderSettings({
+      kind: "signature",
+      items: [signature],
+    });
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText(/^name$/i)).not.toBeInTheDocument();
+  });
+
   it("shows a snippet shortcut and normalizes what is typed", async () => {
     const user = userEvent.setup();
     const { onCreate } = renderSettings({ kind: "snippet", items: [snippet] });
@@ -269,7 +235,7 @@ describe("EmailContentSettings", () => {
 
   it("disables the actions while a request is in flight", () => {
     renderSettings({ busy: true });
-    expect(screen.getByRole("button", { name: /new template/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /delete/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /duplicate/i })).toBeDisabled();
   });
 });

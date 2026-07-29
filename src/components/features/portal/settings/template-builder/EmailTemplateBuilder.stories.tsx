@@ -1,0 +1,116 @@
+import type { Meta, StoryObj } from "@storybook/react";
+import { fn } from "storybook/test";
+import { EmailTemplateBuilder } from "./EmailTemplateBuilder";
+import { decorateMergeFieldsHtml } from "@/lib/email-content";
+import {
+  appendBlock,
+  emptyDocument,
+} from "@/lib/email-template-document";
+
+let seeded = emptyDocument("#e4e4e7");
+seeded = appendBlock(seeded, "text");
+seeded = appendBlock(seeded, "button");
+seeded = appendBlock(seeded, "columns");
+seeded = appendBlock(seeded, "imageText");
+seeded = appendBlock(seeded, "grid");
+seeded = appendBlock(seeded, "table");
+seeded = {
+  ...seeded,
+  header: {
+    html: "<p><strong>Trashbox</strong></p>",
+    backgroundColor: "transparent",
+    paddingX: 0,
+    paddingY: 8,
+    borderWidth: 1,
+    borderColor: "#e4e4e7",
+    align: "left",
+  },
+  footer: {
+    html: '<p style="font-size:12px;color:#71717a;">Thanks for reading</p>',
+    backgroundColor: "transparent",
+    paddingX: 0,
+    paddingY: 8,
+    borderWidth: 1,
+    borderColor: "#e4e4e7",
+    align: "center",
+  },
+  pageMarginTop: 28,
+  pageMarginRight: 28,
+  pageMarginBottom: 28,
+  pageMarginLeft: 28,
+  blocks: seeded.blocks.map((block) => {
+    if (block.type === "text") {
+      return {
+        ...block,
+        html: decorateMergeFieldsHtml(
+          "<p>Hi {{lead.first_name}}, thanks for reaching out to {{business.name}}.</p>",
+        ),
+      };
+    }
+    if (block.type === "button") {
+      return { ...block, label: "Reply now", href: "mailto:hello@example.com" };
+    }
+    if (block.type === "columns") {
+      return {
+        ...block,
+        columns: [
+          "<p><strong>Left</strong></p><p>Drop an image here.</p>",
+          "<p><strong>Right</strong></p><p>Details go here.</p>",
+        ],
+      };
+    }
+    if (block.type === "imageText") {
+      return {
+        ...block,
+        imagePosition: "left" as const,
+        image: {
+          ...block.image,
+          alt: "Hero",
+        },
+        text: {
+          html: "<p>Image + text body copy lives here.</p>",
+        },
+      };
+    }
+    if (block.type === "grid") {
+      return {
+        ...block,
+        cells: [
+          "<p><strong>A1</strong></p>",
+          "<p><strong>A2</strong></p>",
+          "<p><strong>B1</strong></p>",
+          "<p><strong>B2</strong></p>",
+        ],
+      };
+    }
+    return block;
+  }),
+};
+
+const meta = {
+  title: "Features/Portal/Settings/EmailTemplateBuilder",
+  component: EmailTemplateBuilder,
+  tags: ["autodocs"],
+  parameters: { layout: "fullscreen" },
+  args: {
+    onSave: fn().mockResolvedValue(undefined),
+    onCancel: fn(),
+  },
+} satisfies Meta<typeof EmailTemplateBuilder>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Empty: Story = {
+  args: {
+    initialName: "New template",
+  },
+};
+
+export const WithBlocks: Story = {
+  args: {
+    initialName: "Welcome reply",
+    initialSubject: "Thanks for contacting us",
+    initialDocument: seeded,
+  },
+};

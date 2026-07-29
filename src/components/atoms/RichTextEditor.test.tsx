@@ -40,6 +40,21 @@ describe("RichTextEditor", () => {
     ).toBeInTheDocument();
   });
 
+  it("can hide the formatting toolbar", () => {
+    render(
+      <RichTextEditor
+        ariaLabel="Reply"
+        onChange={vi.fn()}
+        showToolbar={false}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("toolbar", { name: /formatting/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /reply/i })).toBeInTheDocument();
+  });
+
   it("exposes font, size, color, align, indent and emoji menus", () => {
     render(<RichTextEditor ariaLabel="Reply" onChange={vi.fn()} />);
 

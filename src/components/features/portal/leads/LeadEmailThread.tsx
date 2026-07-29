@@ -17,6 +17,7 @@ import {
   type RichTextEditorHandle,
   type RichTextValue,
 } from "@/components/atoms/RichTextEditor";
+import { EmailTemplateGallery } from "@/components/features/portal/settings/EmailTemplateGallery";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -46,11 +47,9 @@ import {
   snippetTriggerAtEnd,
   type TemplateVariableContext,
 } from "@/lib/email-content";
+import type { EmailTemplateStarter } from "@/lib/email-template-starters";
 import { settingsSectionPath } from "@/lib/portal-settings";
 import { cn } from "@/lib/utils";
-
-const labelClass =
-  "mb-2 block font-label text-[10px] uppercase tracking-widest text-outline";
 
 export interface LeadComposerLibrary {
   templates: EmailTemplate[];
@@ -447,6 +446,7 @@ export function LeadEmailThread({
     defaultSignatureId(signatures),
   );
   const [editorKey, setEditorKey] = useState(0);
+  const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const seededForSignature = useRef<string | null>(null);
   const draftRef = useRef<RichTextValue>({ html: "", text: "" });
@@ -519,6 +519,16 @@ export function LeadEmailThread({
     const template = templates.find((item) => item.id === templateId);
     if (!template || !editorRef.current) return;
     const rendered = renderContentForInsert(template, context);
+    const next = replaceReplyBody(
+      draftRef.current.html || seedHtml,
+      rendered.html,
+    );
+    editorRef.current.setHtml(next);
+  }
+
+  function applyStarter(starter: EmailTemplateStarter) {
+    if (!editorRef.current) return;
+    const rendered = renderContentForInsert(starter, context);
     const next = replaceReplyBody(
       draftRef.current.html || seedHtml,
       rendered.html,
@@ -780,41 +790,22 @@ export function LeadEmailThread({
                 className="rounded-none border-0 bg-transparent"
                 toolbarStart={
                   <>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          aria-label="Template"
-                          title="Templates"
-                          disabled={busy || templates.length === 0}
-                          className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
-                        >
-                          <MaterialIcon
-                            name="description"
-                            className="text-lg"
-                          />
-                          <MaterialIcon
-                            name="arrow_drop_down"
-                            className="text-base opacity-70"
-                          />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="start"
-                        className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
-                      >
-                        {templates.map((template) => (
-                          <DropdownMenuItem
-                            key={template.id}
-                            onSelect={() => applyTemplate(template.id)}
-                          >
-                            {template.name}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Template"
+                      title="Templates"
+                      disabled={busy}
+                      onClick={() => setTemplateGalleryOpen(true)}
+                      className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                    >
+                      <MaterialIcon name="description" className="text-lg" />
+                      <MaterialIcon
+                        name="arrow_drop_down"
+                        className="text-base opacity-70"
+                      />
+                    </Button>
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -942,8 +933,31 @@ export function LeadEmailThread({
               </a>{" "}
               to reply from the portal.
             </p>
-          ))}
+          )          )}
       </div>
+
+      {templateGalleryOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4">
+          <EmailTemplateGallery
+            mode="compose"
+            className="w-full max-w-5xl shadow-lg"
+            savedTemplates={templates.map((template) => ({
+              id: template.id,
+              name: template.name,
+              subject: template.subject,
+            }))}
+            onSelectSaved={(template) => {
+              applyTemplate(template.id);
+              setTemplateGalleryOpen(false);
+            }}
+            onSelectStarter={(starter) => {
+              applyStarter(starter);
+              setTemplateGalleryOpen(false);
+            }}
+            onClose={() => setTemplateGalleryOpen(false)}
+          />
+        </div>
+      )}
     </TooltipProvider>
   );
 }

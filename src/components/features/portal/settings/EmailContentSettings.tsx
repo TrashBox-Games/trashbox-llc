@@ -19,7 +19,11 @@ import {
   unknownTemplateVariables,
   type TemplateVariableContext,
 } from "@/lib/email-content";
-import { settingsSectionPath } from "@/lib/portal-settings";
+import {
+  settingsSectionPath,
+  templateBuilderEditPath,
+  templateBuilderNewPath,
+} from "@/lib/portal-settings";
 
 export type EmailContentKind = "template" | "signature" | "snippet";
 
@@ -165,6 +169,7 @@ export function EmailContentSettings({
   const [seedCounter, setSeedCounter] = useState(0);
 
   const context = previewContext ?? SAMPLE_PREVIEW_CONTEXT;
+  const usesBuilder = kind === "template";
 
   function openForm(editingId: string | null, draft: EmailContentDraft) {
     const nextKey = seedCounter + 1;
@@ -175,6 +180,11 @@ export function EmailContentSettings({
       seedKey: nextKey,
       draft,
     });
+  }
+
+  function startNew() {
+    if (usesBuilder) return;
+    openForm(null, EMPTY_DRAFT);
   }
 
   function updateDraft(patch: Partial<EmailContentDraft>) {
@@ -206,6 +216,16 @@ export function EmailContentSettings({
     );
     if (!ok) return;
     void onDelete(entry.id);
+  }
+
+  async function duplicateTemplate(entry: EmailContentEntry) {
+    const draft = {
+      ...draftFromEntry(entry),
+      name: `${entry.name} (copy)`.slice(0, EMAIL_CONTENT_LIMITS.name),
+      shortcut: "",
+      isDefault: false,
+    };
+    await onCreate(draft);
   }
 
   const unknownTokens = form
@@ -264,16 +284,21 @@ export function EmailContentSettings({
       <section>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Label className="mb-0">Saved {copy.label}s</Label>
-          {canManage && (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={() => openForm(null, EMPTY_DRAFT)}
-            >
-              New {copy.label}
-            </Button>
-          )}
+          {canManage &&
+            (usesBuilder ? (
+              <Button type="button" variant="outline" disabled={busy} asChild>
+                <a href={templateBuilderNewPath()}>New {copy.label}</a>
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={startNew}
+              >
+                New {copy.label}
+              </Button>
+            ))}
         </div>
 
         <ul className="mt-4 divide-y divide-outline-variant/10 border-y border-outline-variant/10">
@@ -283,7 +308,6 @@ export function EmailContentSettings({
             </li>
           )}
           {items.map((entry) => {
-            const rendered = renderTemplateVariables(entry.bodyText, context);
             const renderedSubject = entry.subject
               ? renderTemplateVariables(entry.subject, context)
               : "";
@@ -328,27 +352,45 @@ export function EmailContentSettings({
                     </Button>
                     {canManage && (
                       <>
+                        {usesBuilder ? (
+                          <Button
+                            type="button"
+                            variant="link"
+                            disabled={busy}
+                            asChild
+                            className={actionClass}
+                          >
+                            <a href={templateBuilderEditPath(entry.id)}>Edit</a>
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="link"
+                            disabled={busy}
+                            onClick={() =>
+                              openForm(entry.id, draftFromEntry(entry))
+                            }
+                            className={actionClass}
+                          >
+                            Edit
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           variant="link"
                           disabled={busy}
-                          onClick={() => openForm(entry.id, draftFromEntry(entry))}
-                          className={actionClass}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="link"
-                          disabled={busy}
-                          onClick={() =>
+                          onClick={() => {
+                            if (usesBuilder) {
+                              void duplicateTemplate(entry);
+                              return;
+                            }
                             openForm(null, {
                               ...draftFromEntry(entry),
                               name: `${entry.name} (copy)`,
                               shortcut: "",
                               isDefault: false,
-                            })
-                          }
+                            });
+                          }}
                           className={actionClass}
                         >
                           Duplicate
@@ -388,10 +430,15 @@ export function EmailContentSettings({
                         {renderedSubject}
                       </p>
                     )}
-                    {/* Plain text only — stored markup is never injected here. */}
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-on-surface-variant">
-                      {rendered}
-                    </p>
+                    <iframe
+                      title={`Preview of ${entry.name}`}
+                      sandbox=""
+                      srcDoc={renderTemplateVariables(
+                        contentBodyToHtml(entry),
+                        context,
+                      )}
+                      className="mt-2 h-48 w-full border border-outline-variant/15 bg-white"
+                    />
                   </div>
                 )}
               </li>
@@ -407,7 +454,7 @@ export function EmailContentSettings({
         )}
       </section>
 
-      {form && (
+      {form && !usesBuilder && (
         <form
           className="space-y-4 border border-outline-variant/20 bg-background/40 p-4 md:p-6"
           onSubmit={(event) => {
@@ -432,23 +479,6 @@ export function EmailContentSettings({
                 className="py-2"
               />
             </div>
-
-            {kind === "template" && (
-              <div>
-                <Label htmlFor="email-content-subject">Subject</Label>
-                <Input
-                  id="email-content-subject"
-                  value={form.draft.subject}
-                  onChange={(event) =>
-                    updateDraft({ subject: event.target.value })
-                  }
-                  disabled={busy}
-                  maxLength={EMAIL_CONTENT_LIMITS.subject}
-                  placeholder="Re: your request"
-                  className="py-2"
-                />
-              </div>
-            )}
 
             {kind === "snippet" && (
               <div>

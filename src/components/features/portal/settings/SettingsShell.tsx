@@ -7,6 +7,7 @@ import {
   DEFAULT_SETTINGS_SECTION,
   getSettingsSection,
   isSettingsSectionId,
+  isTemplateBuilderImmersivePath,
 } from "@/lib/portal-settings";
 
 interface SettingsShellProps {
@@ -16,6 +17,11 @@ interface SettingsShellProps {
 function sectionIdFromPath(pathname: string | null | undefined) {
   if (!pathname) return DEFAULT_SETTINGS_SECTION;
   const parts = pathname.replace(/\/$/, "").split("/").filter(Boolean);
+  const settingsIndex = parts.indexOf("settings");
+  if (settingsIndex >= 0) {
+    const after = parts[settingsIndex + 1];
+    if (after && isSettingsSectionId(after)) return after;
+  }
   const maybe = parts[parts.length - 1];
   if (maybe && isSettingsSectionId(maybe)) return maybe;
   if (maybe === "settings") return DEFAULT_SETTINGS_SECTION;
@@ -26,6 +32,14 @@ export function SettingsShell({ children }: SettingsShellProps) {
   const pathname = usePathname() ?? "";
   const sectionId = sectionIdFromPath(pathname);
   const section = getSettingsSection(sectionId);
+
+  if (isTemplateBuilderImmersivePath(pathname)) {
+    return (
+      <div className="fixed inset-x-0 top-11 bottom-0 z-40 flex flex-col bg-background">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10">

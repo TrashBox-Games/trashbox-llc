@@ -12,6 +12,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import {
+  isBuilderDrag,
+  readBuilderDragData,
+} from "@/lib/email-template-dnd";
+import {
+  isMergeFieldVariant,
+  mergeFieldChipHtmlFromVariant,
+} from "@/lib/email-content";
 import { HexAlphaColorPicker } from "react-colorful";
 
 export interface RichTextValue {
@@ -52,6 +61,18 @@ interface RichTextEditorProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /** Classes applied to the contenteditable surface only. */
+  editorClassName?: string;
+  /**
+   * When false, the formatting toolbar is omitted (useful when a shared
+   * toolbar is rendered elsewhere). Defaults to true.
+   */
+  showToolbar?: boolean;
+  /**
+   * When set, the formatting toolbar is portaled into this element instead of
+   * rendering above the editor (e.g. builder chrome at the top of the canvas).
+   */
+  toolbarPortal?: HTMLElement | null;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
   /**
    * Content to seed the editor with on mount. The editor stays uncontrolled
@@ -65,6 +86,11 @@ interface RichTextEditorProps {
   toolbarStart?: ReactNode;
   /** Inserted at the end of the formatting toolbar. */
   toolbarEnd?: ReactNode;
+  /**
+   * When true, dropping a builder merge-field variant inserts a chip at the
+   * caret (or at the end).
+   */
+  acceptMergeFieldDrops?: boolean;
 }
 
 interface ToolbarButton {
@@ -799,10 +825,14 @@ export const RichTextEditor = forwardRef<
     placeholder = "Write a message…",
     disabled = false,
     className,
+    editorClassName,
+    showToolbar = true,
+    toolbarPortal = null,
     onKeyDown,
     initialHtml,
     toolbarStart,
     toolbarEnd,
+    acceptMergeFieldDrops = false,
   },
   ref,
 ) {
@@ -1036,11 +1066,18 @@ export const RichTextEditor = forwardRef<
     <div
       className={cn(
         "border-outline-variant/20 bg-surface-container-low overflow-hidden rounded border",
+        !showToolbar && "border-0 bg-transparent",
         className,
       )}
     >
+      {showToolbar
+        ? (() => {
+            const toolbar = (
       <div
-        className="border-outline-variant/15 bg-surface-container-high flex flex-wrap items-center gap-1 border-b px-3 py-2"
+        className={cn(
+          "border-outline-variant/15 bg-surface-container-high flex flex-wrap items-center gap-1 px-3 py-2",
+          !toolbarPortal && "border-b",
+        )}
         role="toolbar"
         aria-label="Formatting"
       >
@@ -1293,12 +1330,18 @@ export const RichTextEditor = forwardRef<
 
         {toolbarEnd}
       </div>
+            );
+            return toolbarPortal
+              ? createPortal(toolbar, toolbarPortal)
+              : toolbar;
+          })()
+        : null}
 
       <div className="relative">
         {isEmpty && (
           <p
             aria-hidden="true"
-            className="text-outline pointer-events-none absolute top-3 left-4 text-sm italic"
+            className="text-outline pointer-events-none absolute top-2 left-0 text-sm italic"
           >
             {placeholder}
           </p>
@@ -1313,6 +1356,41 @@ export const RichTextEditor = forwardRef<
           suppressContentEditableWarning
           onInput={emit}
           onKeyDown={onKeyDown}
+          onDragOver={(event) => {
+            if (!acceptMergeFieldDrops || disabled) return;
+            if (!isBuilderDrag(event.dataTransfer)) return;
+            const payload = readBuilderDragData(event.dataTransfer);
+            if (
+              payload?.kind !== "variant" ||
+              !isMergeFieldVariant(payload.variantId)
+            ) {
+              return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            event.dataTransfer.dropEffect = "copy";
+          }}
+          onDrop={(event) => {
+            if (!acceptMergeFieldDrops || disabled) return;
+            if (!isBuilderDrag(event.dataTransfer)) return;
+            const payload = readBuilderDragData(event.dataTransfer);
+            if (
+              payload?.kind !== "variant" ||
+              !isMergeFieldVariant(payload.variantId)
+            ) {
+              return;
+            }
+            const chip = mergeFieldChipHtmlFromVariant(payload.variantId);
+            if (!chip) return;
+            event.preventDefault();
+            event.stopPropagation();
+            editorRef.current?.focus();
+            if (!insertHtmlAtSelection(chip)) {
+              const el = editorRef.current;
+              if (el) el.innerHTML = `${el.innerHTML}${chip}`;
+            }
+            emit();
+          }}
           className={cn(
             "text-on-surface min-h-40 w-full px-4 py-3 text-sm leading-relaxed focus:outline-none",
             "[&_a]:text-primary [&_a]:underline",
@@ -1321,6 +1399,7 @@ export const RichTextEditor = forwardRef<
             "[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6",
             "[&_img]:max-w-full [&_img]:rounded",
             disabled && "opacity-60",
+            editorClassName,
           )}
         />
       </div>
