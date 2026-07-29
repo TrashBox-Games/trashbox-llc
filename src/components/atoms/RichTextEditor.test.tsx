@@ -1,8 +1,12 @@
-import { createRef } from "react";
+import { createRef, useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { RichTextEditor, type RichTextEditorHandle } from "./RichTextEditor";
+import {
+  RichTextEditor,
+  type RichTextEditorHandle,
+  type RichTextValue,
+} from "./RichTextEditor";
 
 describe("RichTextEditor", () => {
   it("renders the core formatting toolbar", () => {
@@ -223,6 +227,28 @@ describe("RichTextEditor", () => {
     const last = onChange.mock.calls.at(-1)?.[0];
     expect(last.text).toContain("Hello");
     expect(typeof last.html).toBe("string");
+  });
+
+  it("keeps caret forward when initialHtml mirrors onChange", async () => {
+    const user = userEvent.setup();
+
+    function Harness() {
+      const [value, setValue] = useState<RichTextValue>({ html: "", text: "" });
+      return (
+        <RichTextEditor
+          ariaLabel="Reply"
+          initialHtml={value.html}
+          onChange={setValue}
+        />
+      );
+    }
+
+    render(<Harness />);
+    const editor = screen.getByRole("textbox", { name: /reply/i });
+    await user.click(editor);
+    await user.type(editor, "Hello");
+
+    expect(editor).toHaveTextContent("Hello");
   });
 
   it("opens with existing content and hides the placeholder", () => {

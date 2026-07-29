@@ -54,10 +54,11 @@ interface RichTextEditorProps {
   className?: string;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
   /**
-   * Content to seed the editor with. The editor stays uncontrolled afterwards,
-   * so callers that need to replace the content later should also change `key`
-   * or call `setHtml` on the handle. No `onChange` fires for the seeded value —
-   * seed the caller's state to match.
+   * Content to seed the editor with on mount. The editor stays uncontrolled
+   * afterwards, so callers that need to replace the content later should
+   * change `key` or call `setHtml` on the handle. No `onChange` fires for the
+   * seeded value — seed the caller's state to match. Updating this prop after
+   * mount is ignored.
    */
   initialHtml?: string;
   /** Inserted at the start of the formatting toolbar (e.g. library menus). */
@@ -853,12 +854,15 @@ export const RichTextEditor = forwardRef<
     [saveSelection],
   );
 
+  // Seed once on mount. Re-applying when `initialHtml` changes (e.g. parent
+  // mirroring onChange) resets the caret and types characters in reverse.
   useEffect(() => {
     const el = editorRef.current;
     if (!el || initialHtml === undefined) return;
     el.innerHTML = initialHtml;
     setIsEmpty(isVisuallyEmpty(el));
-  }, [initialHtml]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount seed only
+  }, []);
 
   useImperativeHandle(
     ref,

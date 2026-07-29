@@ -460,6 +460,8 @@ export function LeadEmailThread({
     html: seedHtml,
     text: "",
   }));
+  /** HTML applied on mount / remount only — never mirror live draft here. */
+  const [editorSeed, setEditorSeed] = useState(seedHtml);
   draftRef.current = draft;
 
   // Seed once when the default signature first becomes available.
@@ -474,6 +476,7 @@ export function LeadEmailThread({
     setSignatureId(nextDefault);
     const html = buildSeedHtml(signatures, nextDefault, context);
     setDraft({ html, text: "" });
+    setEditorSeed(html);
     setEditorKey((key) => key + 1);
   }, [mailboxConnected, signatures, context]);
 
@@ -508,6 +511,7 @@ export function LeadEmailThread({
     });
     const htmlSeed = buildSeedHtml(signatures, signatureId, context);
     setDraft({ html: htmlSeed, text: "" });
+    setEditorSeed(htmlSeed);
     setEditorKey((key) => key + 1);
   }
 
@@ -770,7 +774,7 @@ export function LeadEmailThread({
                 ariaLabel="Reply"
                 placeholder="Type your reply here… Use /shortcut for snippets."
                 disabled={busy}
-                initialHtml={draft.html}
+                initialHtml={editorSeed}
                 onChange={setDraft}
                 onKeyDown={onEditorKeyDown}
                 className="rounded-none border-0 bg-transparent"
