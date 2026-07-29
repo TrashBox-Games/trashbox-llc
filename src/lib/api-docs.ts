@@ -242,7 +242,7 @@ export const SUBMISSIONS_API_ENDPOINTS: ApiEndpoint[] = [
     pathExample: "/submissions/sub_01H8XABCDEF/messages",
     summary: "Send a reply",
     description:
-      "Sends an email reply from the connected business mailbox. Counts against the monthly email quota.",
+      "Sends an email reply from the connected business mailbox. Counts against the monthly email quota. The first outbound reply on a new lead sets status to contacted.",
     parameters: [
       {
         name: "submissionId",

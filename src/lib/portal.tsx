@@ -19,6 +19,7 @@ import {
   getAccount,
   getMailbox,
   getTeam,
+  leadStatusOf,
   listLeadMessages,
   listSubmissions,
   openBillingPortal,
@@ -591,11 +592,15 @@ export function PortalProvider({
           [selectedId]: [...(prev[selectedId] ?? []), message],
         }));
         setItems((items) =>
-          items.map((item) =>
-            item.submissionId === selectedId
-              ? { ...item, messageCount: (item.messageCount ?? 0) + 1 }
-              : item,
-          ),
+          items.map((item) => {
+            if (item.submissionId !== selectedId) return item;
+            return {
+              ...item,
+              status:
+                leadStatusOf(item) === "new" ? "contacted" : item.status,
+              messageCount: (item.messageCount ?? 0) + 1,
+            };
+          }),
         );
       } catch (err) {
         setMessageError(
