@@ -582,8 +582,7 @@ export function LeadEmailThread({
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
     // Latest reply is featured above History; timeline keeps older entries only.
-    const historyMessages =
-      ordered.length > 0 ? ordered.slice(0, -1) : ordered;
+    const historyMessages = ordered.length > 0 ? ordered.slice(0, -1) : ordered;
 
     const entries: TimelineEntry[] = [
       {
@@ -731,209 +730,215 @@ export function LeadEmailThread({
 
         {onSend &&
           (mailboxConnected ? (
-          <div className="border-outline-variant/10 bg-surface-container-low mt-8 overflow-hidden rounded-lg border shadow-md">
-            <div className="bg-surface-container-lowest/50 space-y-3 p-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <span className="font-label text-outline w-8 shrink-0 text-[10px] uppercase">
-                  To
-                </span>
-                <span className="bg-surface-container inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-white shadow-sm">
-                  {formFrom}
-                </span>
-                <span className="font-label text-outline w-10 shrink-0 text-[10px] uppercase">
-                  From
-                </span>
-                <div className="min-w-[12rem] flex-1">
-                  {hasFromOptions ? (
-                    <Select
-                      aria-label="Sender Display Name"
-                      value={fromIdentityId}
-                      onChange={setFromIdentityId}
-                      disabled={busy}
-                      options={fromOptions.map((option) => ({
-                        value: option.id,
-                        label: option.label,
-                      }))}
-                    />
-                  ) : (
-                    <p className="text-on-surface-variant py-2 text-sm">
-                      No Sender Display Name assigned. Ask an owner or admin to
-                      set one in Members.
-                    </p>
-                  )}
+            <div className="border-outline-variant/10 bg-surface-container-low mt-8 overflow-hidden rounded-lg border shadow-md">
+              <div className="bg-surface-container-lowest/50 space-y-3 p-4">
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="font-label text-outline w-8 shrink-0 text-[10px] uppercase">
+                    To
+                  </span>
+                  <span className="bg-surface-container inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-white shadow-sm">
+                    {formFrom}
+                  </span>
+                  <span className="font-label text-outline w-10 shrink-0 text-[10px] uppercase">
+                    From
+                  </span>
+                  <div className="min-w-[12rem] flex-1">
+                    {hasFromOptions ? (
+                      <Select
+                        aria-label="Sender Display Name"
+                        value={fromIdentityId}
+                        onChange={setFromIdentityId}
+                        disabled={busy}
+                        options={fromOptions.map((option) => ({
+                          value: option.id,
+                          label: option.label,
+                        }))}
+                      />
+                    ) : (
+                      <p className="text-on-surface-variant py-2 text-sm">
+                        No Sender Display Name assigned. Ask an owner or admin
+                        to set one in Members.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <RichTextEditor
-              key={editorKey}
-              ref={editorRef}
-              ariaLabel="Reply"
-              placeholder="Type your reply here… Use /shortcut for snippets."
-              disabled={busy}
-              initialHtml={draft.html}
-              onChange={setDraft}
-              onKeyDown={onEditorKeyDown}
-              className="rounded-none border-0 bg-transparent"
-              toolbarStart={
-                <>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label="Template"
-                        title="Templates"
-                        disabled={busy || templates.length === 0}
-                        className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
-                      >
-                        <MaterialIcon name="description" className="text-lg" />
-                        <MaterialIcon
-                          name="arrow_drop_down"
-                          className="text-base opacity-70"
-                        />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
-                    >
-                      {templates.map((template) => (
-                        <DropdownMenuItem
-                          key={template.id}
-                          onSelect={() => applyTemplate(template.id)}
+              <RichTextEditor
+                key={editorKey}
+                ref={editorRef}
+                ariaLabel="Reply"
+                placeholder="Type your reply here… Use /shortcut for snippets."
+                disabled={busy}
+                initialHtml={draft.html}
+                onChange={setDraft}
+                onKeyDown={onEditorKeyDown}
+                className="rounded-none border-0 bg-transparent"
+                toolbarStart={
+                  <>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Template"
+                          title="Templates"
+                          disabled={busy || templates.length === 0}
+                          className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
                         >
-                          {template.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label="Snippet"
-                        title="Snippets"
-                        disabled={busy || snippets.length === 0}
-                        className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                          <MaterialIcon
+                            name="description"
+                            className="text-lg"
+                          />
+                          <MaterialIcon
+                            name="arrow_drop_down"
+                            className="text-base opacity-70"
+                          />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="start"
+                        className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
                       >
-                        <MaterialIcon name="data_object" className="text-lg" />
-                        <MaterialIcon
-                          name="arrow_drop_down"
-                          className="text-base opacity-70"
-                        />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
-                    >
-                      {snippets.map((snippet) => (
-                        <DropdownMenuItem
-                          key={snippet.id}
-                          onSelect={() => applySnippet(snippet.id)}
-                        >
-                          {snippet.shortcut
-                            ? `${snippet.name} (/${snippet.shortcut})`
-                            : snippet.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        {templates.map((template) => (
+                          <DropdownMenuItem
+                            key={template.id}
+                            onSelect={() => applyTemplate(template.id)}
+                          >
+                            {template.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label="Signature"
-                        title="Signatures"
-                        disabled={busy || signatures.length === 0}
-                        className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Snippet"
+                          title="Snippets"
+                          disabled={busy || snippets.length === 0}
+                          className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                        >
+                          <MaterialIcon
+                            name="data_object"
+                            className="text-lg"
+                          />
+                          <MaterialIcon
+                            name="arrow_drop_down"
+                            className="text-base opacity-70"
+                          />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="start"
+                        className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
                       >
-                        <MaterialIcon name="draw" className="text-lg" />
-                        <MaterialIcon
-                          name="arrow_drop_down"
-                          className="text-base opacity-70"
-                        />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
-                    >
-                      {signatures.map((signature) => (
-                        <DropdownMenuItem
-                          key={signature.id}
-                          onSelect={() => applySignature(signature.id)}
-                        >
-                          {signature.isDefault
-                            ? `${signature.name} (Default)`
-                            : signature.name}
-                          {signature.id === signatureId ? " ✓" : ""}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
-              }
-              toolbarEnd={
-                libraryEmpty ? (
-                  <a
-                    href={settingsSectionPath("templates")}
-                    className="font-label ml-1 text-[10px] tracking-widest text-white uppercase underline"
-                  >
-                    Manage in Settings
-                  </a>
-                ) : null
-              }
-            />
+                        {snippets.map((snippet) => (
+                          <DropdownMenuItem
+                            key={snippet.id}
+                            onSelect={() => applySnippet(snippet.id)}
+                          >
+                            {snippet.shortcut
+                              ? `${snippet.name} (/${snippet.shortcut})`
+                              : snippet.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
 
-            <div className="bg-surface-container/80 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-              <div className="flex items-center gap-3">
-                {fromAddress && (
-                  <span className="font-label text-outline-variant text-[10px] uppercase">
-                    Replying as{" "}
-                    <span className="font-medium text-white">
-                      {resolvedPreview
-                        ? `${resolvedPreview} <${fromAddress}>`
-                        : fromAddress}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Signature"
+                          title="Signatures"
+                          disabled={busy || signatures.length === 0}
+                          className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                        >
+                          <MaterialIcon name="draw" className="text-lg" />
+                          <MaterialIcon
+                            name="arrow_drop_down"
+                            className="text-base opacity-70"
+                          />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="start"
+                        className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
+                      >
+                        {signatures.map((signature) => (
+                          <DropdownMenuItem
+                            key={signature.id}
+                            onSelect={() => applySignature(signature.id)}
+                          >
+                            {signature.isDefault
+                              ? `${signature.name} (Default)`
+                              : signature.name}
+                            {signature.id === signatureId ? " ✓" : ""}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                }
+                toolbarEnd={
+                  libraryEmpty ? (
+                    <a
+                      href={settingsSectionPath("templates")}
+                      className="font-label ml-1 text-[10px] tracking-widest text-white uppercase underline"
+                    >
+                      Manage in Settings
+                    </a>
+                  ) : null
+                }
+              />
+
+              <div className="bg-surface-container/80 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  {fromAddress && (
+                    <span className="font-label text-outline-variant text-[10px] uppercase">
+                      Replying as{" "}
+                      <span className="font-medium text-white">
+                        {resolvedPreview
+                          ? `${resolvedPreview} <${fromAddress}>`
+                          : fromAddress}
+                      </span>
                     </span>
+                  )}
+                  <span className="text-outline-variant/60 font-mono text-[10px]">
+                    Cmd + Enter to send
                   </span>
-                )}
-                <span className="text-outline-variant/60 font-mono text-[10px]">
-                  Cmd + Enter to send
-                </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={sendDisabled}
+                  onClick={() => void submit()}
+                  className="font-label text-background hover:text-background rounded bg-white font-medium shadow-sm hover:bg-white/90"
+                >
+                  Send message
+                  <MaterialIcon name="send" className="text-sm" />
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={sendDisabled}
-                onClick={() => void submit()}
-                className="font-label text-background hover:text-background rounded bg-white font-medium shadow-sm hover:bg-white/90"
-              >
-                Send message
-                <MaterialIcon name="send" className="text-sm" />
-              </Button>
             </div>
-          </div>
-        ) : (
-          <p className="text-on-surface-variant mt-6 text-sm">
-            Connect a business mailbox in{" "}
-            <a
-              href={settingsSectionPath("email-accounts")}
-              className="text-white underline"
-            >
-              Settings
-            </a>{" "}
-            to reply from the portal.
-          </p>
-        ))}
+          ) : (
+            <p className="text-on-surface-variant mt-6 text-sm">
+              Connect a business mailbox in{" "}
+              <a
+                href={settingsSectionPath("email-accounts")}
+                className="text-white underline"
+              >
+                Settings
+              </a>{" "}
+              to reply from the portal.
+            </p>
+          ))}
       </div>
     </TooltipProvider>
   );

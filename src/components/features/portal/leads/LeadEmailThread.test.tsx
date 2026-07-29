@@ -253,7 +253,9 @@ describe("LeadEmailThread", () => {
 
     const dayLabels = screen
       .getAllByRole("time")
-      .filter((el) => /^\d{4}-\d{2}-\d{2}$/.test(el.getAttribute("dateTime") ?? ""));
+      .filter((el) =>
+        /^\d{4}-\d{2}-\d{2}$/.test(el.getAttribute("dateTime") ?? ""),
+      );
     expect(dayLabels).toHaveLength(2);
     expect(dayLabels[0]).toHaveTextContent(
       new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
@@ -322,7 +324,9 @@ describe("LeadEmailThread", () => {
       library: { templates: [], signatures: [], snippets: [] },
     });
 
-    expect(screen.getByRole("heading", { name: /^history$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /^history$/i }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText(/form submission event/i)).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /^Re: Need a quote$/i }),
@@ -447,7 +451,9 @@ describe("LeadEmailThread", () => {
       library: { templates: [], signatures: [], snippets: [] },
     });
 
-    await user.click(screen.getByRole("button", { name: /^Re: Need a quote$/i }));
+    await user.click(
+      screen.getByRole("button", { name: /^Re: Need a quote$/i }),
+    );
 
     const body = screen.getByText("Happy to help.");
     expect(body.previousElementSibling).toBeNull();
@@ -485,7 +491,9 @@ describe("LeadEmailThread", () => {
     const card = screen.getByRole("button", { name: /^Re: Need a quote$/i });
     expect(card).toHaveAttribute("aria-expanded", "false");
 
-    await user.click(screen.getByText(/Sent sales@acme\.test → ada@example\.com/i));
+    await user.click(
+      screen.getByText(/Sent sales@acme\.test → ada@example\.com/i),
+    );
     expect(card).toHaveAttribute("aria-expanded", "true");
 
     await user.click(screen.getByText("Happy to help."));

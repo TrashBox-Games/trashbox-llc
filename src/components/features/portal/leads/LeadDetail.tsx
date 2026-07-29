@@ -115,6 +115,7 @@ export function LeadDetail({
 }: LeadDetailProps) {
   const [noteDraft, setNoteDraft] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const status = leadStatusOf(submission);
   const tags = leadTagsOf(submission);
   const notes = leadNotesOf(submission);
@@ -320,45 +321,73 @@ export function LeadDetail({
       />
 
       <div className={cn("pt-2", hasHistory ? "mt-6" : "mt-10")}>
-        <p className={labelClass}>Notes</p>
-        <ul className="space-y-4">
-          {notes.length === 0 && (
-            <li className="text-on-surface-variant text-sm">No notes yet.</li>
-          )}
-          {notes.map((note) => (
-            <li key={note.id} className="text-sm">
-              <p className="text-white">{note.body}</p>
-              <p className="font-label text-outline mt-1 text-[10px] tracking-widest uppercase">
-                {note.authorEmail} · {formatWhen(note.createdAt)}
-              </p>
-            </li>
-          ))}
-        </ul>
-        <form
-          className="mt-6 space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const body = noteDraft.trim();
-            if (!body) return;
-            void onAddNote(body).then(() => setNoteDraft(""));
-          }}
-        >
-          <label className={labelClass} htmlFor="lead-note">
-            Add note
-          </label>
-          <Textarea
-            id="lead-note"
-            rows={3}
-            value={noteDraft}
-            onChange={(e) => setNoteDraft(e.target.value)}
-            className="border-outline-variant/20 placeholder:text-outline focus-visible:border-primary min-h-0 border px-3 py-3"
-            placeholder="Add a note…"
-            disabled={busy}
-          />
-          <Button type="submit" disabled={busy || !noteDraft.trim()}>
-            Save note
-          </Button>
-        </form>
+        <div className="flex justify-center pb-6">
+          <button
+            type="button"
+            aria-expanded={notesOpen}
+            onClick={() => setNotesOpen((open) => !open)}
+            className="font-label text-outline inline-flex items-center gap-1 text-[10px] tracking-widest uppercase transition-colors hover:text-white"
+          >
+            <MaterialIcon
+              name="expand_more"
+              className={cn(
+                "text-base transition-transform duration-300 ease-out",
+                notesOpen && "rotate-180",
+              )}
+            />
+            {notesOpen
+              ? "Hide notes"
+              : notes.length > 0
+                ? `Show notes (${notes.length})`
+                : "Show notes"}
+          </button>
+        </div>
+
+        {notesOpen && (
+          <div>
+            <p className={labelClass}>Notes</p>
+            <ul className="space-y-4">
+              {notes.length === 0 && (
+                <li className="text-on-surface-variant text-sm">
+                  No notes yet.
+                </li>
+              )}
+              {notes.map((note) => (
+                <li key={note.id} className="text-sm">
+                  <p className="text-white">{note.body}</p>
+                  <p className="font-label text-outline mt-1 text-[10px] tracking-widest uppercase">
+                    {note.authorEmail} · {formatWhen(note.createdAt)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <form
+              className="mt-6 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const body = noteDraft.trim();
+                if (!body) return;
+                void onAddNote(body).then(() => setNoteDraft(""));
+              }}
+            >
+              <label className={labelClass} htmlFor="lead-note">
+                Add note
+              </label>
+              <Textarea
+                id="lead-note"
+                rows={3}
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                className="border-outline-variant/20 placeholder:text-outline focus-visible:border-primary min-h-0 border px-3 py-3"
+                placeholder="Add a note…"
+                disabled={busy}
+              />
+              <Button type="submit" disabled={busy || !noteDraft.trim()}>
+                Save note
+              </Button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

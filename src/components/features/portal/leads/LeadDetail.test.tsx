@@ -76,6 +76,9 @@ describe("LeadDetail", () => {
     );
     expect(onUpdate).toHaveBeenCalledWith({ status: "contacted" });
 
+    expect(screen.queryByLabelText(/add note/i)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /show notes/i }));
+
     await user.type(
       screen.getByLabelText(/add note/i),
       "Called customer July 15, requested estimate",
@@ -84,6 +87,40 @@ describe("LeadDetail", () => {
     expect(onAddNote).toHaveBeenCalledWith(
       "Called customer July 15, requested estimate",
     );
+  });
+
+  it("keeps notes collapsed until show notes is clicked", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <LeadDetail
+        submission={{
+          ...baseSubmission,
+          notes: [
+            {
+              id: "n1",
+              body: "Followed up by email.",
+              authorEmail: "owner@example.com",
+              createdAt: "2026-07-15T14:00:00.000Z",
+            },
+          ],
+        }}
+        members={[]}
+        onUpdate={vi.fn()}
+        onAddNote={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("Followed up by email.")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/add note/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /show notes/i }));
+
+    expect(screen.getByText("Followed up by email.")).toBeInTheDocument();
+    expect(screen.getByLabelText(/add note/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /hide notes/i }));
+    expect(screen.queryByText("Followed up by email.")).not.toBeInTheDocument();
   });
 
   it("shows the form message and metadata when there are no thread replies", () => {
