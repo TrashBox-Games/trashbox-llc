@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Button } from "@/components/ui/button";
 import {
