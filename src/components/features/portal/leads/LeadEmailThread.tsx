@@ -902,16 +902,16 @@ export function LeadEmailThread({
               <div className="bg-surface-container/80 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                 <div className="flex items-center gap-3">
                   {fromAddress && (
-                    <span className="font-label text-outline-variant text-[10px] uppercase">
+                    <span className="font-label text-outline text-[10px] uppercase">
                       Replying as{" "}
-                      <span className="font-medium text-white">
+                      <span className="font-medium text-on-surface">
                         {resolvedPreview
                           ? `${resolvedPreview} <${fromAddress}>`
                           : fromAddress}
                       </span>
                     </span>
                   )}
-                  <span className="text-outline-variant/60 font-mono text-[10px]">
+                  <span className="text-outline font-mono text-[10px]">
                     Cmd + Enter to send
                   </span>
                 </div>

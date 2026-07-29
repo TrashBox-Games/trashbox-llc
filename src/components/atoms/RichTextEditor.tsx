@@ -681,7 +681,7 @@ function ColorPickerPanel({
             type="button"
             aria-label={`${labelPrefix} eyedropper`}
             disabled={!eyedropperSupported}
-            className="flex size-8 shrink-0 items-center justify-center rounded-sm text-white hover:bg-white/10 disabled:opacity-40"
+            className="text-on-surface hover:bg-surface-bright flex size-8 shrink-0 items-center justify-center rounded-sm disabled:opacity-40"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => void onEyedropper()}
           >
@@ -700,7 +700,7 @@ function ColorPickerPanel({
             aria-label={`${labelPrefix} color format`}
             value={format}
             onChange={(event) => setFormat(event.target.value as ColorFormat)}
-            className="h-8 appearance-none rounded-md border-0 bg-[#3c3c3c] py-1 pr-7 pl-2.5 text-xs text-white outline-none"
+            className="bg-surface-bright text-on-surface h-8 appearance-none rounded-md border-0 py-1 pr-7 pl-2.5 text-xs outline-none"
           >
             {COLOR_FORMATS.map((option) => (
               <option key={option.id} value={option.id}>
@@ -710,7 +710,7 @@ function ColorPickerPanel({
           </select>
           <MaterialIcon
             name="arrow_drop_down"
-            className="pointer-events-none absolute top-1/2 right-0.5 -translate-y-1/2 text-base text-white/70"
+            className="text-outline pointer-events-none absolute top-1/2 right-0.5 -translate-y-1/2 text-base"
           />
         </label>
         <Input
@@ -724,22 +724,22 @@ function ColorPickerPanel({
               onInputCommit();
             }
           }}
-          className="h-8 flex-1 rounded-md border-0 bg-[#3c3c3c] px-2.5 py-1 font-mono text-xs text-white shadow-none"
+          className="bg-surface-bright text-on-surface h-8 flex-1 rounded-md border-0 px-2.5 py-1 font-mono text-xs shadow-none"
         />
       </div>
 
-      <div className="border-t border-white/10 pt-3">
+      <div className="border-outline-variant/20 border-t pt-3">
         <div className="relative mb-2">
           <select
             aria-label={`${labelPrefix} palette`}
             defaultValue="presets"
-            className="h-8 w-full appearance-none rounded-md border-0 bg-[#3c3c3c] py-1 pr-7 pl-2.5 text-xs text-white outline-none"
+            className="bg-surface-bright text-on-surface h-8 w-full appearance-none rounded-md border-0 py-1 pr-7 pl-2.5 text-xs outline-none"
           >
             <option value="presets">Presets</option>
           </select>
           <MaterialIcon
             name="arrow_drop_down"
-            className="pointer-events-none absolute top-1/2 right-1 -translate-y-1/2 text-base text-white/70"
+            className="text-outline pointer-events-none absolute top-1/2 right-1 -translate-y-1/2 text-base"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -750,9 +750,9 @@ function ColorPickerPanel({
               aria-label={`${labelPrefix} ${color}`}
               title={color}
               className={cn(
-                "size-6 rounded-[4px] border border-black/20 shadow-sm",
+                "border-outline-variant/40 size-6 rounded-[4px] border shadow-sm",
                 solidHex(draft).toLowerCase() === color.toLowerCase() &&
-                  "ring-1 ring-white ring-offset-1 ring-offset-[#2b2b2b]",
+                  "ring-primary ring-offset-surface-container-high ring-1 ring-offset-1",
               )}
               style={{ backgroundColor: color }}
               onMouseDown={(event) => event.preventDefault()}
@@ -1031,12 +1031,12 @@ export const RichTextEditor = forwardRef<
   return (
     <div
       className={cn(
-        "border-outline-variant/20 bg-surface-container-lowest/40 overflow-hidden rounded border",
+        "border-outline-variant/20 bg-surface-container-low overflow-hidden rounded border",
         className,
       )}
     >
       <div
-        className="border-outline-variant/10 bg-surface-container/60 flex flex-wrap items-center gap-1 border-b px-3 py-2"
+        className="border-outline-variant/15 bg-surface-container-high flex flex-wrap items-center gap-1 border-b px-3 py-2"
         role="toolbar"
         aria-label="Formatting"
       >
@@ -1164,7 +1164,7 @@ export const RichTextEditor = forwardRef<
             </PopoverTrigger>
             <PopoverContent
               align="start"
-              className="z-[100] w-[240px] border-white/10 bg-[#2b2b2b] p-3 text-white shadow-xl"
+              className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] w-[240px] p-3 shadow-xl"
               onOpenAutoFocus={(event) => event.preventDefault()}
             >
               <ColorPickerPanel
@@ -1187,7 +1187,7 @@ export const RichTextEditor = forwardRef<
             </PopoverTrigger>
             <PopoverContent
               align="start"
-              className="z-[100] w-[240px] border-white/10 bg-[#2b2b2b] p-3 text-white shadow-xl"
+              className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] w-[240px] p-3 shadow-xl"
               onOpenAutoFocus={(event) => event.preventDefault()}
             >
               <ColorPickerPanel
@@ -1294,7 +1294,7 @@ export const RichTextEditor = forwardRef<
         {isEmpty && (
           <p
             aria-hidden="true"
-            className="text-outline-variant/60 pointer-events-none absolute top-3 left-4 text-sm italic"
+            className="text-outline pointer-events-none absolute top-3 left-4 text-sm italic"
           >
             {placeholder}
           </p>
@@ -1310,7 +1310,7 @@ export const RichTextEditor = forwardRef<
           onInput={emit}
           onKeyDown={onKeyDown}
           className={cn(
-            "min-h-40 w-full px-4 py-3 text-sm leading-relaxed text-white focus:outline-none",
+            "text-on-surface min-h-40 w-full px-4 py-3 text-sm leading-relaxed focus:outline-none",
             "[&_a]:text-primary [&_a]:underline",
             "[&_blockquote]:border-outline-variant/40 [&_blockquote]:text-on-surface-variant [&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:pl-3",
             "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6",
