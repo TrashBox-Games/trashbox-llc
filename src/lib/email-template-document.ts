@@ -3564,32 +3564,26 @@ export function documentFromStarter(input: {
     input.id === "basic-two-column-image"
   ) {
     const doc = emptyDocument();
+    const columnsBlock = createDefaultBlock("columns");
+    if (columnsBlock.type !== "columns") {
+      throw new Error("Expected columns block from createDefaultBlock");
+    }
+    const twoColumnBlock: EmailTemplateColumnsBlock = {
+      ...columnsBlock,
+      columns: [
+        "<p><strong>Left column</strong></p><p>Details go here.</p>",
+        "<p><strong>Right column</strong></p><p>Details go here.</p>",
+      ],
+    };
     if (input.id === "basic-two-column-image") {
       return {
         ...doc,
-        blocks: [
-          createDefaultBlock("image"),
-          {
-            ...createDefaultBlock("columns"),
-            columns: [
-              "<p><strong>Left column</strong></p><p>Details go here.</p>",
-              "<p><strong>Right column</strong></p><p>Details go here.</p>",
-            ],
-          },
-        ],
+        blocks: [createDefaultBlock("image"), twoColumnBlock],
       };
     }
     return {
       ...doc,
-      blocks: [
-        {
-          ...createDefaultBlock("columns"),
-          columns: [
-            "<p><strong>Left column</strong></p><p>Details go here.</p>",
-            "<p><strong>Right column</strong></p><p>Details go here.</p>",
-          ],
-        },
-      ],
+      blocks: [twoColumnBlock],
     };
   }
 

@@ -2243,8 +2243,7 @@ export function BuilderInspector({
           </Section>
         ) : (
           <p className="px-3 py-4 text-[11px] leading-relaxed text-[#8c8c8c]">
-            Edit this {BLOCK_TYPE_LABELS[block.type].toLowerCase()} block
-            directly on the canvas.
+            Edit this block directly on the canvas.
           </p>
         )}
       </div>
