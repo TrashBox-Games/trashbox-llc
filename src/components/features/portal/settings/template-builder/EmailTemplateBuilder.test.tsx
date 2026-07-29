@@ -8,11 +8,13 @@ import {
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { EmailTemplateBuilder } from "./EmailTemplateBuilder";
-import { emptyDocument, appendBlock, appendVariant, insertVariantIntoColumn } from "@/lib/email-template-document";
 import {
-  TB_BLOCK_MIME,
-  TB_VARIANT_MIME,
-} from "@/lib/email-template-dnd";
+  emptyDocument,
+  appendBlock,
+  appendVariant,
+  insertVariantIntoColumn,
+} from "@/lib/email-template-document";
+import { TB_BLOCK_MIME, TB_MERGE_MIME, TB_VARIANT_MIME } from "@/lib/email-template-dnd";
 
 function getComponentsPalette(): HTMLElement {
   const sidebar = screen.getByRole("complementary", {
@@ -24,9 +26,7 @@ function getComponentsPalette(): HTMLElement {
 describe("EmailTemplateBuilder", () => {
   it("edits page background color and image from the design inspector", async () => {
     const user = userEvent.setup();
-    render(
-      <EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />,
-    );
+    render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
 
     const inspector = screen.getByRole("complementary", {
       name: /component properties/i,
@@ -124,7 +124,7 @@ describe("EmailTemplateBuilder", () => {
     expect(paper).toHaveStyle({ paddingTop: "48px" });
   });
 
-  it("adds header and footer from the layout folder", async () => {
+  it("adds header and footer from the page folder", async () => {
     const user = userEvent.setup();
     render(
       <EmailTemplateBuilder
@@ -136,7 +136,7 @@ describe("EmailTemplateBuilder", () => {
 
     const palette = getComponentsPalette();
     await user.click(
-      within(palette).getByRole("button", { name: /^layout$/i }),
+      within(palette).getByRole("button", { name: /^page$/i }),
     );
     await user.click(
       within(palette).getByRole("button", { name: /^header$/i }),
@@ -160,14 +160,10 @@ describe("EmailTemplateBuilder", () => {
 
   it("adds a text block from the palette folder", async () => {
     const user = userEvent.setup();
-    render(
-      <EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />,
-    );
+    render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
 
     const palette = getComponentsPalette();
-    await user.click(
-      within(palette).getByRole("button", { name: /^text$/i }),
-    );
+    await user.click(within(palette).getByRole("button", { name: /^text$/i }));
     await user.click(
       within(palette).getByRole("button", { name: /paragraph/i }),
     );
@@ -180,7 +176,9 @@ describe("EmailTemplateBuilder", () => {
       screen.getByRole("textbox", { name: /text block/i }),
     ).toHaveTextContent("");
     expect(screen.getByText(/type your text here/i)).toBeInTheDocument();
-    expect(screen.getByRole("toolbar", { name: /formatting/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("toolbar", { name: /formatting/i }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /duplicate block/i }),
     ).toBeInTheDocument();
@@ -189,11 +187,23 @@ describe("EmailTemplateBuilder", () => {
     ).toBeInTheDocument();
   });
 
-  it("adds a merge field from the palette with a highlighted chip", async () => {
+  it("shows merge fields as chips and only inserts them into text", async () => {
     const user = userEvent.setup();
+    let doc = emptyDocument();
+    doc = appendBlock(doc, "text");
+    doc = {
+      ...doc,
+      blocks: doc.blocks.map((block) =>
+        block.type === "text"
+          ? { ...block, html: "<p>Hello</p>" }
+          : block,
+      ),
+    };
+
     render(
       <EmailTemplateBuilder
         initialName="Merge"
+        initialDocument={doc}
         onSave={vi.fn()}
         onCancel={vi.fn()}
       />,
@@ -203,10 +213,45 @@ describe("EmailTemplateBuilder", () => {
     await user.click(
       within(palette).getByRole("button", { name: /^merge fields$/i }),
     );
-    await user.click(
-      within(palette).getByRole("button", { name: /lead first name/i }),
+
+    const chipTile = within(palette).getByRole("button", {
+      name: /drag lead first name into text/i,
+    });
+    expect(chipTile).toHaveTextContent("{{lead.first_name}}");
+    expect(chipTile).toHaveAttribute(
+      "data-testid",
+      "merge-palette-merge-lead.first_name",
     );
 
+    // Click must not create a standalone merge block.
+    await user.click(chipTile);
+    expect(
+      document.querySelector('[data-tb-merge="lead.first_name"]'),
+    ).toBeNull();
+    expect(screen.getAllByTestId("builder-block-frame")).toHaveLength(1);
+
+    // Dropping on the page (not into text) must not add a block.
+    const page = screen.getByTestId("template-paper-page");
+    const pageDataTransfer = {
+      getData: (type: string) => {
+        if (type === TB_VARIANT_MIME) return "merge-lead.first_name";
+        if (type === TB_MERGE_MIME) return "merge-lead.first_name";
+        if (type === "text/plain") return "tb-variant:merge-lead.first_name";
+        return "";
+      },
+      types: [TB_VARIANT_MIME, TB_MERGE_MIME, "text/plain"],
+      dropEffect: "copy",
+      effectAllowed: "copy",
+    };
+    fireEvent.drop(page, { dataTransfer: pageDataTransfer });
+    expect(
+      document.querySelector('[data-tb-merge="lead.first_name"]'),
+    ).toBeNull();
+
+    // Select the text block so the editor mounts, then drop the merge chip.
+    await user.click(screen.getByText("Hello"));
+    const editor = screen.getByRole("textbox", { name: /text block/i });
+    fireEvent.drop(editor, { dataTransfer: pageDataTransfer });
     const chip = document.querySelector('[data-tb-merge="lead.first_name"]');
     expect(chip).toBeTruthy();
     expect(chip).toHaveTextContent("{{lead.first_name}}");
@@ -215,13 +260,11 @@ describe("EmailTemplateBuilder", () => {
 
   it("adds a grid block and shows layout settings", async () => {
     const user = userEvent.setup();
-    render(
-      <EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />,
-    );
+    render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
 
     const palette = getComponentsPalette();
     await user.click(
-      within(palette).getByRole("button", { name: /^grid$/i }),
+      within(palette).getByRole("button", { name: /^layout$/i }),
     );
     await user.click(
       within(palette).getByRole("button", { name: /2 × 2 grid/i }),
@@ -236,9 +279,7 @@ describe("EmailTemplateBuilder", () => {
     });
     expect(within(inspector).getByLabelText(/^rows$/i)).toBeInTheDocument();
     expect(within(inspector).getByLabelText(/^columns$/i)).toBeInTheDocument();
-    expect(
-      within(inspector).getByLabelText(/column gap/i),
-    ).toBeInTheDocument();
+    expect(within(inspector).getByLabelText(/column gap/i)).toBeInTheDocument();
     expect(within(inspector).getByLabelText(/row gap/i)).toBeInTheDocument();
     expect(
       within(inspector).getByLabelText(/item spacing/i),
@@ -253,9 +294,7 @@ describe("EmailTemplateBuilder", () => {
     render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
 
     const palette = getComponentsPalette();
-    await user.click(
-      within(palette).getByRole("button", { name: /^text$/i }),
-    );
+    await user.click(within(palette).getByRole("button", { name: /^text$/i }));
     await user.click(
       within(palette).getByRole("button", { name: /paragraph/i }),
     );
@@ -266,14 +305,17 @@ describe("EmailTemplateBuilder", () => {
     expect(editor).toHaveTextContent("Hello world");
   });
 
-  it("opens columns folder with Zoho-style layout options", async () => {
+  it("opens layout folder with columns and grid options without image+text presets", async () => {
     const user = userEvent.setup();
     render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
 
     const palette = getComponentsPalette();
     await user.click(
-      within(palette).getByRole("button", { name: /^columns$/i }),
+      within(palette).getByRole("button", { name: /^layout$/i }),
     );
+    expect(
+      within(palette).getByRole("button", { name: /1 column/i }),
+    ).toBeInTheDocument();
     expect(
       within(palette).getByRole("button", { name: /2 columns/i }),
     ).toBeInTheDocument();
@@ -281,23 +323,59 @@ describe("EmailTemplateBuilder", () => {
       within(palette).getByRole("button", { name: /3 columns/i }),
     ).toBeInTheDocument();
     expect(
-      within(palette).getByRole("button", { name: /image \+ text \(a\)/i }),
+      within(palette).getByRole("button", { name: /2 × 2 grid/i }),
     ).toBeInTheDocument();
     expect(
-      within(palette).getByRole("button", { name: /image \+ text \(b\)/i }),
-    ).toBeInTheDocument();
+      within(palette).queryByRole("button", { name: /image \+ text/i }),
+    ).not.toBeInTheDocument();
     expect(
-      within(palette).getByRole("button", { name: /image \+ text \(c\)/i }),
-    ).toBeInTheDocument();
-    expect(
-      within(palette).getByText(/other components such as text, image, button/i),
+      within(palette).getByText(
+        /drop text, image, button, and other components into columns or grid cells/i,
+      ),
     ).toBeInTheDocument();
 
     await user.click(
       within(palette).getByRole("button", { name: /3 columns/i }),
     );
-    expect(screen.getByRole("textbox", { name: /column 1/i })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: /column 3/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: /column 1/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: /column 3/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("exposes layout chrome controls for columns on the inspector", async () => {
+    const user = userEvent.setup();
+    let doc = emptyDocument();
+    doc = appendVariant(doc, "columns-2");
+
+    render(
+      <EmailTemplateBuilder
+        initialName="Chrome"
+        initialDocument={doc}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByTestId("builder-column-drop-0"));
+    const inspector = screen.getByRole("complementary", {
+      name: /component properties/i,
+    });
+    expect(within(inspector).getByLabelText(/^background$/i)).toBeInTheDocument();
+    expect(within(inspector).getByLabelText(/^block align$/i)).toBeInTheDocument();
+    expect(
+      within(inspector).getByLabelText(/cell vertical align/i),
+    ).toBeInTheDocument();
+    expect(within(inspector).getByLabelText(/^cell padding$/i)).toBeInTheDocument();
+
+    fireEvent.change(within(inspector).getByLabelText(/^background$/i), {
+      target: { value: "#ffeedd" },
+    });
+    expect(screen.getByTestId("builder-columns-chrome")).toHaveStyle({
+      backgroundColor: "#ffeedd",
+    });
   });
 
   it("accepts a palette variant dropped onto the empty page", async () => {
@@ -354,25 +432,26 @@ describe("EmailTemplateBuilder", () => {
     const buttonId = doc.blocks[1]!.id;
 
     const originalGetRect = HTMLElement.prototype.getBoundingClientRect;
-    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
-      const indexAttr = this.getAttribute?.("data-builder-block-index");
-      if (indexAttr != null) {
-        const i = Number(indexAttr);
-        const top = 100 + i * 100;
-        return {
-          top,
-          height: 80,
-          bottom: top + 80,
-          left: 0,
-          right: 400,
-          width: 400,
-          x: 0,
-          y: top,
-          toJSON: () => ({}),
-        } as DOMRect;
-      }
-      return originalGetRect.call(this);
-    };
+    HTMLElement.prototype.getBoundingClientRect =
+      function getBoundingClientRect() {
+        const indexAttr = this.getAttribute?.("data-builder-block-index");
+        if (indexAttr != null) {
+          const i = Number(indexAttr);
+          const top = 100 + i * 100;
+          return {
+            top,
+            height: 80,
+            bottom: top + 80,
+            left: 0,
+            right: 400,
+            width: 400,
+            x: 0,
+            y: top,
+            toJSON: () => ({}),
+          } as DOMRect;
+        }
+        return originalGetRect.call(this);
+      };
 
     try {
       render(
@@ -444,9 +523,15 @@ describe("EmailTemplateBuilder", () => {
     expect(within(inspector).getByLabelText(/^font$/i)).toBeInTheDocument();
     expect(within(inspector).getByLabelText(/^size$/i)).toBeInTheDocument();
     expect(within(inspector).getByLabelText(/^weight$/i)).toBeInTheDocument();
-    expect(within(inspector).getByLabelText(/stroke width/i)).toBeInTheDocument();
-    expect(within(inspector).getByLabelText(/^fill opacity$/i)).toBeInTheDocument();
-    expect(within(inspector).getByLabelText(/^text opacity$/i)).toBeInTheDocument();
+    expect(
+      within(inspector).getByLabelText(/stroke width/i),
+    ).toBeInTheDocument();
+    expect(
+      within(inspector).getByLabelText(/^fill opacity$/i),
+    ).toBeInTheDocument();
+    expect(
+      within(inspector).getByLabelText(/^text opacity$/i),
+    ).toBeInTheDocument();
 
     await user.selectOptions(
       within(inspector).getByLabelText(/^font$/i),
@@ -488,11 +573,15 @@ describe("EmailTemplateBuilder", () => {
     const inspector = screen.getByRole("complementary", {
       name: /component properties/i,
     });
-    expect(within(inspector).getByLabelText(/column count/i)).toBeInTheDocument();
+    expect(
+      within(inspector).getByLabelText(/column count/i),
+    ).toBeInTheDocument();
     const columnCount = within(inspector).getByLabelText(/column count/i);
     await user.clear(columnCount);
     await user.type(columnCount, "3");
-    expect(screen.getByRole("textbox", { name: /column 3/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: /column 3/i }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByText("Header 1"));
     expect(within(inspector).getByLabelText(/rows/i)).toBeInTheDocument();
@@ -507,6 +596,77 @@ describe("EmailTemplateBuilder", () => {
     await user.clear(rowsField);
     await user.type(rowsField, "3");
     expect(screen.getByLabelText(/cell 3, 1/i)).toBeInTheDocument();
+  });
+
+  it("clears the page drop indicator after a nested column drop", () => {
+    let doc = emptyDocument();
+    doc = appendVariant(doc, "columns-2");
+    doc = appendBlock(doc, "text");
+
+    const originalGetRect = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect =
+      function getBoundingClientRect() {
+        const indexAttr = this.getAttribute?.("data-builder-block-index");
+        if (indexAttr != null) {
+          const i = Number(indexAttr);
+          const top = 100 + i * 100;
+          return {
+            top,
+            height: 80,
+            bottom: top + 80,
+            left: 0,
+            right: 400,
+            width: 400,
+            x: 0,
+            y: top,
+            toJSON: () => ({}),
+          } as DOMRect;
+        }
+        return originalGetRect.call(this);
+      };
+
+    try {
+      render(
+        <EmailTemplateBuilder
+          initialDocument={doc}
+          onSave={vi.fn()}
+          onCancel={vi.fn()}
+        />,
+      );
+
+      const surface = screen.getByTestId("template-canvas-drop-surface");
+      const dataTransfer = {
+        getData: (type: string) =>
+          type === TB_VARIANT_MIME || type === "text/plain"
+            ? type === "text/plain"
+              ? "tb-variant:button-center"
+              : "button-center"
+            : "",
+        types: [TB_VARIANT_MIME, "text/plain"],
+        dropEffect: "copy",
+        effectAllowed: "copy",
+      };
+
+      // Pointer above the first block midpoint → insert slot 0.
+      const overEvent = createEvent.dragOver(surface, { dataTransfer });
+      Object.defineProperty(overEvent, "clientY", { value: 110 });
+      fireEvent(surface, overEvent);
+      expect(screen.getByTestId("builder-drop-slot-0")).toBeInTheDocument();
+
+      // Column drop stops propagation — page handler must still clear the bar.
+      const column = screen.getByTestId("builder-column-drop-0");
+      fireEvent.drop(column, { dataTransfer });
+      fireEvent.dragEnd(window);
+
+      expect(
+        screen.queryByTestId("builder-drop-slot-0"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByLabelText(/insert at position/i),
+      ).not.toBeInTheDocument();
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetRect;
+    }
   });
 
   it("drops an image variant into a column cell", async () => {
@@ -574,9 +734,7 @@ describe("EmailTemplateBuilder", () => {
     fireEvent.drop(cell, { dataTransfer });
 
     expect(cell.innerHTML).toMatch(/Click here/i);
-    expect(
-      screen.getByTestId("builder-grid-item-0-1-0"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("builder-grid-item-0-1-0")).toBeInTheDocument();
   });
 
   it("edits image fit from the inspector", async () => {
@@ -615,7 +773,9 @@ describe("EmailTemplateBuilder", () => {
     expect(screen.getByAltText("Image")).toHaveStyle({ width: "100%" });
 
     await user.selectOptions(fitField, "fit");
-    await user.click(within(inspector).getByRole("button", { name: /align center/i }));
+    await user.click(
+      within(inspector).getByRole("button", { name: /align center/i }),
+    );
     expect(screen.getByTestId("builder-image-align")).toHaveStyle({
       textAlign: "center",
     });
@@ -642,9 +802,7 @@ describe("EmailTemplateBuilder", () => {
     doc = {
       ...doc,
       blocks: doc.blocks.map((block) =>
-        block.type === "text"
-          ? { ...block, html: "<p>Sized text</p>" }
-          : block,
+        block.type === "text" ? { ...block, html: "<p>Sized text</p>" } : block,
       ),
     };
 
@@ -689,7 +847,9 @@ describe("EmailTemplateBuilder", () => {
 
     fireEvent.pointerDown(handle, { clientY: 100, pointerId: 1 });
     fireEvent.pointerMove(handle, { clientY: 160, pointerId: 1 });
-    expect(screen.getByTestId("builder-resize-badge")).toHaveTextContent("84px");
+    expect(screen.getByTestId("builder-resize-badge")).toHaveTextContent(
+      "84px",
+    );
     fireEvent.pointerUp(handle, { clientY: 160, pointerId: 1 });
 
     expect(screen.getByText(/spacer \(84px\)/i)).toBeInTheDocument();
@@ -770,7 +930,9 @@ describe("EmailTemplateBuilder", () => {
     await user.clear(gapField);
     await user.type(gapField, "48");
     expect(gapField).toHaveValue("48");
-    expect(screen.getByTestId("builder-column-drop-0").parentElement).toHaveStyle({
+    expect(
+      screen.getByTestId("builder-column-drop-0").parentElement,
+    ).toHaveStyle({
       columnGap: "48px",
     });
   });
@@ -819,9 +981,9 @@ describe("EmailTemplateBuilder", () => {
     expect(width1).toHaveValue("50");
     expect(width2).toHaveValue("25");
     expect(width3).toHaveValue("25");
-    expect(screen.getByTestId("builder-columns-grid").getAttribute("style")).toContain(
-      "50fr 25fr 25fr",
-    );
+    expect(
+      screen.getByTestId("builder-columns-grid").getAttribute("style"),
+    ).toContain("50fr 25fr 25fr");
 
     await user.selectOptions(
       within(inspector).getByLabelText(/^column widths$/i),
@@ -830,9 +992,9 @@ describe("EmailTemplateBuilder", () => {
     expect(
       within(inspector).queryByLabelText(/column 1 width/i),
     ).not.toBeInTheDocument();
-    expect(screen.getByTestId("builder-columns-grid").getAttribute("style")).toContain(
-      "33fr 33fr 34fr",
-    );
+    expect(
+      screen.getByTestId("builder-columns-grid").getAttribute("style"),
+    ).toContain("33fr 33fr 34fr");
   });
 
   it("edits default and uneven column item spacing from the inspector", async () => {
@@ -874,9 +1036,8 @@ describe("EmailTemplateBuilder", () => {
       paddingTop: "28px",
     });
 
-    const gapBeforeSecond = within(inspector).getByLabelText(
-      /gap before item 2/i,
-    );
+    const gapBeforeSecond =
+      within(inspector).getByLabelText(/gap before item 2/i);
     await user.clear(gapBeforeSecond);
     await user.type(gapBeforeSecond, "32");
     expect(gapBeforeSecond).toHaveValue("32");
@@ -1070,18 +1231,16 @@ describe("EmailTemplateBuilder", () => {
     expect(screen.getByLabelText(/^hierarchy$/i)).toBeInTheDocument();
 
     const buttonId = doc.blocks.find((b) => b.type === "button")!.id;
-    expect(screen.getByTestId(`hierarchy-node-${buttonId}`)).toBeInTheDocument();
+    expect(
+      screen.getByTestId(`hierarchy-node-${buttonId}`),
+    ).toBeInTheDocument();
     expect(
       screen.queryByTestId(`hierarchy-node-${buttonId}:text`),
     ).not.toBeInTheDocument();
 
     // Expand Columns → Column 1
-    await user.click(
-      screen.getByRole("button", { name: /expand columns/i }),
-    );
-    await user.click(
-      screen.getByRole("button", { name: /expand column 1/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /expand columns/i }));
+    await user.click(screen.getByRole("button", { name: /expand column 1/i }));
 
     await user.click(screen.getByTestId(`hierarchy-node-${columnsId}:col-0`));
     const inspector = screen.getByRole("complementary", {

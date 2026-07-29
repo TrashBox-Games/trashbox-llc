@@ -36,6 +36,7 @@ import {
   type EmailTemplatePageBand,
   type ImageTextImageChild,
 } from "@/lib/email-template-document";
+import { isMergeFieldVariant } from "@/lib/email-content";
 import type { BuilderDragPayload } from "@/lib/email-template-dnd";
 import {
   selectBlock,
@@ -105,6 +106,8 @@ export function EmailTemplateBuilder({
   }
 
   function addVariant(variantId: string) {
+    // Merge fields only insert into rich text, never as standalone blocks.
+    if (isMergeFieldVariant(variantId)) return;
     setDoc((current) => {
       const next = appendVariant(current, variantId);
       if (variantId.startsWith("header")) {
@@ -122,6 +125,9 @@ export function EmailTemplateBuilder({
 
   function handleDropAt(index: number, payload: BuilderDragPayload | null) {
     if (!payload) return;
+    if (payload.kind === "variant" && isMergeFieldVariant(payload.variantId)) {
+      return;
+    }
     enterEdit();
     if (payload.kind === "variant") {
       setDoc((current) => {
@@ -142,6 +148,9 @@ export function EmailTemplateBuilder({
     payload: BuilderDragPayload | null,
   ) {
     if (!payload) return;
+    if (payload.kind === "variant" && isMergeFieldVariant(payload.variantId)) {
+      return;
+    }
     enterEdit();
     if (payload.kind === "variant") {
       setDoc((current) => {
@@ -190,6 +199,9 @@ export function EmailTemplateBuilder({
     payload: BuilderDragPayload | null,
   ) {
     if (!payload) return;
+    if (payload.kind === "variant" && isMergeFieldVariant(payload.variantId)) {
+      return;
+    }
     enterEdit();
     if (payload.kind === "variant") {
       setDoc((current) => {

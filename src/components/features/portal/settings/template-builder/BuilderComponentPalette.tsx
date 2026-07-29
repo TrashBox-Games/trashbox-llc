@@ -8,7 +8,11 @@ import {
   type BuilderComponentFolder,
   type BuilderComponentVariant,
 } from "@/lib/email-template-document";
-import { setVariantDragData } from "@/lib/email-template-dnd";
+import { parseMergeFieldVariant } from "@/lib/email-content";
+import {
+  setMergeFieldDragImage,
+  setVariantDragData,
+} from "@/lib/email-template-dnd";
 import { cn } from "@/lib/utils";
 
 export interface BuilderComponentPaletteProps {
@@ -66,40 +70,6 @@ function VariantPreview({
       return (
         <div className="flex h-14 items-center justify-center px-2">
           <div className="h-6 w-full border border-dashed border-[#b0b0b6]" />
-        </div>
-      );
-    case "imageTextLeft":
-      return (
-        <div className="flex h-14 gap-1.5 px-2 py-2">
-          <div className={cn(cell, "w-[42%]")} />
-          <div className="flex flex-1 flex-col justify-center gap-1.5">
-            <div className={cn(line, "h-1.5 w-full")} />
-            <div className={cn(line, "h-1.5 w-full")} />
-            <div className={cn(line, "h-1.5 w-3/4")} />
-          </div>
-        </div>
-      );
-    case "imageTextRight":
-      return (
-        <div className="flex h-14 gap-1.5 px-2 py-2">
-          <div className="flex flex-1 flex-col justify-center gap-1.5">
-            <div className={cn(line, "h-1.5 w-full")} />
-            <div className={cn(line, "h-1.5 w-full")} />
-            <div className={cn(line, "h-1.5 w-3/4")} />
-          </div>
-          <div className={cn(cell, "w-[42%]")} />
-        </div>
-      );
-    case "imageTextTriple":
-      return (
-        <div className="flex h-14 gap-1 px-2 py-2">
-          {[0, 1, 2].map((key) => (
-            <div key={key} className="flex flex-1 flex-col gap-1">
-              <div className={cn(cell, "h-6 w-full")} />
-              <div className={cn(line, "h-1 w-full")} />
-              <div className={cn(line, "h-1 w-3/4")} />
-            </div>
-          ))}
         </div>
       );
     case "button":
@@ -212,6 +182,67 @@ function FolderGrid({
   );
 }
 
+function MergeFieldList({
+  folder,
+  disabled,
+}: {
+  folder: BuilderComponentFolder;
+  disabled: boolean;
+}): React.ReactElement {
+  return (
+    <div className="space-y-3 p-3">
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {folder.variants.map((variant) => {
+          const parsed = parseMergeFieldVariant(variant.id);
+          const token = parsed?.token ?? `{{${variant.label}}}`;
+          return (
+            <li key={variant.id}>
+              <button
+                type="button"
+                disabled={disabled}
+                draggable={!disabled}
+                data-testid={`merge-palette-${variant.id}`}
+                aria-label={`Drag ${variant.label} into text`}
+                onDragStart={(event) => {
+                  setVariantDragData(event.dataTransfer, variant.id);
+                  setMergeFieldDragImage(event.dataTransfer, token);
+                }}
+                className={cn(
+                  "flex w-full cursor-grab items-center gap-2 rounded border border-zinc-200 bg-white px-2.5 py-2 text-left",
+                  "hover:border-sky-300 hover:bg-sky-50/40 active:cursor-grabbing",
+                  "disabled:cursor-not-allowed disabled:opacity-50",
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-block shrink-0 rounded border border-sky-500 bg-sky-100 px-1.5 py-0.5",
+                    "font-mono text-[12px] leading-snug text-sky-800",
+                    "shadow-[0_0_0_1px_rgba(14,165,233,0.2)]",
+                  )}
+                >
+                  {token}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-500">
+                  {variant.label}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {folder.note && (
+        <p className="text-xs leading-relaxed text-on-surface-variant">
+          Note: {folder.note}
+        </p>
+      )}
+      <p className="text-[11px] text-on-surface-variant">
+        Drag a field into a text block (or header/footer). Merge fields cannot
+        be placed on the page by themselves.
+      </p>
+    </div>
+  );
+}
+
 function VariantGrid({
   folder,
   disabled,
@@ -221,6 +252,10 @@ function VariantGrid({
   disabled: boolean;
   onAdd: (variantId: string) => void;
 }): React.ReactElement {
+  if (folder.id === "merge") {
+    return <MergeFieldList folder={folder} disabled={disabled} />;
+  }
+
   if (folder.variants.length === 0) {
     return (
       <div className="space-y-3 p-3">

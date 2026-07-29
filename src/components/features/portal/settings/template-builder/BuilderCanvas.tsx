@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   RichTextEditor,
   type RichTextValue,
@@ -18,6 +18,7 @@ import {
 } from "@/lib/email-template-document";
 import {
   isBuilderDrag,
+  isMergeFieldDrag,
   readBuilderDragData,
   resolveInsertIndex,
 } from "@/lib/email-template-dnd";
@@ -212,11 +213,39 @@ export function BuilderCanvas({
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const dropIndexRef = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+
+  function clearDropVisual() {
+    setDropIndex(null);
+  }
 
   function clearDropState() {
     dropIndexRef.current = null;
     setDropIndex(null);
   }
+
+  // Nested column/grid drops stopPropagation, so the page drop handler never
+  // runs. Clear the insert bar on any drop under the canvas (capture) and on
+  // dragend (covers cancel / drop outside). Keep the ref until handleDrop so
+  // page-level drops still know the insert index.
+  useEffect(() => {
+    const surface = surfaceRef.current;
+    if (!surface) return;
+
+    const onDropCapture = () => {
+      clearDropVisual();
+    };
+    const onDragEnd = () => {
+      clearDropState();
+    };
+
+    surface.addEventListener("drop", onDropCapture, true);
+    window.addEventListener("dragend", onDragEnd);
+    return () => {
+      surface.removeEventListener("drop", onDropCapture, true);
+      window.removeEventListener("dragend", onDragEnd);
+    };
+  }, []);
 
   function collectBlockRects(): Array<{ top: number; height: number }> {
     if (!listRef.current) return [];
@@ -230,6 +259,11 @@ export function BuilderCanvas({
 
   function handleDragOver(event: React.DragEvent) {
     if (!isBuilderDrag(event.dataTransfer)) return;
+    if (isMergeFieldDrag(event.dataTransfer)) {
+      clearDropState();
+      event.dataTransfer.dropEffect = "none";
+      return;
+    }
     event.preventDefault();
     event.dataTransfer.dropEffect =
       event.dataTransfer.effectAllowed === "move" ? "move" : "copy";
@@ -238,8 +272,24 @@ export function BuilderCanvas({
     setDropIndex(next);
   }
 
+  function handleDragOverCapture(event: React.DragEvent) {
+    if (!isBuilderDrag(event.dataTransfer)) return;
+    if (isMergeFieldDrag(event.dataTransfer)) return;
+    const nested = (event.target as Element | null)?.closest?.(
+      "[data-builder-nested-drop]",
+    );
+    if (nested) {
+      // Nested targets stopPropagation on bubble — clear the page bar here.
+      clearDropVisual();
+    }
+  }
+
   function handleDrop(event: React.DragEvent) {
     if (!isBuilderDrag(event.dataTransfer)) return;
+    if (isMergeFieldDrag(event.dataTransfer)) {
+      clearDropState();
+      return;
+    }
     event.preventDefault();
     const index = dropIndexRef.current ?? doc.blocks.length;
     clearDropState();
@@ -247,6 +297,7 @@ export function BuilderCanvas({
   }
 
   const dropHandlers = {
+    onDragOverCapture: handleDragOverCapture,
     onDragOver: handleDragOver,
     onDragLeave: (event: React.DragEvent) => {
       if (event.currentTarget.contains(event.relatedTarget as Node)) return;
@@ -306,6 +357,7 @@ export function BuilderCanvas({
       </div>
 
       <div
+        ref={surfaceRef}
         className="min-h-0 flex-1 overflow-y-auto"
         style={{
           ...documentPageBackgroundStyle(doc),

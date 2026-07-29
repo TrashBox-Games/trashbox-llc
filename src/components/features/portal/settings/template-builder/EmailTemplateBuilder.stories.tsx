@@ -57,6 +57,13 @@ seeded = {
           "<p><strong>Left</strong></p><p>Drop an image here.</p>",
           "<p><strong>Right</strong></p><p>Details go here.</p>",
         ],
+        backgroundColor: "#f8fafc",
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+        borderRadius: 8,
+        paddingX: 12,
+        paddingY: 12,
+        cellPadding: 4,
       };
     }
     if (block.type === "imageText") {
@@ -81,6 +88,13 @@ seeded = {
           "<p><strong>B1</strong></p>",
           "<p><strong>B2</strong></p>",
         ],
+        backgroundColor: "#fff7ed",
+        borderWidth: 1,
+        borderColor: "#fed7aa",
+        borderRadius: 6,
+        paddingX: 8,
+        paddingY: 8,
+        cellVerticalAlign: "middle" as const,
       };
     }
     return block;

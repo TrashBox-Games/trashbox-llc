@@ -6,10 +6,12 @@ import {
   moveBlockToIndex,
 } from "@/lib/email-template-document";
 import {
+  isMergeFieldDrag,
   readBuilderDragData,
   resolveInsertIndex,
   setBlockDragData,
   setVariantDragData,
+  TB_MERGE_MIME,
 } from "@/lib/email-template-dnd";
 
 describe("email template drag helpers", () => {
@@ -61,12 +63,35 @@ describe("email template drag helpers", () => {
       kind: "variant",
       variantId: "columns-3",
     });
+    expect(isMergeFieldDrag(dataTransfer)).toBe(false);
 
     store.clear();
     setBlockDragData(dataTransfer, "block-1");
     expect(readBuilderDragData(dataTransfer)).toEqual({
       kind: "block",
       blockId: "block-1",
+    });
+  });
+
+  it("marks merge-field variants with a dedicated mime type", () => {
+    const store = new Map<string, string>();
+    const types: string[] = [];
+    const dataTransfer = {
+      setData: (type: string, value: string) => {
+        store.set(type, value);
+        if (!types.includes(type)) types.push(type);
+      },
+      getData: (type: string) => store.get(type) ?? "",
+      effectAllowed: "none" as DataTransfer["effectAllowed"],
+      types,
+    } as unknown as DataTransfer;
+
+    setVariantDragData(dataTransfer, "merge-lead.first_name");
+    expect(store.get(TB_MERGE_MIME)).toBe("merge-lead.first_name");
+    expect(isMergeFieldDrag(dataTransfer)).toBe(true);
+    expect(readBuilderDragData(dataTransfer)).toEqual({
+      kind: "variant",
+      variantId: "merge-lead.first_name",
     });
   });
 

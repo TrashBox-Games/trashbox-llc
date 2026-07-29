@@ -10,6 +10,7 @@ import {
   documentToPlainText,
   duplicateBlock,
   emptyDocument,
+  emptyGridCells,
   insertVariantIntoColumn,
   insertVariantIntoGridCell,
   moveBlock,
@@ -131,6 +132,80 @@ describe("email-template-document", () => {
     if (parsed.blocks[0]?.type === "columns") {
       expect(parsed.blocks[0].columns).toHaveLength(3);
     }
+  });
+
+  it("round-trips layout chrome on columns and grid, including 1 column", () => {
+    let doc = emptyDocument();
+    doc = appendVariant(doc, "columns-1");
+    expect(doc.blocks[0]?.type).toBe("columns");
+    if (doc.blocks[0]?.type === "columns") {
+      expect(doc.blocks[0].columns).toHaveLength(1);
+      expect(doc.blocks[0].align).toBe("left");
+    }
+
+    doc = {
+      ...doc,
+      blocks: doc.blocks.map((block) =>
+        block.type === "columns"
+          ? {
+              ...block,
+              backgroundColor: "#fef3c7",
+              borderWidth: 2,
+              borderColor: "#f59e0b",
+              borderRadius: 8,
+              paddingX: 12,
+              paddingY: 10,
+              align: "center",
+              cellPadding: 6,
+              cellVerticalAlign: "middle",
+            }
+          : block,
+      ),
+    };
+    const html = documentToEmailHtml(doc);
+    expect(html).toContain('data-tb-bg="#fef3c7"');
+    expect(html).toContain('data-tb-align="center"');
+    expect(html).toContain('data-tb-cell-valign="middle"');
+    expect(html).toContain('valign="middle"');
+    expect(html).toContain("data-tb-layout-chrome");
+    const parsed = parseDocumentFromHtml(html);
+    expect(parsed.blocks[0]?.type).toBe("columns");
+    if (parsed.blocks[0]?.type !== "columns") return;
+    expect(parsed.blocks[0].backgroundColor).toBe("#fef3c7");
+    expect(parsed.blocks[0].borderWidth).toBe(2);
+    expect(parsed.blocks[0].borderRadius).toBe(8);
+    expect(parsed.blocks[0].align).toBe("center");
+    expect(parsed.blocks[0].cellPadding).toBe(6);
+    expect(parsed.blocks[0].cellVerticalAlign).toBe("middle");
+
+    let gridDoc = emptyDocument();
+    gridDoc = appendVariant(gridDoc, "grid-2x2");
+    gridDoc = {
+      ...gridDoc,
+      blocks: gridDoc.blocks.map((block) =>
+        block.type === "grid"
+          ? {
+              ...block,
+              rows: 8,
+              columns: 6,
+              cells: emptyGridCells(8, 6),
+              backgroundColor: "#e0f2fe",
+              align: "right",
+              cellVerticalAlign: "bottom",
+              borderWidth: 1,
+            }
+          : block,
+      ),
+    };
+    const gridHtml = documentToEmailHtml(gridDoc);
+    const parsedGrid = parseDocumentFromHtml(gridHtml);
+    expect(parsedGrid.blocks[0]?.type).toBe("grid");
+    if (parsedGrid.blocks[0]?.type !== "grid") return;
+    expect(parsedGrid.blocks[0].rows).toBe(8);
+    expect(parsedGrid.blocks[0].columns).toBe(6);
+    expect(parsedGrid.blocks[0].align).toBe("right");
+    expect(parsedGrid.blocks[0].cellVerticalAlign).toBe("bottom");
+    expect(parsedGrid.blocks[0].backgroundColor).toBe("#e0f2fe");
   });
 
   it("round-trips button style properties", () => {
@@ -451,8 +526,8 @@ describe("email-template-document", () => {
     doc = appendVariant(doc, "columns-2");
     const html = documentToEmailHtml(doc);
     expect(html).toContain('data-tb-column-gap="24"');
-    expect(html).toContain("padding-right:24px");
-    expect(html).not.toContain("padding-left:24px");
+    expect(html).toMatch(/padding:0px 24px 0px 0px/);
+    expect(html).not.toMatch(/padding:0px 0px 0px 24px/);
   });
 
   it("updates the gap between columns via setColumnGap", () => {
@@ -468,7 +543,7 @@ describe("email-template-document", () => {
 
     const html = documentToEmailHtml(doc);
     expect(html).toContain('data-tb-column-gap="40"');
-    expect(html).toContain("padding-right:40px");
+    expect(html).toMatch(/padding:0px 40px 0px 0px/);
 
     const parsed = parseDocumentFromHtml(html);
     expect(parsed.blocks[0]?.type).toBe("columns");

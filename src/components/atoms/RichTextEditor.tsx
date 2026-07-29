@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
-  isBuilderDrag,
+  isMergeFieldDrag,
   readBuilderDragData,
 } from "@/lib/email-template-dnd";
 import {
@@ -1358,21 +1358,15 @@ export const RichTextEditor = forwardRef<
           onKeyDown={onKeyDown}
           onDragOver={(event) => {
             if (!acceptMergeFieldDrops || disabled) return;
-            if (!isBuilderDrag(event.dataTransfer)) return;
-            const payload = readBuilderDragData(event.dataTransfer);
-            if (
-              payload?.kind !== "variant" ||
-              !isMergeFieldVariant(payload.variantId)
-            ) {
-              return;
-            }
+            // Use types-only check — getData is often empty during dragover.
+            if (!isMergeFieldDrag(event.dataTransfer)) return;
             event.preventDefault();
             event.stopPropagation();
             event.dataTransfer.dropEffect = "copy";
           }}
           onDrop={(event) => {
             if (!acceptMergeFieldDrops || disabled) return;
-            if (!isBuilderDrag(event.dataTransfer)) return;
+            if (!isMergeFieldDrag(event.dataTransfer)) return;
             const payload = readBuilderDragData(event.dataTransfer);
             if (
               payload?.kind !== "variant" ||

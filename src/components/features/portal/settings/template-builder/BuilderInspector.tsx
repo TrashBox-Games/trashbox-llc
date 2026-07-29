@@ -5,7 +5,9 @@ import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import {
   BLOCK_TYPE_LABELS,
   BUTTON_FONT_FAMILIES,
+  COLUMN_LIMITS,
   DEFAULT_IMAGE_STYLE,
+  DEFAULT_LAYOUT_CHROME,
   equalColumnWidths,
   equalTrackSizes,
   GRID_LIMITS,
@@ -20,6 +22,7 @@ import {
   serializeColumnItems,
   type BackgroundPosition,
   type BackgroundSize,
+  type CellVerticalAlign,
   type ColumnItem,
   type EmailTemplateBlock,
   type EmailTemplateButtonBlock,
@@ -31,6 +34,7 @@ import {
   type EmailTemplateTableBlock,
   type ImageFitMode,
   type ImageTextImageChild,
+  type LayoutAlign,
 } from "@/lib/email-template-document";
 import {
   getAlphaPercent,
@@ -656,6 +660,139 @@ function SizeFields({
   );
 }
 
+function LayoutChromeFields({
+  idPrefix,
+  value,
+  onChange,
+}: {
+  idPrefix: string;
+  value: {
+    backgroundColor: string;
+    borderWidth: number;
+    borderColor: string;
+    borderRadius: number;
+    paddingX: number;
+    paddingY: number;
+    align: LayoutAlign;
+    cellPadding: number;
+    cellVerticalAlign: CellVerticalAlign;
+  };
+  onChange: (
+    patch: Partial<{
+      backgroundColor: string;
+      borderWidth: number;
+      borderColor: string;
+      borderRadius: number;
+      paddingX: number;
+      paddingY: number;
+      align: LayoutAlign;
+      cellPadding: number;
+      cellVerticalAlign: CellVerticalAlign;
+    }>,
+  ) => void;
+}): React.ReactElement {
+  return (
+    <>
+      <Section title="Chrome">
+        <ColorField
+          id={`${idPrefix}-bg`}
+          label="Background"
+          value={value.backgroundColor || DEFAULT_LAYOUT_CHROME.backgroundColor}
+          onChange={(backgroundColor) => onChange({ backgroundColor })}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <NumberField
+            id={`${idPrefix}-border-w`}
+            label="Border"
+            badge="B"
+            value={value.borderWidth}
+            min={0}
+            max={12}
+            suffix="px"
+            onChange={(borderWidth) => onChange({ borderWidth })}
+          />
+          <NumberField
+            id={`${idPrefix}-radius`}
+            label="Radius"
+            badge="R"
+            value={value.borderRadius}
+            min={0}
+            max={64}
+            suffix="px"
+            onChange={(borderRadius) => onChange({ borderRadius })}
+          />
+        </div>
+        <ColorField
+          id={`${idPrefix}-border-color`}
+          label="Border color"
+          value={value.borderColor || DEFAULT_LAYOUT_CHROME.borderColor}
+          onChange={(borderColor) => onChange({ borderColor })}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <NumberField
+            id={`${idPrefix}-pad-x`}
+            label="Pad width"
+            badge="W"
+            value={value.paddingX}
+            min={0}
+            max={80}
+            suffix="px"
+            onChange={(paddingX) => onChange({ paddingX })}
+          />
+          <NumberField
+            id={`${idPrefix}-pad-y`}
+            label="Pad height"
+            badge="H"
+            value={value.paddingY}
+            min={0}
+            max={80}
+            suffix="px"
+            onChange={(paddingY) => onChange({ paddingY })}
+          />
+        </div>
+      </Section>
+      <Section title="Alignment">
+        <SelectField
+          id={`${idPrefix}-align`}
+          label="Block align"
+          icon="format_align_left"
+          value={value.align}
+          onChange={(align) => onChange({ align: align as LayoutAlign })}
+        >
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </SelectField>
+        <SelectField
+          id={`${idPrefix}-valign`}
+          label="Cell vertical align"
+          icon="vertical_align_top"
+          value={value.cellVerticalAlign}
+          onChange={(cellVerticalAlign) =>
+            onChange({
+              cellVerticalAlign: cellVerticalAlign as CellVerticalAlign,
+            })
+          }
+        >
+          <option value="top">Top</option>
+          <option value="middle">Middle</option>
+          <option value="bottom">Bottom</option>
+        </SelectField>
+        <NumberField
+          id={`${idPrefix}-cell-pad`}
+          label="Cell padding"
+          badge="P"
+          value={value.cellPadding}
+          min={0}
+          max={80}
+          suffix="px"
+          onChange={(cellPadding) => onChange({ cellPadding })}
+        />
+      </Section>
+    </>
+  );
+}
+
 function ColumnsInspector({
   block,
   onChange,
@@ -668,16 +805,34 @@ function ColumnsInspector({
   void focusColumnIndex;
   return (
     <>
+      <LayoutChromeFields
+        idPrefix={`inspect-col-chrome-${block.id}`}
+        value={{
+          backgroundColor: block.backgroundColor ?? DEFAULT_LAYOUT_CHROME.backgroundColor,
+          borderWidth: block.borderWidth ?? 0,
+          borderColor: block.borderColor ?? DEFAULT_LAYOUT_CHROME.borderColor,
+          borderRadius: block.borderRadius ?? 0,
+          paddingX: block.paddingX ?? 0,
+          paddingY: block.paddingY ?? 0,
+          align: block.align ?? "left",
+          cellPadding: block.cellPadding ?? 0,
+          cellVerticalAlign: block.cellVerticalAlign ?? "top",
+        }}
+        onChange={(patch) => onChange(patch)}
+      />
       <Section title="Layout">
         <NumberField
           id={`inspect-col-count-${block.id}`}
           label="Column count"
           badge="C"
           value={block.columns.length}
-          min={2}
-          max={4}
+          min={COLUMN_LIMITS.minColumns}
+          max={COLUMN_LIMITS.maxColumns}
           onChange={(count) => {
-            const clamped = Math.min(4, Math.max(2, count));
+            const clamped = Math.min(
+              COLUMN_LIMITS.maxColumns,
+              Math.max(COLUMN_LIMITS.minColumns, count),
+            );
             onChange({
               columns: Array.from(
                 { length: clamped },
@@ -901,6 +1056,21 @@ function GridInspector({
 
   return (
     <>
+      <LayoutChromeFields
+        idPrefix={`inspect-grid-chrome-${block.id}`}
+        value={{
+          backgroundColor: block.backgroundColor ?? DEFAULT_LAYOUT_CHROME.backgroundColor,
+          borderWidth: block.borderWidth ?? 0,
+          borderColor: block.borderColor ?? DEFAULT_LAYOUT_CHROME.borderColor,
+          borderRadius: block.borderRadius ?? 0,
+          paddingX: block.paddingX ?? 0,
+          paddingY: block.paddingY ?? 0,
+          align: block.align ?? "left",
+          cellPadding: block.cellPadding ?? 0,
+          cellVerticalAlign: block.cellVerticalAlign ?? "top",
+        }}
+        onChange={(patch) => onChange(patch)}
+      />
       <Section title="Layout">
         <div className="grid grid-cols-2 gap-2">
           <NumberField
@@ -1117,20 +1287,6 @@ function GridInspector({
               serializeColumnItems(parseColumnItems(html), nextGap),
             );
             onChange({ itemGap: nextGap, cells });
-          }}
-        />
-        <NumberField
-          id={`inspect-grid-cell-pad-${block.id}`}
-          label="Cell padding"
-          badge="P"
-          value={block.cellPadding ?? 0}
-          min={0}
-          max={80}
-          suffix="px"
-          onChange={(cellPadding) => {
-            onChange({
-              cellPadding: Math.min(80, Math.max(0, Math.round(cellPadding))),
-            });
           }}
         />
         <SizeFields

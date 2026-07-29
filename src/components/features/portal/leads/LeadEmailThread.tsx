@@ -899,7 +899,7 @@ export function LeadEmailThread({
                   {fromAddress && (
                     <span className="font-label text-outline text-[10px] uppercase">
                       Replying as{" "}
-                      <span className="font-medium text-on-surface">
+                      <span className="text-on-surface font-medium">
                         {resolvedPreview
                           ? `${resolvedPreview} <${fromAddress}>`
                           : fromAddress}
@@ -933,7 +933,7 @@ export function LeadEmailThread({
               </a>{" "}
               to reply from the portal.
             </p>
-          )          )}
+          ))}
       </div>
 
       {templateGalleryOpen && (

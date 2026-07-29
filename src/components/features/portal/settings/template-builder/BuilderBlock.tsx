@@ -17,6 +17,7 @@ import type {
   EmailTemplateTableBlock,
 } from "@/lib/email-template-document";
 import {
+  COLUMN_LIMITS,
   getBlockBoxSize,
   GRID_LIMITS,
   gridCellIndex,
@@ -29,6 +30,7 @@ import {
 } from "@/lib/email-template-document";
 import {
   isBuilderDrag,
+  isMergeFieldDrag,
   readBuilderDragData,
   setBlockDragData,
   type BuilderDragPayload,
@@ -128,9 +130,26 @@ function ColumnsBlockEditor({
   const [activeCol, setActiveCol] = useState(0);
   const [hoverCol, setHoverCol] = useState<number | null>(null);
   const [colEpoch, setColEpoch] = useState<number[]>(() =>
-    Array.from({ length: 4 }, () => 0),
+    Array.from({ length: COLUMN_LIMITS.maxColumns }, () => 0),
   );
-  const colCount = Math.min(4, Math.max(2, block.columns.length));
+  const colCount = Math.min(
+    COLUMN_LIMITS.maxColumns,
+    Math.max(COLUMN_LIMITS.minColumns, block.columns.length),
+  );
+
+  const cellPad = Math.max(0, block.cellPadding ?? 0);
+  const valign =
+    block.cellVerticalAlign === "middle"
+      ? "center"
+      : block.cellVerticalAlign === "bottom"
+        ? "flex-end"
+        : "flex-start";
+  const alignClass =
+    block.align === "center"
+      ? "mx-auto"
+      : block.align === "right"
+        ? "ml-auto"
+        : undefined;
 
   function updateColumnHtml(columnIndex: number, html: string) {
     const columns = Array.from(
@@ -170,18 +189,31 @@ function ColumnsBlockEditor({
   return (
     <BlockChrome {...chrome}>
       <div
-        className="grid gap-y-3"
+        className={cn("box-border", alignClass)}
         style={{
-          columnGap: block.columnGap ?? 24,
-          gridTemplateColumns: resolveColumnWidths(
-            block.columnWidths,
-            colCount,
-          )
-            .map((width) => `${width}fr`)
-            .join(" "),
+          backgroundColor: block.backgroundColor || "transparent",
+          borderWidth: Math.max(0, block.borderWidth ?? 0),
+          borderStyle: (block.borderWidth ?? 0) > 0 ? "solid" : undefined,
+          borderColor: block.borderColor,
+          borderRadius: Math.max(0, block.borderRadius ?? 0),
+          padding: `${Math.max(0, block.paddingY ?? 0)}px ${Math.max(0, block.paddingX ?? 0)}px`,
         }}
-        data-testid="builder-columns-grid"
+        data-testid="builder-columns-chrome"
       >
+        <div
+          className="grid gap-y-3"
+          style={{
+            columnGap: block.columnGap ?? 24,
+            gridTemplateColumns: resolveColumnWidths(
+              block.columnWidths,
+              colCount,
+            )
+              .map((width) => `${width}fr`)
+              .join(" "),
+            alignItems: valign,
+          }}
+          data-testid="builder-columns-grid"
+        >
         {Array.from({ length: colCount }, (_, index) => {
           const items = parseColumnItems(block.columns[index] ?? "");
           const showItemList = items.length > 0;
@@ -190,15 +222,17 @@ function ColumnsBlockEditor({
             <div
               key={index}
               data-testid={`builder-column-drop-${index}`}
+              data-builder-nested-drop=""
               aria-label={`Drop into column ${index + 1}`}
               className={cn(
-                "min-h-24 border border-dashed p-2 transition-colors",
+                "min-h-24 border border-dashed transition-colors",
                 hoverCol === index
                   ? "border-sky-500 bg-sky-50"
                   : selectedColumnIndex === index
                     ? "border-sky-400 bg-sky-50/70"
                     : "border-zinc-200",
               )}
+              style={{ padding: Math.max(8, cellPad) }}
               onClick={(event) => {
                 if ((event.target as HTMLElement).closest("[data-testid^=builder-column-item-]")) {
                   return;
@@ -209,12 +243,17 @@ function ColumnsBlockEditor({
               onFocusCapture={() => setActiveCol(index)}
               onDragEnter={(event) => {
                 if (!isBuilderDrag(event.dataTransfer)) return;
+                if (isMergeFieldDrag(event.dataTransfer)) return;
                 event.preventDefault();
                 event.stopPropagation();
                 setHoverCol(index);
               }}
               onDragOver={(event) => {
                 if (!isBuilderDrag(event.dataTransfer)) return;
+                if (isMergeFieldDrag(event.dataTransfer)) {
+                  event.dataTransfer.dropEffect = "none";
+                  return;
+                }
                 event.preventDefault();
                 event.stopPropagation();
                 event.dataTransfer.dropEffect =
@@ -229,6 +268,10 @@ function ColumnsBlockEditor({
               }}
               onDrop={(event) => {
                 if (!isBuilderDrag(event.dataTransfer)) return;
+                if (isMergeFieldDrag(event.dataTransfer)) {
+                  setHoverCol(null);
+                  return;
+                }
                 event.preventDefault();
                 event.stopPropagation();
                 setHoverCol(null);
@@ -399,6 +442,7 @@ function ColumnsBlockEditor({
           );
         })}
       </div>
+      </div>
     </BlockChrome>
   );
 }
@@ -510,12 +554,37 @@ function GridBlockEditor({
   return (
     <BlockChrome {...chrome}>
       <div
+        className={cn(
+          "box-border",
+          block.align === "center"
+            ? "mx-auto"
+            : block.align === "right"
+              ? "ml-auto"
+              : undefined,
+        )}
+        style={{
+          backgroundColor: block.backgroundColor || "transparent",
+          borderWidth: Math.max(0, block.borderWidth ?? 0),
+          borderStyle: (block.borderWidth ?? 0) > 0 ? "solid" : undefined,
+          borderColor: block.borderColor,
+          borderRadius: Math.max(0, block.borderRadius ?? 0),
+          padding: `${Math.max(0, block.paddingY ?? 0)}px ${Math.max(0, block.paddingX ?? 0)}px`,
+        }}
+        data-testid="builder-grid-chrome"
+      >
+      <div
         className="grid"
         style={{
           columnGap: block.columnGap ?? 16,
           rowGap: block.rowGap ?? 16,
           gridTemplateColumns: colWidths.map((width) => `${width}fr`).join(" "),
           gridTemplateRows: rowHeights.map((height) => `${height}fr`).join(" "),
+          alignItems:
+            block.cellVerticalAlign === "middle"
+              ? "center"
+              : block.cellVerticalAlign === "bottom"
+                ? "flex-end"
+                : "flex-start",
         }}
         data-testid="builder-grid"
       >
@@ -533,6 +602,7 @@ function GridBlockEditor({
               <div
                 key={`${rowIndex}-${columnIndex}`}
                 data-testid={`builder-grid-drop-${rowIndex}-${columnIndex}`}
+                data-builder-nested-drop=""
                 aria-label={`Drop into grid cell row ${rowIndex + 1} column ${columnIndex + 1}`}
                 className={cn(
                   "min-h-20 border border-dashed transition-colors",
@@ -560,12 +630,17 @@ function GridBlockEditor({
                 }
                 onDragEnter={(event) => {
                   if (!isBuilderDrag(event.dataTransfer)) return;
+                  if (isMergeFieldDrag(event.dataTransfer)) return;
                   event.preventDefault();
                   event.stopPropagation();
                   setHoverCell({ row: rowIndex, col: columnIndex });
                 }}
                 onDragOver={(event) => {
                   if (!isBuilderDrag(event.dataTransfer)) return;
+                  if (isMergeFieldDrag(event.dataTransfer)) {
+                    event.dataTransfer.dropEffect = "none";
+                    return;
+                  }
                   event.preventDefault();
                   event.stopPropagation();
                   event.dataTransfer.dropEffect =
@@ -588,6 +663,10 @@ function GridBlockEditor({
                 }}
                 onDrop={(event) => {
                   if (!isBuilderDrag(event.dataTransfer)) return;
+                  if (isMergeFieldDrag(event.dataTransfer)) {
+                    setHoverCell(null);
+                    return;
+                  }
                   event.preventDefault();
                   event.stopPropagation();
                   setHoverCell(null);
@@ -774,6 +853,7 @@ function GridBlockEditor({
             );
           }),
         )}
+      </div>
       </div>
     </BlockChrome>
   );
