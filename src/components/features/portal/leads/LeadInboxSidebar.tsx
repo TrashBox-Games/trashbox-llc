@@ -185,6 +185,122 @@ export function LeadInboxResizeHandle({
   );
 }
 
+/** Handle on the email pane’s left edge when closed — click/drag opens. */
+export interface LeadInboxOpenHandleProps {
+  onOpenChange: (open: boolean) => void;
+  onWidthChange: (width: number) => void;
+  onDraggingChange?: (dragging: boolean) => void;
+  className?: string;
+}
+
+export function LeadInboxOpenHandle({
+  onOpenChange,
+  onWidthChange,
+  onDraggingChange,
+  className,
+}: LeadInboxOpenHandleProps): JSX.Element {
+  const dragRef = useRef<{
+    startX: number;
+    moved: boolean;
+    lastWidth: number;
+  } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  function setDraggingState(next: boolean) {
+    setDragging(next);
+    onDraggingChange?.(next);
+  }
+
+  function openToSnap() {
+    onWidthChange(INBOX_SIDEBAR_SNAP_WIDTH);
+    onOpenChange(true);
+  }
+
+  function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    event.preventDefault();
+    dragRef.current = {
+      startX: event.clientX,
+      moved: false,
+      lastWidth: 0,
+    };
+    setDraggingState(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const delta = event.clientX - drag.startX;
+    if (Math.abs(delta) >= 3) {
+      drag.moved = true;
+    }
+    const next = clampInboxSidebarDragWidth(delta);
+    drag.lastWidth = next;
+    onWidthChange(next);
+    if (next > 0) {
+      onOpenChange(true);
+    }
+  }
+
+  function onPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    const drag = dragRef.current;
+    dragRef.current = null;
+    setDraggingState(false);
+
+    if (!drag || !drag.moved) {
+      openToSnap();
+      return;
+    }
+
+    if (drag.lastWidth < INBOX_SIDEBAR_MIN_WIDTH) {
+      onWidthChange(INBOX_SIDEBAR_SNAP_WIDTH);
+      onOpenChange(false);
+      return;
+    }
+
+    onWidthChange(clampInboxSidebarWidth(drag.lastWidth));
+    onOpenChange(true);
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (
+      event.key === "Enter" ||
+      event.key === " " ||
+      event.key === "ArrowRight"
+    ) {
+      event.preventDefault();
+      openToSnap();
+    }
+  }
+
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Show leads panel"
+      aria-valuenow={0}
+      aria-valuemin={0}
+      aria-valuemax={INBOX_SIDEBAR_MAX_WIDTH}
+      tabIndex={0}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onKeyDown={onKeyDown}
+      className={cn(
+        "absolute top-0 left-0 z-10 flex h-full w-3 cursor-col-resize touch-none items-stretch justify-center",
+        "after:my-auto after:h-12 after:w-px after:bg-outline-variant/40 after:transition-colors",
+        "hover:after:bg-white/50 focus-visible:outline-none focus-visible:after:bg-white",
+        dragging && "after:bg-white",
+        className,
+      )}
+    />
+  );
+}
+
 export interface LeadInboxSidebarProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

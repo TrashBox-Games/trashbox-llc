@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Submission } from "@/lib/api";
 import {
   INBOX_SIDEBAR_SNAP_WIDTH,
+  LeadInboxOpenHandle,
   LeadInboxResizeHandle,
   LeadInboxSidebar,
   LeadInboxSidebarToggle,
@@ -274,6 +275,98 @@ describe("LeadInboxResizeHandle", () => {
     handle.focus();
     await user.keyboard("{Enter}");
     expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onWidthChange).toHaveBeenCalledWith(INBOX_SIDEBAR_SNAP_WIDTH);
+  });
+});
+
+describe("LeadInboxOpenHandle", () => {
+  it("opens on click without dragging", () => {
+    const onWidthChange = vi.fn();
+    const onOpenChange = vi.fn();
+
+    render(
+      <LeadInboxOpenHandle
+        onWidthChange={onWidthChange}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    const handle = screen.getByRole("separator", {
+      name: /show leads panel/i,
+    });
+    expect(handle.className).toMatch(/\bcursor-col-resize\b/);
+
+    fireEvent.pointerDown(handle, { clientX: 0, pointerId: 1 });
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    expect(onWidthChange).toHaveBeenCalledWith(INBOX_SIDEBAR_SNAP_WIDTH);
+  });
+
+  it("opens when dragged past the minimum width", () => {
+    const onWidthChange = vi.fn();
+    const onOpenChange = vi.fn();
+
+    render(
+      <LeadInboxOpenHandle
+        onWidthChange={onWidthChange}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    const handle = screen.getByRole("separator", {
+      name: /show leads panel/i,
+    });
+
+    fireEvent.pointerDown(handle, { clientX: 0, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 300, pointerId: 1 });
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    expect(onWidthChange).toHaveBeenLastCalledWith(300);
+  });
+
+  it("stays closed when the drag ends below the minimum width", () => {
+    const onWidthChange = vi.fn();
+    const onOpenChange = vi.fn();
+
+    render(
+      <LeadInboxOpenHandle
+        onWidthChange={onWidthChange}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    const handle = screen.getByRole("separator", {
+      name: /show leads panel/i,
+    });
+
+    fireEvent.pointerDown(handle, { clientX: 0, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 80, pointerId: 1 });
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+
+    expect(onOpenChange).toHaveBeenLastCalledWith(false);
+    expect(onWidthChange).toHaveBeenLastCalledWith(INBOX_SIDEBAR_SNAP_WIDTH);
+  });
+
+  it("opens with Enter or ArrowRight", async () => {
+    const user = userEvent.setup();
+    const onWidthChange = vi.fn();
+    const onOpenChange = vi.fn();
+
+    render(
+      <LeadInboxOpenHandle
+        onWidthChange={onWidthChange}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    const handle = screen.getByRole("separator", {
+      name: /show leads panel/i,
+    });
+    handle.focus();
+    await user.keyboard("{Enter}");
+    expect(onOpenChange).toHaveBeenCalledWith(true);
     expect(onWidthChange).toHaveBeenCalledWith(INBOX_SIDEBAR_SNAP_WIDTH);
   });
 });

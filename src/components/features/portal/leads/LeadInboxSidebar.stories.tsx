@@ -4,9 +4,9 @@ import { fn } from "storybook/test";
 import type { Submission } from "@/lib/api";
 import {
   INBOX_SIDEBAR_SNAP_WIDTH,
+  LeadInboxOpenHandle,
   LeadInboxResizeHandle,
   LeadInboxSidebar,
-  LeadInboxSidebarToggle,
   type LeadInboxSidebarProps,
 } from "./LeadInboxSidebar";
 
@@ -91,7 +91,6 @@ function ControlledSidebar(args: LeadInboxSidebarProps) {
   const [resizing, setResizing] = useState(false);
 
   function onOpenChange(next: boolean) {
-    if (next) setWidth(INBOX_SIDEBAR_SNAP_WIDTH);
     setOpen(next);
     args.onOpenChange(next);
   }
@@ -105,21 +104,23 @@ function ControlledSidebar(args: LeadInboxSidebarProps) {
         resizing={resizing}
         onOpenChange={onOpenChange}
       />
-      <div className="relative min-w-0 flex-1 rounded bg-surface-container-low p-6 text-sm text-on-surface-variant">
-        {open && (
+      <div className="relative min-w-0 min-h-[20rem] flex-1 rounded bg-surface-container-low p-6 text-sm text-on-surface-variant">
+        {open ? (
           <LeadInboxResizeHandle
             width={width}
             onWidthChange={setWidth}
             onOpenChange={onOpenChange}
             onDraggingChange={setResizing}
           />
+        ) : (
+          <LeadInboxOpenHandle
+            onWidthChange={setWidth}
+            onOpenChange={onOpenChange}
+            onDraggingChange={setResizing}
+          />
         )}
-        {!open && (
-          <div className="mb-4">
-            <LeadInboxSidebarToggle open={false} onOpenChange={onOpenChange} />
-          </div>
-        )}
-        Detail pane (drag the left edge to resize; click to close)
+        Detail pane — drag the left edge to resize; click the edge to
+        {open ? " close" : " open"}
       </div>
     </div>
   );

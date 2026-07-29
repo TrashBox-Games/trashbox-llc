@@ -4,10 +4,11 @@ import { type FormEvent, useEffect, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { LeadDetail } from "@/components/features/portal/leads/LeadDetail";
 import {
+  INBOX_SIDEBAR_MIN_WIDTH,
   INBOX_SIDEBAR_SNAP_WIDTH,
+  LeadInboxOpenHandle,
   LeadInboxResizeHandle,
   LeadInboxSidebar,
-  LeadInboxSidebarToggle,
 } from "@/components/features/portal/leads/LeadInboxSidebar";
 import { LeadThreadTabs } from "@/components/features/portal/leads/LeadThreadTabs";
 import {
@@ -278,7 +279,11 @@ export function PortalApp({ tab }: PortalAppProps) {
   }, [openTabIds, portal.selectedId, portal.ready, tabsReady]);
 
   function onInboxSidebarOpenChange(next: boolean) {
-    if (next) setInboxSidebarWidth(INBOX_SIDEBAR_SNAP_WIDTH);
+    if (next) {
+      setInboxSidebarWidth((width) =>
+        width >= INBOX_SIDEBAR_MIN_WIDTH ? width : INBOX_SIDEBAR_SNAP_WIDTH,
+      );
+    }
     setInboxSidebarOpen(next);
   }
 
@@ -525,12 +530,11 @@ export function PortalApp({ tab }: PortalAppProps) {
                   />
                 )}
                 {!inboxSidebarOpen && (
-                  <div className="mb-4">
-                    <LeadInboxSidebarToggle
-                      open={false}
-                      onOpenChange={onInboxSidebarOpenChange}
-                    />
-                  </div>
+                  <LeadInboxOpenHandle
+                    onWidthChange={setInboxSidebarWidth}
+                    onOpenChange={onInboxSidebarOpenChange}
+                    onDraggingChange={setInboxResizing}
+                  />
                 )}
                 {displayTabIds.length > 0 ? (
                   <div>
