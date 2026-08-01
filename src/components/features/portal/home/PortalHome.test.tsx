@@ -59,7 +59,10 @@ describe("PortalHome", () => {
     expect(
       screen.getByRole("heading", { name: /acme co/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Marketing site")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /select project marketing site/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Selected")).toBeInTheDocument();
     expect(
       screen
         .getByRole("link", { name: /switch organization/i })
@@ -68,5 +71,8 @@ describe("PortalHome", () => {
     expect(
       screen.getByRole("link", { name: /open inbox/i }).getAttribute("href"),
     ).toBe("/portal/acme-co/marketing-site/inbox/");
+    expect(
+      screen.getByRole("button", { name: /^create project$/i }),
+    ).toBeInTheDocument();
   });
 });

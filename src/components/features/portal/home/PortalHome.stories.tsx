@@ -16,6 +16,33 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+const baseOrg = {
+  orgId: "o1",
+  orgName: "Acme Co",
+  orgSlug: "acme-co",
+  role: "owner" as const,
+  tier: "basic" as const,
+  active: true,
+  hasBilling: false,
+  projects: [
+    {
+      projectId: "p1",
+      projectName: "Marketing site",
+      projectSlug: "marketing-site",
+    },
+    {
+      projectId: "p2",
+      projectName: "Customer app",
+      projectSlug: "customer-app",
+    },
+    {
+      projectId: "p3",
+      projectName: "Docs",
+      projectSlug: "docs",
+    },
+  ],
+};
+
 export const Workspace: Story = {
   decorators: [
     (Story) => {
@@ -32,28 +59,16 @@ export const Workspace: Story = {
             value={{
               ready: true,
               clientName: "Marketing site",
-              orgs: [
-                {
-                  orgId: "o1",
-                  orgName: "Acme Co",
-              orgSlug: "acme-co",
-                  role: "owner",
-                  tier: "basic",
-                  active: true,
-                  hasBilling: false,
-                  projects: [
-                    { projectId: "p1", projectName: "Marketing site", projectSlug: "marketing-site" },
-                  ],
-                },
-              ],
+              orgs: [baseOrg],
               account: {
                 linked: true,
                 email: "owner@example.com",
                 orgId: "o1",
                 orgName: "Acme Co",
-              orgSlug: "acme-co",
+                orgSlug: "acme-co",
                 projectId: "p1",
                 projectName: "Marketing site",
+                projectSlug: "marketing-site",
                 clientId: "p1",
                 clientName: "Marketing site",
                 tier: "basic",
@@ -62,6 +77,46 @@ export const Workspace: Story = {
                 hasBilling: false,
                 role: "owner",
               },
+            }}
+          >
+            <div className="mx-auto max-w-screen-2xl px-8 pt-16 pb-24">
+              <Story />
+            </div>
+          </StubPortalProvider>
+        </StubAuthProvider>
+      );
+    },
+  ],
+};
+
+export const EmptyProjects: Story = {
+  decorators: [
+    (Story) => {
+      setSelectedWorkspace("o1", null);
+      return (
+        <StubAuthProvider
+          value={{
+            status: "signedIn",
+            configured: true,
+            email: "owner@example.com",
+          }}
+        >
+          <StubPortalProvider
+            value={{
+              ready: true,
+              orgs: [{ ...baseOrg, projects: [] }],
+              account: {
+                linked: true,
+                email: "owner@example.com",
+                orgId: "o1",
+                orgName: "Acme Co",
+                orgSlug: "acme-co",
+                tier: "basic",
+                active: true,
+                hasBilling: false,
+                role: "owner",
+              },
+              projectNameDraft: "",
             }}
           >
             <div className="mx-auto max-w-screen-2xl px-8 pt-16 pb-24">
