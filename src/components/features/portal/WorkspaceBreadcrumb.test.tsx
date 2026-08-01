@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StubAuthProvider } from "@/lib/auth";
@@ -81,7 +81,7 @@ describe("WorkspaceBreadcrumb", () => {
     ).toBeInTheDocument();
   });
 
-  it("lists organizations with create new at the bottom", async () => {
+  it("sends the organization crumb to the org picker", async () => {
     const user = userEvent.setup();
     render(
       <StubAuthProvider value={{ status: "signedIn", configured: true }}>
@@ -108,12 +108,7 @@ describe("WorkspaceBreadcrumb", () => {
     await user.click(
       screen.getByRole("button", { name: /organization: acme co/i }),
     );
-    const menu = screen.getByRole("menu");
-    expect(within(menu).getByRole("menuitem", { name: /acme co/i })).toBeInTheDocument();
-    expect(within(menu).getByRole("menuitem", { name: /beta llc/i })).toBeInTheDocument();
-    expect(
-      within(menu).getByRole("menuitem", { name: /create organization/i }),
-    ).toBeInTheDocument();
+    expect(assign).toHaveBeenCalledWith("/portal/orgs/");
   });
 
   it("switches project from the project dropdown", async () => {
