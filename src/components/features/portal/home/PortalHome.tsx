@@ -128,6 +128,19 @@ export function PortalHome() {
                     : `${projects.length} project${projects.length === 1 ? "" : "s"} in this organization`}
                 </p>
               </div>
+              {org?.orgSlug ? (
+                <Button asChild variant="outline" size="sm">
+                  <PortalLink
+                    href={portalWorkspacePath({
+                      orgSlug: org.orgSlug,
+                      surface: "orgSettings",
+                    })}
+                  >
+                    <MaterialIcon name="settings" className="text-base!" />
+                    Organization settings
+                  </PortalLink>
+                </Button>
+              ) : null}
             </div>
 
             <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

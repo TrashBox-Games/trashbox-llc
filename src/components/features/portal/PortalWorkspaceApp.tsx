@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { PortalHome } from "@/components/features/portal/home/PortalHome";
 import { PortalApp } from "@/components/features/portal/leads/PortalPage";
+import { OrgSettings } from "@/components/features/portal/orgs/OrgSettings";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { SettingsSectionContent } from "@/components/features/portal/settings/SettingsSectionContent";
 import { SettingsShell } from "@/components/features/portal/settings/SettingsShell";
@@ -66,7 +67,7 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
       return;
     }
 
-    if (parsed.surface === "orgHome") {
+    if (parsed.surface === "orgHome" || parsed.surface === "orgSettings") {
       if (
         getSelectedOrgId() !== org.orgId ||
         getSelectedProjectId() !== null
@@ -126,6 +127,10 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
 
   if (parsed.surface === "orgHome") {
     return <PortalHome />;
+  }
+
+  if (parsed.surface === "orgSettings") {
+    return <OrgSettings org={org} />;
   }
 
   const project = org.projects.find(

@@ -30,6 +30,19 @@ describe("parsePortalWorkspacePath", () => {
     });
   });
 
+  it("parses org settings without a project", () => {
+    expect(parsePortalWorkspacePath("/portal/acme/settings/")).toEqual({
+      orgSlug: "acme",
+      surface: "orgSettings",
+      settingsRest: "",
+    });
+    expect(parsePortalWorkspacePath("/portal/acme/settings/general/")).toEqual({
+      orgSlug: "acme",
+      surface: "orgSettings",
+      settingsRest: "general",
+    });
+  });
+
   it("parses project home and surfaces", () => {
     expect(parsePortalWorkspacePath("/portal/acme/site/")).toEqual({
       orgSlug: "acme",
@@ -103,5 +116,18 @@ describe("portalWorkspacePath", () => {
         settingsRest: "api-keys",
       }),
     ).toBe("/portal/acme/site/settings/api-keys/");
+    expect(
+      portalWorkspacePath({
+        orgSlug: "acme",
+        surface: "orgSettings",
+      }),
+    ).toBe("/portal/acme/settings/");
+    expect(
+      portalWorkspacePath({
+        orgSlug: "acme",
+        surface: "orgSettings",
+        settingsRest: "general",
+      }),
+    ).toBe("/portal/acme/settings/general/");
   });
 });

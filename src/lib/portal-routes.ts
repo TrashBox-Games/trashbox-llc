@@ -19,6 +19,7 @@ export const RESERVED_ORG_SLUGS = new Set([
 
 export type PortalWorkspaceSurface =
   | "orgHome"
+  | "orgSettings"
   | "projectHome"
   | "inbox"
   | "settings"
@@ -78,6 +79,16 @@ export function parsePortalWorkspacePath(
     return { orgSlug, surface: "orgHome" };
   }
 
+  // `/portal/{org}/settings/…` — organization settings (no project).
+  if (projectSlug === "settings") {
+    const settingsRest = [surfaceSeg, ...rest].filter(Boolean).join("/");
+    return {
+      orgSlug,
+      surface: "orgSettings",
+      settingsRest,
+    };
+  }
+
   if (!surfaceSeg) {
     return { orgSlug, projectSlug, surface: "projectHome" };
   }
@@ -108,7 +119,14 @@ export function portalWorkspacePath(input: {
 }): string {
   const org = encodeURIComponent(input.orgSlug);
   const base = `${PORTAL_BASE}/${org}`;
-  if (input.surface === "orgHome" || !input.projectSlug) {
+  if (input.surface === "orgHome") {
+    return `${base}/`;
+  }
+  if (input.surface === "orgSettings") {
+    const rest = (input.settingsRest || "").replace(/^\/+|\/+$/g, "");
+    return rest ? `${base}/settings/${rest}/` : `${base}/settings/`;
+  }
+  if (!input.projectSlug) {
     return `${base}/`;
   }
   const project = encodeURIComponent(input.projectSlug);

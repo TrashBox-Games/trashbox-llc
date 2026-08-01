@@ -168,6 +168,8 @@ export interface PortalContextValue {
   onCreateOrganization: () => Promise<void>;
   onCreateProject: (orgId: string) => Promise<void>;
   selectWorkspace: (orgId: string, projectId: string) => void;
+  /** Reload account/orgs (e.g. after renaming an organization). */
+  refreshWorkspace: () => void;
   onUpgrade: (plan: "basic" | "premium") => Promise<void>;
   onManageBilling: () => Promise<void>;
 }
@@ -232,6 +234,7 @@ export function StubPortalProvider({
     onCreateOrganization: portalNoop,
     onCreateProject: portalNoop,
     selectWorkspace: () => {},
+    refreshWorkspace: () => {},
     onUpgrade: portalNoop,
     onManageBilling: portalNoop,
     ...value,
@@ -768,6 +771,10 @@ export function PortalProvider({
     setWorkspaceEpoch((n) => n + 1);
   }, []);
 
+  const refreshWorkspace = useCallback(() => {
+    setWorkspaceEpoch((n) => n + 1);
+  }, []);
+
   const onCreateOrganization = useCallback(async () => {
     const name = businessName.trim();
     if (!name) {
@@ -937,6 +944,7 @@ export function PortalProvider({
       onCreateOrganization,
       onCreateProject,
       selectWorkspace,
+      refreshWorkspace,
       onUpgrade,
       onManageBilling,
     }),
@@ -984,6 +992,7 @@ export function PortalProvider({
       onCreateOrganization,
       onCreateProject,
       selectWorkspace,
+      refreshWorkspace,
       onUpgrade,
       onManageBilling,
     ],

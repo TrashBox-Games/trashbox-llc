@@ -544,6 +544,38 @@ export async function createProject(input: {
   };
 }
 
+export async function updateOrganization(input: {
+  orgId: string;
+  orgName: string;
+}): Promise<{
+  orgId: string;
+  orgName: string;
+  orgSlug: string;
+}> {
+  return (await authFetch(`/orgs/${encodeURIComponent(input.orgId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ orgName: input.orgName }),
+  })) as unknown as {
+    orgId: string;
+    orgName: string;
+    orgSlug: string;
+  };
+}
+
+export async function deleteOrganization(input: {
+  orgId: string;
+  confirmName: string;
+}): Promise<{ success: boolean; orgId: string; message?: string }> {
+  return (await authFetch(`/orgs/${encodeURIComponent(input.orgId)}`, {
+    method: "DELETE",
+    body: JSON.stringify({ confirmName: input.confirmName }),
+  })) as unknown as {
+    success: boolean;
+    orgId: string;
+    message?: string;
+  };
+}
+
 /** @deprecated Prefer createOrganization — still calls provision with orgName. */
 export async function provisionAccount(orgName: string): Promise<
   AccountResponse & { apiKey?: string; created?: boolean; message?: string }

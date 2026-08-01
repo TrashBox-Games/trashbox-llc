@@ -59,6 +59,7 @@ For GitHub Pages, set the same names as repository **Secrets** (used by `.github
 | `/platform/documentation` | Platform docs + OpenAPI link |
 | `/portal/orgs` | Org picker — select or create an organization |
 | `/portal/{orgSlug}/` | Org workspace (project list) |
+| `/portal/{orgSlug}/settings/` | Organization settings (rename / delete) |
 | `/portal/{orgSlug}/{projectSlug}/` | Project home |
 | `/portal/{orgSlug}/{projectSlug}/inbox/` | Lead inbox |
 | `/portal/{orgSlug}/{projectSlug}/settings/*` | Project/org settings |
