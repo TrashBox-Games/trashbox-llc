@@ -18,6 +18,8 @@ vi.mock("@/lib/api", async (importOriginal) => {
     ...actual,
     getAccount: vi.fn(),
     getMailbox: vi.fn().mockResolvedValue({ connected: false }),
+    listOrgs: vi.fn().mockResolvedValue({ orgs: [] }),
+    listForms: vi.fn().mockResolvedValue({ forms: [], canManage: false }),
     getTeam: vi.fn().mockResolvedValue({
       clientId: "c1",
       clientName: "Test",
@@ -49,9 +51,11 @@ vi.mock("@/components/atoms/FadeIn", () => ({
 
 import { useAuth } from "@/lib/auth";
 import { getAccount, listSubmissions } from "@/lib/api";
+import { portalNavigate } from "@/lib/portal-routes";
 
 describe("PortalProvider session", () => {
   beforeEach(() => {
+    window.history.replaceState({}, "", "/portal/");
     vi.mocked(useAuth).mockReturnValue({
       configured: true,
       status: "signedIn",
@@ -109,5 +113,51 @@ describe("PortalProvider session", () => {
     ).toBeInTheDocument();
     expect(getAccount).toHaveBeenCalledTimes(1);
     expect(listSubmissions).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies ?formId= on load and keeps it in the URL", async () => {
+    const formId = "3d7d2cddb3d65a370cee976eb94f951f";
+    window.history.replaceState(
+      {},
+      "",
+      `/portal/acme/site/inbox/?formId=${formId}`,
+    );
+
+    render(
+      <PortalProvider disableAuthRedirect>
+        <PortalApp tab="inbox" />
+      </PortalProvider>,
+    );
+
+    await waitFor(() => {
+      expect(listSubmissions).toHaveBeenCalledWith(
+        expect.objectContaining({ formId }),
+      );
+    });
+    expect(window.location.search).toContain(`formId=${formId}`);
+  });
+
+  it("applies formId when portalNavigate lands on inbox with query", async () => {
+    const formId = "form-from-view-leads";
+    render(
+      <PortalProvider disableAuthRedirect>
+        <PortalApp tab="inbox" />
+      </PortalProvider>,
+    );
+
+    await waitFor(() => {
+      expect(listSubmissions).toHaveBeenCalled();
+    });
+    vi.mocked(listSubmissions).mockClear();
+
+    portalNavigate(
+      `/portal/acme/site/inbox/?formId=${encodeURIComponent(formId)}`,
+    );
+
+    await waitFor(() => {
+      expect(listSubmissions).toHaveBeenCalledWith(
+        expect.objectContaining({ formId }),
+      );
+    });
   });
 });

@@ -27,6 +27,7 @@ const emptyValue: LeadInboxFiltersValue = {
   status: "",
   tag: "",
   assignedTo: "",
+  formId: "",
 };
 
 const meta = {
@@ -43,6 +44,17 @@ const meta = {
   args: {
     value: emptyValue,
     members,
+    forms: [
+      {
+        formId: "f1",
+        clientId: "c1",
+        name: "Contact",
+        slug: "contact",
+        active: true,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
     onChange: fn(),
     onApply: fn(),
   },
@@ -75,6 +87,7 @@ export const Filled: Story = {
       status: "new",
       tag: "website_quote",
       assignedTo: "sarah@example.com",
+      formId: "f1",
     },
   },
 };

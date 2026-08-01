@@ -42,6 +42,8 @@ const submissionExample = `{
   "senderEmail": "john@example.com",
   "message": "I'd like a quote for a spring cleanout.",
   "metadata": { "page": "/contact" },
+  "formId": "form_contact",
+  "formName": "Contact",
   "submittedAt": "2026-07-20T14:05:00.000Z",
   "status": "new",
   "tags": ["website_quote"],
@@ -79,7 +81,7 @@ export const SUBMISSIONS_API_ENDPOINTS: ApiEndpoint[] = [
     pathExample: "/submissions?status=new&limit=50",
     summary: "List submissions",
     description:
-      "Returns paginated form submissions (leads) for a client you belong to. Supports status, tag, assignee, and text-search filters.",
+      "Returns paginated form submissions (leads) for a client you belong to. Supports status, tag, assignee, form, and text-search filters.",
     parameters: [
       {
         name: "limit",
@@ -115,6 +117,13 @@ export const SUBMISSIONS_API_ENDPOINTS: ApiEndpoint[] = [
         required: false,
         type: "email",
         description: "Filter by assignee email.",
+      },
+      {
+        name: "formId",
+        in: "query",
+        required: false,
+        type: "string",
+        description: "Filter by project form id.",
       },
       {
         name: "q",

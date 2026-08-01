@@ -14,7 +14,12 @@ import {
   type LeadInboxFiltersValue,
 } from "@/components/features/portal/leads/LeadInboxFilters";
 import { Button } from "@/components/ui/button";
-import { leadStatusOf, type Submission, type TeamMember } from "@/lib/api";
+import {
+  leadStatusOf,
+  type ProjectForm,
+  type Submission,
+  type TeamMember,
+} from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export const INBOX_SIDEBAR_DEFAULT_WIDTH = 320;
@@ -306,6 +311,7 @@ export interface LeadInboxSidebarProps {
   onOpenChange: (open: boolean) => void;
   filters: LeadInboxFiltersValue;
   members: TeamMember[];
+  forms?: ProjectForm[];
   onFiltersChange: (value: LeadInboxFiltersValue) => void;
   onApplyFilters: () => void;
   items: Submission[];
@@ -331,6 +337,7 @@ export function LeadInboxSidebar({
   open,
   filters,
   members,
+  forms = [],
   onFiltersChange,
   onApplyFilters,
   items,
@@ -368,6 +375,7 @@ export function LeadInboxSidebar({
           <LeadInboxFilters
             value={filters}
             members={members}
+            forms={forms}
             onChange={onFiltersChange}
             onApply={onApplyFilters}
           />
@@ -400,6 +408,7 @@ export function LeadInboxSidebar({
                       senderName={item.senderName}
                       senderEmail={item.senderEmail}
                       message={item.message}
+                      formName={item.formName}
                       submittedAt={item.submittedAt}
                       status={leadStatusOf(item)}
                       active={active}

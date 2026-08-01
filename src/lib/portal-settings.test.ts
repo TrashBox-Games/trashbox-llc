@@ -44,6 +44,7 @@ describe("portal-settings", () => {
     expect(orgSections).toContain("current-plan");
     expect(projectSections).not.toContain("members");
     expect(projectSections).not.toContain("current-plan");
+    expect(projectSections).not.toContain("forms");
     expect(projectSections).toContain("api-keys");
     expect(projectSections).toContain("email-accounts");
   });

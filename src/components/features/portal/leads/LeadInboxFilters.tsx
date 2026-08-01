@@ -12,6 +12,7 @@ import {
   teamMemberDisplayName,
   type LeadStatus,
   type LeadTag,
+  type ProjectForm,
   type TeamMember,
 } from "@/lib/api";
 
@@ -23,11 +24,13 @@ export interface LeadInboxFiltersValue {
   status: LeadStatus | "";
   tag: LeadTag | "";
   assignedTo: string;
+  formId: string;
 }
 
 interface LeadInboxFiltersProps {
   value: LeadInboxFiltersValue;
   members: TeamMember[];
+  forms?: ProjectForm[];
   onChange: (next: LeadInboxFiltersValue) => void;
   onApply: () => void;
 }
@@ -35,6 +38,7 @@ interface LeadInboxFiltersProps {
 export function LeadInboxFilters({
   value,
   members,
+  forms = [],
   onChange,
   onApply,
 }: LeadInboxFiltersProps) {
@@ -118,6 +122,23 @@ export function LeadInboxFilters({
                     : `${label} (${member.email})`,
               };
             }),
+          ]}
+        />
+      </div>
+      <div>
+        <label className={labelClass} htmlFor="lead-form">
+          Form
+        </label>
+        <Select
+          id="lead-form"
+          value={value.formId}
+          onChange={(formId) => onChange({ ...value, formId })}
+          options={[
+            { value: "", label: "All forms" },
+            ...forms.map((form) => ({
+              value: form.formId,
+              label: form.active ? form.name : `${form.name} (inactive)`,
+            })),
           ]}
         />
       </div>

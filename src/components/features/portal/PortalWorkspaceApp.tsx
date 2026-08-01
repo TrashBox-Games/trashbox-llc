@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { FormsPage } from "@/components/features/portal/forms/FormsPage";
 import { PortalHome } from "@/components/features/portal/home/PortalHome";
 import { PortalApp } from "@/components/features/portal/leads/PortalPage";
 import { OrgSettingsSectionContent } from "@/components/features/portal/orgs/OrgSettingsSectionContent";
@@ -175,6 +176,30 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
   }
   if (parsed.surface === "inbox") {
     return <PortalApp tab="inbox" />;
+  }
+
+  if (parsed.surface === "forms") {
+    return <FormsPage />;
+  }
+
+  // Legacy Settings → Forms deep link.
+  const settingsRest = (parsed.settingsRest || "").replace(/^\/+|\/+$/g, "");
+  if (
+    parsed.surface === "settings" &&
+    (settingsRest === "forms" || settingsRest.startsWith("forms/"))
+  ) {
+    const target = portalWorkspacePath({
+      orgSlug: org.orgSlug,
+      projectSlug: project.projectSlug,
+      surface: "forms",
+    });
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname.replace(/\/$/, "") !== target.replace(/\/$/, "")
+    ) {
+      portalNavigate(target, { replace: true });
+    }
+    return <PortalSkeleton />;
   }
 
   const settingsKind = settingsSurface(parsed.settingsRest, "project");

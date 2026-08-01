@@ -58,7 +58,7 @@ const meta = {
   args: {
     open: true,
     onOpenChange: fn(),
-    filters: { q: "", status: "", tag: "", assignedTo: "" },
+    filters: { q: "", status: "", tag: "", assignedTo: "", formId: "" },
     members: [
       {
         email: "owner@example.com",

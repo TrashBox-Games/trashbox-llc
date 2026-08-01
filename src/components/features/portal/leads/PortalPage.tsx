@@ -244,6 +244,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                     onOpenChange={onInboxSidebarOpenChange}
                     filters={portal.filters}
                     members={portal.members}
+                    forms={portal.forms}
                     onFiltersChange={portal.setFilters}
                     onApplyFilters={portal.applyFilters}
                     items={portal.items}

@@ -94,6 +94,24 @@ export interface SubmissionNote {
   createdAt: string;
 }
 
+export interface ProjectForm {
+  formId: string;
+  clientId: string;
+  name: string;
+  slug: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  /** Leads tagged with this form (from GET /forms). */
+  submissionCount?: number;
+}
+
+export interface FormsListResponse {
+  clientId: string;
+  forms: ProjectForm[];
+  canManage: boolean;
+}
+
 export interface Submission {
   clientId: string;
   submissionId: string;
@@ -101,6 +119,8 @@ export interface Submission {
   senderEmail: string;
   message: string;
   metadata?: Record<string, string>;
+  formId?: string;
+  formName?: string;
   submittedAt: string;
   status?: LeadStatus;
   tags?: LeadTag[];
@@ -341,6 +361,7 @@ export interface ListSubmissionsOptions {
   status?: LeadStatus;
   tag?: LeadTag;
   assignedTo?: string;
+  formId?: string;
   q?: string;
   clientId?: string;
 }
@@ -354,6 +375,7 @@ export async function listSubmissions(
   if (options?.status) params.set("status", options.status);
   if (options?.tag) params.set("tag", options.tag);
   if (options?.assignedTo) params.set("assignedTo", options.assignedTo);
+  if (options?.formId) params.set("formId", options.formId);
   if (options?.q) params.set("q", options.q);
   if (options?.clientId) params.set("clientId", options.clientId);
   const qs = params.toString();
@@ -600,6 +622,30 @@ export async function deleteApiKey(): Promise<ApiKeyResponse> {
   return (await authFetch("/account/api-key", {
     method: "DELETE",
   })) as unknown as ApiKeyResponse;
+}
+
+export async function listForms(): Promise<FormsListResponse> {
+  return (await authFetch("/forms")) as unknown as FormsListResponse;
+}
+
+export async function createForm(input: {
+  name: string;
+  slug?: string;
+}): Promise<{ form: ProjectForm }> {
+  return (await authFetch("/forms", {
+    method: "POST",
+    body: JSON.stringify(input),
+  })) as unknown as { form: ProjectForm };
+}
+
+export async function updateForm(
+  formId: string,
+  patch: { name?: string; slug?: string; active?: boolean },
+): Promise<{ form: ProjectForm }> {
+  return (await authFetch(`/forms/${encodeURIComponent(formId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  })) as unknown as { form: ProjectForm };
 }
 
 export async function startCheckout(

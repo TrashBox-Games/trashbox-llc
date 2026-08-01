@@ -11,13 +11,24 @@ describe("LeadInboxFilters", () => {
 
     render(
       <LeadInboxFilters
-        value={{ q: "", status: "", tag: "", assignedTo: "" }}
+        value={{ q: "", status: "", tag: "", assignedTo: "", formId: "" }}
         members={[
           {
             email: "sarah@example.com",
             role: "member",
             joinedAt: "2026-01-01",
             emailNotifications: false,
+          },
+        ]}
+        forms={[
+          {
+            formId: "f1",
+            clientId: "c1",
+            name: "Contact",
+            slug: "contact",
+            active: true,
+            createdAt: "2026-01-01T00:00:00.000Z",
+            updatedAt: "2026-01-01T00:00:00.000Z",
           },
         ]}
         onChange={onChange}

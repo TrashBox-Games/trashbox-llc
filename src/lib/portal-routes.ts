@@ -22,6 +22,7 @@ export type PortalWorkspaceSurface =
   | "orgSettings"
   | "projectHome"
   | "inbox"
+  | "forms"
   | "settings"
   | "membership";
 
@@ -48,9 +49,10 @@ export function slugifyPortalSegment(input: string): string {
 }
 
 function normalizePathname(pathname: string): string {
-  const trimmed = pathname.trim();
-  if (!trimmed || trimmed === "/") return "/";
-  return trimmed.replace(/\/+$/, "") || "/";
+  // Callers sometimes pass full hrefs from portalNavigate (`path?query`).
+  const withoutQuery = pathname.trim().split(/[?#]/)[0] || "/";
+  if (!withoutQuery || withoutQuery === "/") return "/";
+  return withoutQuery.replace(/\/+$/, "") || "/";
 }
 
 function splitPortalSegments(pathname: string): string[] {
@@ -96,6 +98,9 @@ export function parsePortalWorkspacePath(
   if (surfaceSeg === "inbox" && rest.length === 0) {
     return { orgSlug, projectSlug, surface: "inbox" };
   }
+  if (surfaceSeg === "forms" && rest.length === 0) {
+    return { orgSlug, projectSlug, surface: "forms" };
+  }
   if (surfaceSeg === "membership" && rest.length === 0) {
     return { orgSlug, projectSlug, surface: "membership" };
   }
@@ -136,6 +141,8 @@ export function portalWorkspacePath(input: {
       return `${projectBase}/`;
     case "inbox":
       return `${projectBase}/inbox/`;
+    case "forms":
+      return `${projectBase}/forms/`;
     case "membership":
       return `${projectBase}/membership/`;
     case "settings": {
@@ -195,15 +202,14 @@ export function subscribePortalNavigate(
   listener: (path: string) => void,
 ): () => void {
   if (typeof window === "undefined") return () => {};
-  const handler = (event: Event) => {
-    const detail = (event as CustomEvent<{ path: string }>).detail;
-    listener(detail?.path || window.location.pathname);
+  // Always report pathname only — query strings break workspace path parsing.
+  const handler = () => {
+    listener(window.location.pathname);
   };
   window.addEventListener(PORTAL_NAVIGATE_EVENT, handler);
-  window.addEventListener("popstate", () => {
-    listener(window.location.pathname);
-  });
+  window.addEventListener("popstate", handler);
   return () => {
     window.removeEventListener(PORTAL_NAVIGATE_EVENT, handler);
+    window.removeEventListener("popstate", handler);
   };
 }

@@ -54,6 +54,20 @@ describe("parsePortalWorkspacePath", () => {
       projectSlug: "site",
       surface: "inbox",
     });
+    expect(
+      parsePortalWorkspacePath(
+        "/portal/acme/site/inbox/?formId=3d7d2cddb3d65a370cee976eb94f951f",
+      ),
+    ).toEqual({
+      orgSlug: "acme",
+      projectSlug: "site",
+      surface: "inbox",
+    });
+    expect(parsePortalWorkspacePath("/portal/acme/site/forms/")).toEqual({
+      orgSlug: "acme",
+      projectSlug: "site",
+      surface: "forms",
+    });
     expect(parsePortalWorkspacePath("/portal/acme/site/membership/")).toEqual({
       orgSlug: "acme",
       projectSlug: "site",
@@ -108,6 +122,13 @@ describe("portalWorkspacePath", () => {
         surface: "inbox",
       }),
     ).toBe("/portal/acme/site/inbox/");
+    expect(
+      portalWorkspacePath({
+        orgSlug: "acme",
+        projectSlug: "site",
+        surface: "forms",
+      }),
+    ).toBe("/portal/acme/site/forms/");
     expect(
       portalWorkspacePath({
         orgSlug: "acme",

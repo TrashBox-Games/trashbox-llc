@@ -6,7 +6,10 @@ import { PortalHeader } from "@/components/features/portal/PortalHeader";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { PortalWorkspaceApp } from "@/components/features/portal/PortalWorkspaceApp";
 import { PortalProvider } from "@/lib/portal";
-import { isPortalWorkspacePath } from "@/lib/portal-routes";
+import {
+  isPortalWorkspacePath,
+  subscribePortalNavigate,
+} from "@/lib/portal-routes";
 
 /**
  * GitHub Pages serves 404.html for unknown slug paths. When the location is a
@@ -19,9 +22,13 @@ export function PortalDeepLinkOrNotFound() {
   const [pathname, setPathname] = useState("");
 
   useEffect(() => {
-    const path = window.location.pathname;
-    setPathname(path);
-    setMode(isPortalWorkspacePath(path) ? "workspace" : "missing");
+    function sync(path: string) {
+      const next = path || window.location.pathname;
+      setPathname(next);
+      setMode(isPortalWorkspacePath(next) ? "workspace" : "missing");
+    }
+    sync(window.location.pathname);
+    return subscribePortalNavigate(sync);
   }, []);
 
   if (mode === "loading") {

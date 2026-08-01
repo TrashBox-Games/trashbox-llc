@@ -38,6 +38,7 @@ const emptyFilters = {
   status: "" as const,
   tag: "" as const,
   assignedTo: "",
+  formId: "",
 };
 
 const baseProps = {

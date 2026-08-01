@@ -175,6 +175,9 @@ export function LeadDetail({
                 }
               />
               {fromAddress && <MetaRow label="To" value={fromAddress} />}
+              {submission.formName ? (
+                <MetaRow label="Form" value={submission.formName} />
+              ) : null}
               <MetaRow
                 label="Subject"
                 value={

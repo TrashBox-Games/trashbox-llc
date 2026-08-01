@@ -22,6 +22,7 @@ import {
   getMailbox,
   getTeam,
   leadStatusOf,
+  listForms,
   listLeadMessages,
   listOrgs,
   listSubmissions,
@@ -41,6 +42,7 @@ import {
   type OrgSummary,
   type PatchMailboxInput,
   type Permission,
+  type ProjectForm,
   type Submission,
   type TeamMember,
   type TeamRole,
@@ -52,6 +54,7 @@ import { portalSignedOutRedirect } from "@/lib/portal-redirects";
 import {
   portalNavigate,
   portalWorkspacePath,
+  subscribePortalNavigate,
 } from "@/lib/portal-routes";
 import {
   getSelectedOrgId,
@@ -69,7 +72,22 @@ const emptyFilters: LeadInboxFiltersValue = {
   status: "",
   tag: "",
   assignedTo: "",
+  formId: "",
 };
+
+/** Deep-link filters from `?formId=` (kept in the URL for shareable inbox links). */
+function filtersFromFormIdSearch(
+  search: string,
+): LeadInboxFiltersValue | null {
+  const formId = new URLSearchParams(search).get("formId")?.trim();
+  if (!formId) return null;
+  return { ...emptyFilters, formId };
+}
+
+function filtersFromWindowFormId(): LeadInboxFiltersValue | null {
+  if (typeof window === "undefined") return null;
+  return filtersFromFormIdSearch(window.location.search);
+}
 
 /** Fill reply counts for inbox stacks without requiring each lead to be opened. */
 async function fetchMessageCounts(
@@ -129,6 +147,7 @@ export interface PortalContextValue {
   setFilters: (value: LeadInboxFiltersValue) => void;
   applyFilters: () => void;
   members: TeamMember[];
+  forms: ProjectForm[];
   teamRole: TeamRole;
   permissions: Permission[];
   roles: ClientRole[];
@@ -210,6 +229,7 @@ export function StubPortalProvider({
     setFilters: () => {},
     applyFilters: () => {},
     members: [],
+    forms: [],
     teamRole: "member",
     permissions: [],
     roles: [],
@@ -271,10 +291,14 @@ export function PortalProvider({
   const [workspaceEpoch, setWorkspaceEpoch] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-  const [filters, setFilters] = useState<LeadInboxFiltersValue>(emptyFilters);
-  const [appliedFilters, setAppliedFilters] =
-    useState<LeadInboxFiltersValue>(emptyFilters);
+  const [filters, setFilters] = useState<LeadInboxFiltersValue>(
+    () => filtersFromWindowFormId() ?? emptyFilters,
+  );
+  const [appliedFilters, setAppliedFilters] = useState<LeadInboxFiltersValue>(
+    () => filtersFromWindowFormId() ?? emptyFilters,
+  );
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [forms, setForms] = useState<ProjectForm[]>([]);
   const [teamRole, setTeamRole] = useState<TeamRole>("member");
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [roles, setRoles] = useState<ClientRole[]>([]);
@@ -309,6 +333,8 @@ export function PortalProvider({
       );
     }
 
+    // Flash params only — keep `formId` so inbox deep links survive Strict Mode
+    // remounts and stay shareable.
     if (billing || mailboxParam) {
       params.delete("billing");
       params.delete("mailbox");
@@ -316,6 +342,18 @@ export function PortalProvider({
       const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
       window.history.replaceState({}, "", next);
     }
+  }, []);
+
+  useEffect(() => {
+    function applyFormIdFromUrl() {
+      const nextFilters = filtersFromWindowFormId();
+      if (!nextFilters) return;
+      setFilters(nextFilters);
+      setAppliedFilters(nextFilters);
+    }
+
+    applyFormIdFromUrl();
+    return subscribePortalNavigate(applyFormIdFromUrl);
   }, []);
 
   useEffect(() => {
@@ -339,6 +377,7 @@ export function PortalProvider({
       setBillingError(null);
       setSelectedId(null);
       setMembers([]);
+      setForms([]);
       setPermissions([]);
       setRoles([]);
       setMessagesById({});
@@ -402,6 +441,7 @@ export function PortalProvider({
           setClientName(null);
           setNextCursor(undefined);
           setMembers([]);
+          setForms([]);
           setPermissions([]);
           setRoles([]);
           setMailbox({ connected: false });
@@ -427,6 +467,14 @@ export function PortalProvider({
         }
 
         try {
+          const formList = await listForms();
+          if (cancelled) return;
+          setForms(formList.forms);
+        } catch {
+          if (!cancelled) setForms([]);
+        }
+
+        try {
           const box = await getMailbox();
           if (cancelled) return;
           setMailbox(box);
@@ -443,6 +491,9 @@ export function PortalProvider({
             ...(appliedFilters.tag ? { tag: appliedFilters.tag } : {}),
             ...(appliedFilters.assignedTo
               ? { assignedTo: appliedFilters.assignedTo }
+              : {}),
+            ...(appliedFilters.formId
+              ? { formId: appliedFilters.formId }
               : {}),
             ...(appliedFilters.q.trim() ? { q: appliedFilters.q.trim() } : {}),
           });
@@ -513,6 +564,7 @@ export function PortalProvider({
         ...(appliedFilters.assignedTo
           ? { assignedTo: appliedFilters.assignedTo }
           : {}),
+        ...(appliedFilters.formId ? { formId: appliedFilters.formId } : {}),
         ...(appliedFilters.q.trim() ? { q: appliedFilters.q.trim() } : {}),
       });
       setItems((prev) => [...prev, ...data.items]);
@@ -920,6 +972,7 @@ export function PortalProvider({
       setFilters,
       applyFilters,
       members,
+      forms,
       teamRole,
       permissions,
       roles,
@@ -968,6 +1021,7 @@ export function PortalProvider({
       filters,
       applyFilters,
       members,
+      forms,
       teamRole,
       permissions,
       roles,

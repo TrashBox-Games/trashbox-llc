@@ -46,6 +46,8 @@ export interface LeadInboxCardProps {
   senderName: string;
   senderEmail: string;
   message: string;
+  /** Named project form label when the lead was tagged on submit. */
+  formName?: string | null;
   submittedAt: string;
   status: LeadStatus;
   active?: boolean;
@@ -73,6 +75,7 @@ export function LeadInboxCard({
   senderName,
   senderEmail,
   message,
+  formName,
   submittedAt,
   status,
   active = false,
@@ -169,6 +172,11 @@ export function LeadInboxCard({
           <LeadStatusBadge status={status} />
         </div>
         <p className="text-outline mt-1 text-xs">{senderEmail}</p>
+        {formName ? (
+          <p className="font-label text-outline mt-2 text-[10px] tracking-widest uppercase">
+            {formName}
+          </p>
+        ) : null}
       </Button>
 
       <div

@@ -62,6 +62,7 @@ For GitHub Pages, set the same names as repository **Secrets** (used by `.github
 | `/portal/{orgSlug}/settings/*` | Organization settings (general, team, billing, security) |
 | `/portal/{orgSlug}/{projectSlug}/` | Project home |
 | `/portal/{orgSlug}/{projectSlug}/inbox/` | Lead inbox |
+| `/portal/{orgSlug}/{projectSlug}/forms/` | Named project forms |
 | `/portal/{orgSlug}/{projectSlug}/settings/*` | Project settings (mailbox, templates, API keys, CRM) |
 | `/portal/{orgSlug}/{projectSlug}/membership/` | Legacy — redirects to org Billing |
 | `/portal/login` | Cognito sign-in |

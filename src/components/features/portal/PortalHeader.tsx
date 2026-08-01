@@ -140,6 +140,15 @@ export function PortalHeader() {
         href: portalWorkspacePath({
           orgSlug,
           projectSlug,
+          surface: "forms",
+        }),
+        label: "Forms",
+        icon: "dynamic_form" as const,
+      },
+      {
+        href: portalWorkspacePath({
+          orgSlug,
+          projectSlug,
           surface: "settings",
           settingsRest: DEFAULT_SETTINGS_SECTION,
         }),
