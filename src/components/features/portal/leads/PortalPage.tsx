@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LeadDetail } from "@/components/features/portal/leads/LeadDetail";
+import { LeadInboxEmptyDetail } from "@/components/features/portal/leads/LeadInboxEmptyDetail";
 import {
   INBOX_SIDEBAR_MIN_WIDTH,
   INBOX_SIDEBAR_SNAP_WIDTH,
@@ -99,6 +100,11 @@ export function PortalApp({ tab }: PortalAppProps) {
       : portal.selectedId
         ? [portal.selectedId]
         : [];
+  // Drop stale tab ids (e.g. previous session / other filter) so the empty
+  // detail graphic can show in the main pane when nothing is openable.
+  const visibleTabIds = displayTabIds.filter((id) =>
+    portal.items.some((entry) => entry.submissionId === id),
+  );
 
   if (!auth.configured) {
     return (
@@ -236,7 +242,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                 <div
                   className={cn(
                     inboxSidebarOpen &&
-                      "lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:scrollbar-none",
+                      "lg:max-h-[calc(100vh-7rem)] lg:scrollbar-none lg:overflow-y-auto",
                   )}
                 >
                   <LeadInboxSidebar
@@ -281,10 +287,10 @@ export function PortalApp({ tab }: PortalAppProps) {
                     onDraggingChange={setInboxResizing}
                   />
                 )}
-                {displayTabIds.length > 0 ? (
+                {visibleTabIds.length > 0 ? (
                   <div>
                     <LeadThreadTabs
-                      tabs={displayTabIds.flatMap((id) => {
+                      tabs={visibleTabIds.flatMap((id) => {
                         const item = portal.items.find(
                           (entry) => entry.submissionId === id,
                         );
@@ -296,7 +302,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                       onClose={closeLead}
                     />
                     <div className="bg-surface-container-low rounded-lg rounded-tl-none p-6 md:p-10">
-                      {displayTabIds.map((id) => {
+                      {visibleTabIds.map((id) => {
                         const submission = portal.items.find(
                           (entry) => entry.submissionId === id,
                         );
@@ -322,9 +328,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                                 portal.messagesById[submission.submissionId] ??
                                 []
                               }
-                              messageError={
-                                active ? portal.messageError : null
-                              }
+                              messageError={active ? portal.messageError : null}
                               onUpdate={portal.onLeadUpdate}
                               onAddNote={portal.onLeadNote}
                               onSendMessage={portal.onSendLeadMessage}
@@ -334,10 +338,18 @@ export function PortalApp({ tab }: PortalAppProps) {
                       })}
                     </div>
                   </div>
+                ) : portal.items.length === 0 && !portal.listBusy ? (
+                  <LeadInboxEmptyDetail
+                    filtered={Boolean(
+                      portal.filters.q.trim() ||
+                        portal.filters.status ||
+                        portal.filters.tag ||
+                        portal.filters.assignedTo ||
+                        portal.filters.formId,
+                    )}
+                  />
                 ) : (
-                  <div className="bg-surface-container-low rounded-lg p-6 md:p-10">
-                    <p className="text-on-surface-variant">Select a lead.</p>
-                  </div>
+                  <LeadInboxEmptyDetail variant="select" />
                 )}
               </div>
             </div>

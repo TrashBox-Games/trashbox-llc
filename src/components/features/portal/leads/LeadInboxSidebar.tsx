@@ -181,7 +181,7 @@ export function LeadInboxResizeHandle({
       onKeyDown={onKeyDown}
       className={cn(
         "absolute top-0 left-0 z-10 flex h-full w-3 -translate-x-1/2 cursor-col-resize touch-none items-stretch justify-center",
-        "after:my-auto after:h-12 after:w-px after:bg-outline-variant/40 after:transition-colors",
+        "after:bg-outline-variant/40 after:my-auto after:h-12 after:w-px after:transition-colors",
         "hover:after:bg-white/50 focus-visible:outline-none focus-visible:after:bg-white",
         dragging && "after:bg-white",
         className,
@@ -297,7 +297,7 @@ export function LeadInboxOpenHandle({
       onKeyDown={onKeyDown}
       className={cn(
         "absolute top-0 left-0 z-10 flex h-full w-3 cursor-col-resize touch-none items-stretch justify-center",
-        "after:my-auto after:h-12 after:w-px after:bg-outline-variant/40 after:transition-colors",
+        "after:bg-outline-variant/40 after:my-auto after:h-12 after:w-px after:transition-colors",
         "hover:after:bg-white/50 focus-visible:outline-none focus-visible:after:bg-white",
         dragging && "after:bg-white",
         className,
