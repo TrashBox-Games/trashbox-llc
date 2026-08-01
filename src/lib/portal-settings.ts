@@ -4,19 +4,22 @@ import {
 } from "@/lib/portal-routes";
 import { PORTAL_PATHS } from "@/lib/sites";
 
+export type SettingsScope = "org" | "project";
+
 function currentWorkspaceSlugs(): {
   orgSlug: string;
-  projectSlug: string;
+  projectSlug?: string;
 } | null {
   if (typeof window === "undefined") return null;
   const parsed = parsePortalWorkspacePath(window.location.pathname);
-  if (parsed?.orgSlug && parsed.projectSlug) {
+  if (parsed?.orgSlug) {
     return { orgSlug: parsed.orgSlug, projectSlug: parsed.projectSlug };
   }
   return null;
 }
 
 export type SettingsGroupId =
+  | "organization"
   | "workspace"
   | "team"
   | "communication"
@@ -68,13 +71,14 @@ export interface SettingsNavGroup {
   items: SettingsNavItem[];
 }
 
-/** Default landing section when visiting /portal/settings. */
+/** Default landing section when visiting settings. */
 export const DEFAULT_SETTINGS_SECTION: SettingsSectionId = "general";
 
-export const PORTAL_SETTINGS_NAV: SettingsNavGroup[] = [
+/** Organization-scoped settings: company identity, team, billing, account security. */
+export const PORTAL_ORG_SETTINGS_NAV: SettingsNavGroup[] = [
   {
-    id: "workspace",
-    label: "Workspace",
+    id: "organization",
+    label: "Organization",
     icon: "corporate_fare",
     items: [
       { id: "general", label: "General", icon: "settings" },
@@ -98,6 +102,55 @@ export const PORTAL_SETTINGS_NAV: SettingsNavGroup[] = [
         icon: "admin_panel_settings",
       },
       { id: "activity-log", label: "Activity Log", icon: "history" },
+    ],
+  },
+  {
+    id: "billing",
+    label: "Billing",
+    icon: "credit_card",
+    items: [
+      { id: "current-plan", label: "Current Plan", icon: "workspace_premium" },
+      { id: "usage", label: "Usage", icon: "bar_chart" },
+      { id: "payment-methods", label: "Payment Methods", icon: "payments" },
+      { id: "invoices", label: "Invoices", icon: "receipt_long" },
+      {
+        id: "upgrade-cancel",
+        label: "Upgrade / Cancel",
+        icon: "trending_up",
+      },
+    ],
+  },
+  {
+    id: "security",
+    label: "Security",
+    icon: "lock",
+    items: [
+      { id: "password", label: "Password", icon: "password" },
+      {
+        id: "two-factor",
+        label: "Two-Factor Authentication",
+        icon: "phonelink_lock",
+      },
+      { id: "sessions", label: "Sessions", icon: "devices" },
+      { id: "audit-log", label: "Audit Log", icon: "policy" },
+    ],
+  },
+];
+
+/** Project-scoped settings: site/inbox/API configuration. */
+export const PORTAL_PROJECT_SETTINGS_NAV: SettingsNavGroup[] = [
+  {
+    id: "workspace",
+    label: "Workspace",
+    icon: "folder",
+    items: [
+      { id: "general", label: "General", icon: "settings" },
+      { id: "branding", label: "Branding", icon: "palette" },
+      {
+        id: "business-information",
+        label: "Business Information",
+        icon: "storefront",
+      },
     ],
   },
   {
@@ -148,77 +201,124 @@ export const PORTAL_SETTINGS_NAV: SettingsNavGroup[] = [
       },
     ],
   },
-  {
-    id: "billing",
-    label: "Billing",
-    icon: "credit_card",
-    items: [
-      { id: "current-plan", label: "Current Plan", icon: "workspace_premium" },
-      { id: "usage", label: "Usage", icon: "bar_chart" },
-      { id: "payment-methods", label: "Payment Methods", icon: "payments" },
-      { id: "invoices", label: "Invoices", icon: "receipt_long" },
-      {
-        id: "upgrade-cancel",
-        label: "Upgrade / Cancel",
-        icon: "trending_up",
-      },
-    ],
-  },
-  {
-    id: "security",
-    label: "Security",
-    icon: "lock",
-    items: [
-      { id: "password", label: "Password", icon: "password" },
-      {
-        id: "two-factor",
-        label: "Two-Factor Authentication",
-        icon: "phonelink_lock",
-      },
-      { id: "sessions", label: "Sessions", icon: "devices" },
-      { id: "audit-log", label: "Audit Log", icon: "policy" },
-    ],
-  },
 ];
 
-const SECTION_BY_ID = new Map(
-  PORTAL_SETTINGS_NAV.flatMap((group) =>
-    group.items.map(
-      (item) =>
-        [
-          item.id,
-          { ...item, groupId: group.id, groupLabel: group.label },
-        ] as const,
+/** @deprecated Prefer PORTAL_PROJECT_SETTINGS_NAV or PORTAL_ORG_SETTINGS_NAV. */
+export const PORTAL_SETTINGS_NAV = PORTAL_PROJECT_SETTINGS_NAV;
+
+function sectionMapFor(nav: SettingsNavGroup[]) {
+  return new Map(
+    nav.flatMap((group) =>
+      group.items.map(
+        (item) =>
+          [
+            item.id,
+            { ...item, groupId: group.id, groupLabel: group.label },
+          ] as const,
+      ),
     ),
-  ),
-);
-
-export function isSettingsSectionId(value: string): value is SettingsSectionId {
-  return SECTION_BY_ID.has(value as SettingsSectionId);
+  );
 }
 
-export function getSettingsSection(id: string) {
-  return SECTION_BY_ID.get(id as SettingsSectionId);
+const ORG_SECTION_BY_ID = sectionMapFor(PORTAL_ORG_SETTINGS_NAV);
+const PROJECT_SECTION_BY_ID = sectionMapFor(PORTAL_PROJECT_SETTINGS_NAV);
+
+export function settingsNavForScope(scope: SettingsScope): SettingsNavGroup[] {
+  return scope === "org" ? PORTAL_ORG_SETTINGS_NAV : PORTAL_PROJECT_SETTINGS_NAV;
 }
 
-export function settingsSectionPath(section: SettingsSectionId): string {
+export function isSettingsSectionId(
+  value: string,
+  scope: SettingsScope = "project",
+): value is SettingsSectionId {
+  const map = scope === "org" ? ORG_SECTION_BY_ID : PROJECT_SECTION_BY_ID;
+  return map.has(value as SettingsSectionId);
+}
+
+export function getSettingsSection(id: string, scope: SettingsScope = "project") {
+  const map = scope === "org" ? ORG_SECTION_BY_ID : PROJECT_SECTION_BY_ID;
+  return map.get(id as SettingsSectionId);
+}
+
+/** Infer settings scope from a portal pathname. */
+export function settingsScopeFromPath(
+  pathname: string | null | undefined,
+): SettingsScope {
+  const parsed = parsePortalWorkspacePath(pathname);
+  if (parsed?.surface === "orgSettings") return "org";
+  return "project";
+}
+
+function resolveSettingsScope(
+  section: SettingsSectionId,
+  scope?: SettingsScope,
+): SettingsScope {
+  if (scope) return scope;
+  const inOrg = ORG_SECTION_BY_ID.has(section);
+  const inProject = PROJECT_SECTION_BY_ID.has(section);
+  // Sections that exist in only one nav always target that scope.
+  if (inOrg && !inProject) return "org";
+  if (inProject && !inOrg) return "project";
+  if (typeof window !== "undefined") {
+    return settingsScopeFromPath(window.location.pathname);
+  }
+  return "project";
+}
+
+export function settingsSectionPath(
+  section: SettingsSectionId,
+  scope?: SettingsScope,
+): string {
   const ws = currentWorkspaceSlugs();
-  if (ws) {
+  const resolvedScope = resolveSettingsScope(section, scope);
+
+  if (ws?.orgSlug && resolvedScope === "org") {
     return portalWorkspacePath({
-      ...ws,
+      orgSlug: ws.orgSlug,
+      surface: "orgSettings",
+      settingsRest: section,
+    });
+  }
+
+  if (ws?.orgSlug && ws.projectSlug && resolvedScope === "project") {
+    return portalWorkspacePath({
+      orgSlug: ws.orgSlug,
+      projectSlug: ws.projectSlug,
       surface: "settings",
       settingsRest: section,
     });
   }
+
+  // Project section while on org settings (no project in URL): stay under org
+  // home so the user can open a project — avoid inventing a bad settings URL.
+  if (ws?.orgSlug && resolvedScope === "project" && !ws.projectSlug) {
+    return portalWorkspacePath({
+      orgSlug: ws.orgSlug,
+      surface: "orgHome",
+    });
+  }
+
   return `${PORTAL_PATHS.settings}${section}/`;
+}
+
+export function orgSettingsSectionPath(
+  orgSlug: string,
+  section: SettingsSectionId = DEFAULT_SETTINGS_SECTION,
+): string {
+  return portalWorkspacePath({
+    orgSlug,
+    surface: "orgSettings",
+    settingsRest: section,
+  });
 }
 
 /** Gallery / starter picker before opening the full-page builder. */
 export function templateBuilderNewPath(): string {
   const ws = currentWorkspaceSlugs();
-  if (ws) {
+  if (ws?.orgSlug && ws.projectSlug) {
     return portalWorkspacePath({
-      ...ws,
+      orgSlug: ws.orgSlug,
+      projectSlug: ws.projectSlug,
       surface: "settings",
       settingsRest: "templates/new",
     });
@@ -232,13 +332,15 @@ export function templateBuilderCreatePath(options?: {
   draft?: boolean;
 }): string {
   const ws = currentWorkspaceSlugs();
-  const base = ws
-    ? portalWorkspacePath({
-        ...ws,
-        surface: "settings",
-        settingsRest: "templates/builder",
-      })
-    : `${PORTAL_PATHS.settings}templates/builder/`;
+  const base =
+    ws?.orgSlug && ws.projectSlug
+      ? portalWorkspacePath({
+          orgSlug: ws.orgSlug,
+          projectSlug: ws.projectSlug,
+          surface: "settings",
+          settingsRest: "templates/builder",
+        })
+      : `${PORTAL_PATHS.settings}templates/builder/`;
   const params = new URLSearchParams();
   if (options?.starterId) params.set("starter", options.starterId);
   if (options?.draft) params.set("draft", "1");
@@ -248,13 +350,15 @@ export function templateBuilderCreatePath(options?: {
 
 export function templateBuilderEditPath(id: string): string {
   const ws = currentWorkspaceSlugs();
-  const base = ws
-    ? portalWorkspacePath({
-        ...ws,
-        surface: "settings",
-        settingsRest: "templates/edit",
-      })
-    : `${PORTAL_PATHS.settings}templates/edit/`;
+  const base =
+    ws?.orgSlug && ws.projectSlug
+      ? portalWorkspacePath({
+          orgSlug: ws.orgSlug,
+          projectSlug: ws.projectSlug,
+          surface: "settings",
+          settingsRest: "templates/edit",
+        })
+      : `${PORTAL_PATHS.settings}templates/edit/`;
   return `${base}?id=${encodeURIComponent(id)}`;
 }
 
@@ -280,8 +384,11 @@ export interface TemplateBuilderDraftPayload {
   document: unknown;
 }
 
-export function settingsGroupForSection(section: SettingsSectionId) {
-  return PORTAL_SETTINGS_NAV.find((group) =>
+export function settingsGroupForSection(
+  section: SettingsSectionId,
+  scope: SettingsScope = "project",
+) {
+  return settingsNavForScope(scope).find((group) =>
     group.items.some((item) => item.id === section),
   );
 }

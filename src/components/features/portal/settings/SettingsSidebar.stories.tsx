@@ -8,7 +8,7 @@ const meta = {
   parameters: {
     nextjs: {
       navigation: {
-        pathname: "/portal/settings/email-accounts/",
+        pathname: "/portal/acme/site/settings/email-accounts/",
       },
     },
   },
@@ -24,23 +24,38 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const EmailAccountsActive: Story = {};
+export const ProjectEmailAccountsActive: Story = {
+  args: { scope: "project" },
+};
 
-export const MembersActive: Story = {
+export const ProjectGeneralActive: Story = {
+  args: { scope: "project" },
   parameters: {
     nextjs: {
       navigation: {
-        pathname: "/portal/settings/members/",
+        pathname: "/portal/acme/site/settings/general/",
       },
     },
   },
 };
 
-export const GeneralActive: Story = {
+export const OrgMembersActive: Story = {
+  args: { scope: "org" },
   parameters: {
     nextjs: {
       navigation: {
-        pathname: "/portal/settings/general/",
+        pathname: "/portal/acme/settings/members/",
+      },
+    },
+  },
+};
+
+export const OrgBillingActive: Story = {
+  args: { scope: "org" },
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: "/portal/acme/settings/current-plan/",
       },
     },
   },

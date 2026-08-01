@@ -134,6 +134,7 @@ export function PortalHome() {
                     href={portalWorkspacePath({
                       orgSlug: org.orgSlug,
                       surface: "orgSettings",
+                      settingsRest: "general",
                     })}
                   >
                     <MaterialIcon name="settings" className="text-base!" />

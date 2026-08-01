@@ -128,16 +128,6 @@ describe("SettingsSectionContent", () => {
     expect(screen.getByText("premium")).toBeInTheDocument();
   });
 
-  it("renders team members management in the members section", async () => {
-    render(
-      <PortalProvider>
-        <SettingsSectionContent sectionId="members" />
-      </PortalProvider>,
-    );
-
-    expect(await screen.findByText(/owner@example.com/i)).toBeInTheDocument();
-  });
-
   it("renders api keys management in the api-keys section", async () => {
     render(
       <PortalProvider>
@@ -176,16 +166,15 @@ describe("SettingsSectionContent", () => {
     expect(await screen.findByText(heading)).toBeInTheDocument();
   });
 
-  it("renders Roles & Permissions in the roles-permissions section", async () => {
+  it("renders placeholders for unfinished project sections", async () => {
     render(
       <PortalProvider>
-        <SettingsSectionContent sectionId="roles-permissions" />
+        <SettingsSectionContent sectionId="branding" />
       </PortalProvider>,
     );
 
     expect(
-      await screen.findByText(/Owner has all permissions/i),
+      await screen.findByText(/branding settings are coming soon/i),
     ).toBeInTheDocument();
-    expect(await screen.findByText("Admin")).toBeInTheDocument();
   });
 });

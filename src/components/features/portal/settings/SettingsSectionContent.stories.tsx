@@ -1,40 +1,7 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react";
-import type { ClientRole, TeamMember } from "@/lib/api";
 import { StubAuthProvider } from "@/lib/auth";
 import { StubPortalProvider } from "@/lib/portal";
 import { SettingsSectionContent } from "./SettingsSectionContent";
-
-const systemRoles: ClientRole[] = [
-  {
-    id: "admin",
-    name: "Admin",
-    system: true,
-    permissions: [
-      "manage_sender_display_names",
-      "allow_all_sender_display_names",
-      "manage_team_members",
-      "manage_roles_and_permissions",
-      "manage_api_keys",
-    ],
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
-  },
-  {
-    id: "member",
-    name: "Member",
-    system: true,
-    permissions: [],
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
-  },
-];
-
-const owner: TeamMember = {
-  email: "owner@example.com",
-  role: "owner",
-  joinedAt: "2026-01-01T00:00:00.000Z",
-  emailNotifications: true,
-};
 
 const signedInDecorator: Decorator = (Story) => (
   <StubAuthProvider
@@ -104,22 +71,6 @@ export const General: Story = {
 export const EmailAccounts: Story = {
   args: {
     sectionId: "email-accounts",
-  },
-};
-
-export const Members: Story = {
-  args: {
-    sectionId: "members",
-    teamMembersInitialState: {
-      role: "owner",
-      canManageTeamMembers: true,
-      members: [owner],
-      invites: [],
-      roles: systemRoles,
-      memberLimit: 5,
-      memberCount: 1,
-      senderDisplayNames: [],
-    },
   },
 };
 

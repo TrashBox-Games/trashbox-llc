@@ -110,9 +110,19 @@ export function PortalHeader() {
       orgSlug,
       surface: "orgHome",
     });
+    const orgSettingsHref = portalWorkspacePath({
+      orgSlug,
+      surface: "orgSettings",
+      settingsRest: DEFAULT_SETTINGS_SECTION,
+    });
     if (!projectSlug) {
       return [
         { href: projectsHref, label: "Projects", icon: "home" as const },
+        {
+          href: orgSettingsHref,
+          label: "Org settings",
+          icon: "settings" as const,
+        },
       ];
     }
     return [
@@ -134,16 +144,12 @@ export function PortalHeader() {
           settingsRest: DEFAULT_SETTINGS_SECTION,
         }),
         label: "Settings",
-        icon: "settings" as const,
+        icon: "tune" as const,
       },
       {
-        href: portalWorkspacePath({
-          orgSlug,
-          projectSlug,
-          surface: "membership",
-        }),
-        label: "Membership",
-        icon: "workspace_premium" as const,
+        href: orgSettingsHref,
+        label: "Org settings",
+        icon: "settings" as const,
       },
     ];
   }, [selectedOrg, selectedProject]);

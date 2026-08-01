@@ -7,29 +7,38 @@ import { PortalLink } from "@/components/features/portal/PortalLink";
 import { Button } from "@/components/ui/button";
 import { subscribePortalNavigate } from "@/lib/portal-routes";
 import {
-  PORTAL_SETTINGS_NAV,
   getSettingsSection,
   isSettingsSectionId,
+  settingsNavForScope,
   settingsSectionPath,
   type SettingsGroupId,
+  type SettingsScope,
 } from "@/lib/portal-settings";
 import { cn } from "@/lib/utils";
 
-function activeSectionFromPath(pathname: string | null | undefined) {
+function activeSectionFromPath(
+  pathname: string | null | undefined,
+  scope: SettingsScope,
+) {
   if (!pathname) return null;
   const parts = pathname.replace(/\/$/, "").split("/").filter(Boolean);
   const settingsIndex = parts.indexOf("settings");
   if (settingsIndex >= 0) {
     const after = parts[settingsIndex + 1];
-    if (after && isSettingsSectionId(after)) return after;
+    if (after && isSettingsSectionId(after, scope)) return after;
   }
   const maybe = parts[parts.length - 1];
-  return maybe && isSettingsSectionId(maybe) ? maybe : null;
+  return maybe && isSettingsSectionId(maybe, scope) ? maybe : null;
 }
 
-export function SettingsSidebar() {
+interface SettingsSidebarProps {
+  scope?: SettingsScope;
+}
+
+export function SettingsSidebar({ scope = "project" }: SettingsSidebarProps) {
   const nextPath = usePathname() ?? "";
   const [pathname, setPathname] = useState(nextPath);
+  const nav = settingsNavForScope(scope);
 
   useEffect(() => {
     const win = window.location.pathname;
@@ -37,14 +46,15 @@ export function SettingsSidebar() {
     return subscribePortalNavigate(setPathname);
   }, [nextPath]);
 
-  const activeSection = activeSectionFromPath(pathname);
+  const activeSection = activeSectionFromPath(pathname, scope);
   const activeGroupId =
-    (activeSection && getSettingsSection(activeSection)?.groupId) || null;
+    (activeSection && getSettingsSection(activeSection, scope)?.groupId) ||
+    null;
 
   const [openGroups, setOpenGroups] = useState<Set<SettingsGroupId>>(() => {
     const initial = new Set<SettingsGroupId>();
     if (activeGroupId) initial.add(activeGroupId);
-    else initial.add("workspace");
+    else if (nav[0]) initial.add(nav[0].id);
     return initial;
   });
 
@@ -69,7 +79,7 @@ export function SettingsSidebar() {
 
   return (
     <nav aria-label="Settings" className="space-y-0.5">
-      {PORTAL_SETTINGS_NAV.map((group) => {
+      {nav.map((group) => {
         const open = openGroups.has(group.id);
         const panelId = `settings-group-${group.id}`;
 
@@ -117,7 +127,7 @@ export function SettingsSidebar() {
               <div className="min-h-0 overflow-hidden">
                 <ul className="mb-1 ml-2 space-y-0.5 border-l border-outline-variant/15 py-0.5 pl-2">
                   {group.items.map((item) => {
-                    const href = settingsSectionPath(item.id);
+                    const href = settingsSectionPath(item.id, scope);
                     const active = activeSection === item.id;
                     return (
                       <li key={item.id}>

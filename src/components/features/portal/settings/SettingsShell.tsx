@@ -9,27 +9,35 @@ import {
   getSettingsSection,
   isSettingsSectionId,
   isTemplateBuilderImmersivePath,
+  type SettingsScope,
 } from "@/lib/portal-settings";
 
 interface SettingsShellProps {
   children: ReactNode;
+  scope?: SettingsScope;
 }
 
-function sectionIdFromPath(pathname: string | null | undefined) {
+function sectionIdFromPath(
+  pathname: string | null | undefined,
+  scope: SettingsScope,
+) {
   if (!pathname) return DEFAULT_SETTINGS_SECTION;
   const parts = pathname.replace(/\/$/, "").split("/").filter(Boolean);
   const settingsIndex = parts.indexOf("settings");
   if (settingsIndex >= 0) {
     const after = parts[settingsIndex + 1];
-    if (after && isSettingsSectionId(after)) return after;
+    if (after && isSettingsSectionId(after, scope)) return after;
   }
   const maybe = parts[parts.length - 1];
-  if (maybe && isSettingsSectionId(maybe)) return maybe;
+  if (maybe && isSettingsSectionId(maybe, scope)) return maybe;
   if (maybe === "settings") return DEFAULT_SETTINGS_SECTION;
   return DEFAULT_SETTINGS_SECTION;
 }
 
-export function SettingsShell({ children }: SettingsShellProps) {
+export function SettingsShell({
+  children,
+  scope = "project",
+}: SettingsShellProps) {
   const nextPath = usePathname() ?? "";
   const [pathname, setPathname] = useState(nextPath);
 
@@ -39,8 +47,9 @@ export function SettingsShell({ children }: SettingsShellProps) {
     return subscribePortalNavigate(setPathname);
   }, [nextPath]);
 
-  const sectionId = sectionIdFromPath(pathname);
-  const section = getSettingsSection(sectionId);
+  const sectionId = sectionIdFromPath(pathname, scope);
+  const section = getSettingsSection(sectionId, scope);
+  const title = scope === "org" ? "Organization settings" : "Settings";
 
   if (isTemplateBuilderImmersivePath(pathname)) {
     return (
@@ -57,14 +66,14 @@ export function SettingsShell({ children }: SettingsShellProps) {
           Settings
         </p>
         <h1 className="max-w-4xl font-headline text-4xl font-bold leading-tight tracking-tighter text-white md:text-6xl">
-          Settings
+          {title}
         </h1>
       </header>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
         <aside className="lg:col-span-3">
           <div className="rounded-lg border border-outline-variant/10 bg-surface-container-low/40 p-2 lg:sticky lg:top-32 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto">
-            <SettingsSidebar />
+            <SettingsSidebar scope={scope} />
           </div>
         </aside>
 

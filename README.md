@@ -59,11 +59,11 @@ For GitHub Pages, set the same names as repository **Secrets** (used by `.github
 | `/platform/documentation` | Platform docs + OpenAPI link |
 | `/portal/orgs` | Org picker — select or create an organization |
 | `/portal/{orgSlug}/` | Org workspace (project list) |
-| `/portal/{orgSlug}/settings/` | Organization settings (rename / delete) |
+| `/portal/{orgSlug}/settings/*` | Organization settings (general, team, billing, security) |
 | `/portal/{orgSlug}/{projectSlug}/` | Project home |
 | `/portal/{orgSlug}/{projectSlug}/inbox/` | Lead inbox |
-| `/portal/{orgSlug}/{projectSlug}/settings/*` | Project/org settings |
-| `/portal/{orgSlug}/{projectSlug}/membership/` | Org subscription / billing |
+| `/portal/{orgSlug}/{projectSlug}/settings/*` | Project settings (mailbox, templates, API keys, CRM) |
+| `/portal/{orgSlug}/{projectSlug}/membership/` | Legacy — redirects to org Billing |
 | `/portal/login` | Cognito sign-in |
 | `/portal/signup` | Cognito sign-up |
 | `/portal/confirm` | Email verification (after signup) |

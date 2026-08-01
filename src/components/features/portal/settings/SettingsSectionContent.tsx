@@ -15,11 +15,6 @@ import {
 } from "@/components/features/portal/settings/ApiKeysSettings";
 import { GeneralSettings } from "@/components/features/portal/settings/GeneralSettings";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
-import { RolesPermissionsSettingsSection } from "@/components/features/portal/settings/RolesPermissionsSettingsSection";
-import {
-  TeamMembersSettings,
-  type TeamMembersSettingsInitialState,
-} from "@/components/features/portal/settings/TeamMembersSettings";
 import { useAuth } from "@/lib/auth";
 import { usePortal } from "@/lib/portal";
 import {
@@ -39,14 +34,12 @@ interface SettingsSectionContentProps {
   sectionId: SettingsSectionId;
   /** Storybook/demo seed for nested API-backed sections. */
   apiKeysInitialState?: ApiKeysSettingsInitialState;
-  teamMembersInitialState?: TeamMembersSettingsInitialState;
   emailContentInitialState?: EmailContentSectionInitialState;
 }
 
 export function SettingsSectionContent({
   sectionId,
   apiKeysInitialState,
-  teamMembersInitialState,
   emailContentInitialState,
 }: SettingsSectionContentProps) {
   const auth = useAuth();
@@ -72,9 +65,8 @@ export function SettingsSectionContent({
   if (!portal.account?.linked) {
     return (
       <p className="text-on-surface-variant">
-        Create an organization from the portal home before managing settings.
-        Team and billing are organization-scoped; API keys and mailbox are
-        project-scoped.
+        Select a project before managing project settings. Team and billing live
+        under organization settings.
       </p>
     );
   }
@@ -128,20 +120,6 @@ export function SettingsSectionContent({
         businessName={portal.account.clientName}
       />
     );
-  }
-
-  if (sectionId === "members") {
-    return (
-      <TeamMembersSettings
-        currentUserEmail={portal.account.email}
-        tier={portal.account.tier}
-        initialState={teamMembersInitialState}
-      />
-    );
-  }
-
-  if (sectionId === "roles-permissions") {
-    return <RolesPermissionsSettingsSection />;
   }
 
   if (sectionId === "api-keys") {

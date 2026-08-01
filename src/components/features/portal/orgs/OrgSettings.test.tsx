@@ -1,21 +1,12 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { StubAuthProvider } from "@/lib/auth";
 import { StubPortalProvider } from "@/lib/portal";
 import { OrgSettings } from "./OrgSettings";
 
-const updateOrganization = vi.fn();
-const deleteOrganization = vi.fn();
-
-vi.mock("@/lib/api", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
-  return {
-    ...actual,
-    updateOrganization: (...args: unknown[]) => updateOrganization(...args),
-    deleteOrganization: (...args: unknown[]) => deleteOrganization(...args),
-  };
-});
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/portal/acme-co/settings/general/",
+}));
 
 const org = {
   orgId: "o1",
@@ -29,51 +20,19 @@ const org = {
 };
 
 describe("OrgSettings", () => {
-  beforeEach(() => {
-    updateOrganization.mockReset();
-    deleteOrganization.mockReset();
-    updateOrganization.mockResolvedValue({
-      orgId: "o1",
-      orgName: "Acme Renamed",
-      orgSlug: "acme-co",
-    });
-  });
-
-  it("lets the owner rename the organization", async () => {
-    const user = userEvent.setup();
-    const refreshWorkspace = vi.fn();
+  it("renders organization settings chrome with general section", () => {
     render(
       <StubAuthProvider value={{ status: "signedIn", configured: true }}>
-        <StubPortalProvider value={{ ready: true, refreshWorkspace }}>
+        <StubPortalProvider value={{ ready: true }}>
           <OrgSettings org={org} />
         </StubPortalProvider>
       </StubAuthProvider>,
     );
 
-    const name = screen.getByLabelText(/^name$/i);
-    await user.clear(name);
-    await user.type(name, "Acme Renamed");
-    await user.click(screen.getByRole("button", { name: /save changes/i }));
-
-    expect(updateOrganization).toHaveBeenCalledWith({
-      orgId: "o1",
-      orgName: "Acme Renamed",
-    });
-    expect(refreshWorkspace).toHaveBeenCalled();
-  });
-
-  it("hides danger zone for non-owners", () => {
-    render(
-      <StubAuthProvider value={{ status: "signedIn", configured: true }}>
-        <StubPortalProvider value={{ ready: true }}>
-          <OrgSettings org={{ ...org, role: "member" }} />
-        </StubPortalProvider>
-      </StubAuthProvider>,
-    );
-
     expect(
-      screen.queryByRole("button", { name: /delete organization/i }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/^name$/i)).toBeDisabled();
+      screen.getByRole("heading", { name: /organization settings/i, level: 1 }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: /settings/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
   });
 });

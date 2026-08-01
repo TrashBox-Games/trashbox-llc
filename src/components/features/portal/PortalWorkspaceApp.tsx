@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { PortalHome } from "@/components/features/portal/home/PortalHome";
 import { PortalApp } from "@/components/features/portal/leads/PortalPage";
-import { OrgSettings } from "@/components/features/portal/orgs/OrgSettings";
+import { OrgSettingsSectionContent } from "@/components/features/portal/orgs/OrgSettingsSectionContent";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { SettingsSectionContent } from "@/components/features/portal/settings/SettingsSectionContent";
 import { SettingsShell } from "@/components/features/portal/settings/SettingsShell";
@@ -28,14 +28,19 @@ import {
 } from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
 
-function settingsSurface(settingsRest: string | undefined) {
+function settingsSurface(
+  settingsRest: string | undefined,
+  scope: "org" | "project",
+) {
   const rest = (settingsRest || "").replace(/^\/+|\/+$/g, "");
-  if (rest === "templates/new") return "templates/new" as const;
-  if (rest === "templates/builder") return "templates/builder" as const;
-  if (rest === "templates/edit") return "templates/edit" as const;
+  if (scope === "project") {
+    if (rest === "templates/new") return "templates/new" as const;
+    if (rest === "templates/builder") return "templates/builder" as const;
+    if (rest === "templates/edit") return "templates/edit" as const;
+  }
   if (!rest) return DEFAULT_SETTINGS_SECTION;
   const section = rest.split("/")[0] || DEFAULT_SETTINGS_SECTION;
-  return isSettingsSectionId(section) ? section : DEFAULT_SETTINGS_SECTION;
+  return isSettingsSectionId(section, scope) ? section : DEFAULT_SETTINGS_SECTION;
 }
 
 interface PortalWorkspaceAppProps {
@@ -64,6 +69,21 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
       // Avoid replace-loops while orgs are still empty between reloads.
       if (portal.orgs.length === 0) return;
       window.location.replace(PORTAL_PATHS.orgs);
+      return;
+    }
+
+    if (parsed.surface === "membership") {
+      const target = portalWorkspacePath({
+        orgSlug: org.orgSlug,
+        surface: "orgSettings",
+        settingsRest: "current-plan",
+      });
+      if (
+        window.location.pathname.replace(/\/$/, "") !==
+        target.replace(/\/$/, "")
+      ) {
+        portalNavigate(target, { replace: true });
+      }
       return;
     }
 
@@ -129,8 +149,20 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
     return <PortalHome />;
   }
 
+  if (parsed.surface === "membership") {
+    return <PortalSkeleton />;
+  }
+
   if (parsed.surface === "orgSettings") {
-    return <OrgSettings org={org} />;
+    const sectionId = settingsSurface(parsed.settingsRest, "org");
+    return (
+      <SettingsShell scope="org">
+        <OrgSettingsSectionContent
+          org={org}
+          sectionId={sectionId as SettingsSectionId}
+        />
+      </SettingsShell>
+    );
   }
 
   const project = org.projects.find(
@@ -144,11 +176,8 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
   if (parsed.surface === "inbox") {
     return <PortalApp tab="inbox" />;
   }
-  if (parsed.surface === "membership") {
-    return <PortalApp tab="membership" />;
-  }
 
-  const settingsKind = settingsSurface(parsed.settingsRest);
+  const settingsKind = settingsSurface(parsed.settingsRest, "project");
   if (settingsKind === "templates/new") {
     return (
       <SettingsShell>

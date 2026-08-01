@@ -44,4 +44,24 @@ describe("SettingsShell", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Section body")).toBeInTheDocument();
   });
+
+  it("uses organization settings chrome for org scope", () => {
+    usePathname.mockReturnValue("/portal/acme/settings/general/");
+
+    render(
+      <SettingsShell scope="org">
+        <p>Org section body</p>
+      </SettingsShell>,
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: /organization settings/i,
+        level: 1,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Org section body")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /billing/i })).toBeInTheDocument();
+  });
 });
+

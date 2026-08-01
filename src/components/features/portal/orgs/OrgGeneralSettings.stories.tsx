@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { StubAuthProvider } from "@/lib/auth";
 import { StubPortalProvider } from "@/lib/portal";
-import { OrgSettings } from "./OrgSettings";
+import { OrgGeneralSettings } from "./OrgGeneralSettings";
 
 const meta = {
-  title: "Features/Portal/Orgs/OrgSettings",
-  component: OrgSettings,
+  title: "Features/Portal/Orgs/OrgGeneralSettings",
+  component: OrgGeneralSettings,
   tags: ["autodocs"],
   parameters: {
-    layout: "fullscreen",
+    layout: "padded",
   },
-} satisfies Meta<typeof OrgSettings>;
+} satisfies Meta<typeof OrgGeneralSettings>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -44,24 +44,16 @@ export const Owner: Story = {
         }}
       >
         <StubPortalProvider value={{ ready: true }}>
-          <div className="mx-auto max-w-screen-2xl px-8 pt-16 pb-24">
+          <div className="mx-auto max-w-xl bg-background p-8">
             <Story />
           </div>
         </StubPortalProvider>
       </StubAuthProvider>
     ),
   ],
-  parameters: {
-    nextjs: {
-      router: {
-        pathname: "/portal/acme-co/settings/general/",
-      },
-    },
-  },
 };
 
 export const Member: Story = {
   args: { org: { ...ownerOrg, role: "member" } },
   decorators: Owner.decorators,
-  parameters: Owner.parameters,
 };
