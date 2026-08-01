@@ -123,8 +123,10 @@ export interface AccountResponse {
   email?: string;
   orgId?: string;
   orgName?: string;
+  orgSlug?: string;
   projectId?: string;
   projectName?: string;
+  projectSlug?: string;
   /** Legacy alias for projectId. */
   clientId?: string;
   clientName?: string;
