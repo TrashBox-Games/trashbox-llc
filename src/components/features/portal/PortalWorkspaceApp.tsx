@@ -17,6 +17,10 @@ import {
   portalWorkspacePath,
 } from "@/lib/portal-routes";
 import {
+  getSelectedOrgId,
+  getSelectedProjectId,
+} from "@/lib/portal-selection";
+import {
   DEFAULT_SETTINGS_SECTION,
   isSettingsSectionId,
   type SettingsSectionId,
@@ -56,12 +60,19 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
 
     const org = portal.orgs.find((entry) => entry.orgSlug === parsed.orgSlug);
     if (!org) {
+      // Avoid replace-loops while orgs are still empty between reloads.
+      if (portal.orgs.length === 0) return;
       window.location.replace(PORTAL_PATHS.orgs);
       return;
     }
 
     if (parsed.surface === "orgHome") {
-      portal.selectWorkspace(org.orgId, "");
+      if (
+        getSelectedOrgId() !== org.orgId ||
+        getSelectedProjectId() !== null
+      ) {
+        portal.selectWorkspace(org.orgId, "");
+      }
       return;
     }
 
@@ -69,14 +80,22 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
       (entry) => entry.projectSlug === parsed.projectSlug,
     );
     if (!project) {
-      portalNavigate(
-        portalWorkspacePath({ orgSlug: org.orgSlug, surface: "orgHome" }),
-        { replace: true },
-      );
+      const target = portalWorkspacePath({
+        orgSlug: org.orgSlug,
+        surface: "orgHome",
+      });
+      if (window.location.pathname.replace(/\/$/, "") !== target.replace(/\/$/, "")) {
+        portalNavigate(target, { replace: true });
+      }
       return;
     }
 
-    portal.selectWorkspace(org.orgId, project.projectId);
+    if (
+      getSelectedOrgId() !== org.orgId ||
+      getSelectedProjectId() !== project.projectId
+    ) {
+      portal.selectWorkspace(org.orgId, project.projectId);
+    }
   }, [
     auth.status,
     parsed,

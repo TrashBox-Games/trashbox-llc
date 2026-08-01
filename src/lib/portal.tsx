@@ -55,6 +55,7 @@ import {
 } from "@/lib/portal-routes";
 import {
   getSelectedOrgId,
+  getSelectedProjectId,
   setSelectedWorkspace,
 } from "@/lib/portal-selection";
 
@@ -757,7 +758,13 @@ export function PortalProvider({
   }, []);
 
   const selectWorkspace = useCallback((orgId: string, projectId: string) => {
-    setSelectedWorkspace(orgId, projectId.trim() ? projectId : null);
+    const nextProjectId = projectId.trim() ? projectId.trim() : null;
+    const currentOrgId = getSelectedOrgId();
+    const currentProjectId = getSelectedProjectId();
+    if (currentOrgId === orgId && currentProjectId === nextProjectId) {
+      return;
+    }
+    setSelectedWorkspace(orgId, nextProjectId);
     setWorkspaceEpoch((n) => n + 1);
   }, []);
 
