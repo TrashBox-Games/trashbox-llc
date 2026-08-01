@@ -143,11 +143,13 @@ export interface AccountResponse {
 export interface OrgProjectRef {
   projectId: string;
   projectName: string;
+  projectSlug: string;
 }
 
 export interface OrgSummary {
   orgId: string;
   orgName: string;
+  orgSlug: string;
   role: TeamRole;
   tier: "basic" | "premium";
   active: boolean;
@@ -497,6 +499,7 @@ export async function createOrganization(input: {
 }): Promise<{
   orgId: string;
   orgName: string;
+  orgSlug: string;
   message?: string;
 }> {
   return (await authFetch("/orgs", {
@@ -505,6 +508,7 @@ export async function createOrganization(input: {
   })) as unknown as {
     orgId: string;
     orgName: string;
+    orgSlug: string;
     message?: string;
   };
 }
@@ -514,8 +518,10 @@ export async function createProject(input: {
   projectName: string;
 }): Promise<{
   orgId: string;
+  orgSlug?: string;
   projectId: string;
   projectName: string;
+  projectSlug?: string;
   apiKey?: string;
   message?: string;
 }> {
@@ -527,8 +533,10 @@ export async function createProject(input: {
     },
   )) as unknown as {
     orgId: string;
+    orgSlug?: string;
     projectId: string;
     projectName: string;
+    projectSlug?: string;
     apiKey?: string;
     message?: string;
   };

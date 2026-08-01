@@ -50,6 +50,10 @@ import { useAuth } from "@/lib/auth";
 import { portalOrgGateRedirect } from "@/lib/portal-org-gate";
 import { portalSignedOutRedirect } from "@/lib/portal-redirects";
 import {
+  portalNavigate,
+  portalWorkspacePath,
+} from "@/lib/portal-routes";
+import {
   getSelectedOrgId,
   setSelectedWorkspace,
 } from "@/lib/portal-selection";
@@ -774,6 +778,14 @@ export function PortalProvider({
       setSelectedWorkspace(result.orgId, null);
       setBusinessName("");
       setWorkspaceEpoch((n) => n + 1);
+      if (result.orgSlug) {
+        portalNavigate(
+          portalWorkspacePath({
+            orgSlug: result.orgSlug,
+            surface: "orgHome",
+          }),
+        );
+      }
     } catch (err) {
       setBillingError(
         err instanceof ApiError
@@ -805,6 +817,18 @@ export function PortalProvider({
         setSelectedWorkspace(result.orgId, result.projectId);
         setProjectNameDraft("");
         setWorkspaceEpoch((n) => n + 1);
+        const orgSlug =
+          result.orgSlug ||
+          orgs.find((entry) => entry.orgId === result.orgId)?.orgSlug;
+        if (orgSlug && result.projectSlug) {
+          portalNavigate(
+            portalWorkspacePath({
+              orgSlug,
+              projectSlug: result.projectSlug,
+              surface: "projectHome",
+            }),
+          );
+        }
       } catch (err) {
         setBillingError(
           err instanceof ApiError ? err.message : "Could not create project",
@@ -813,7 +837,7 @@ export function PortalProvider({
         setBillingBusy(false);
       }
     },
-    [projectNameDraft],
+    [projectNameDraft, orgs],
   );
 
   const onProvisionAccount = onCreateOrganization;

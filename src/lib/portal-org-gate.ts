@@ -1,4 +1,8 @@
 import { isPortalAuthPath } from "@/lib/portal-auth";
+import {
+  isLegacyPortalProductPath,
+  isPortalWorkspacePath,
+} from "@/lib/portal-routes";
 import { PORTAL_PATHS } from "@/lib/sites";
 
 function normalizePath(pathname: string): string {
@@ -21,24 +25,20 @@ export function isPortalProductPath(
   if (isPortalAuthPath(pathname) || isPortalOrgPickerPath(pathname)) {
     return false;
   }
-  const path = normalizePath(pathname);
-  return (
-    path === normalizePath(PORTAL_PATHS.home) ||
-    path === normalizePath(PORTAL_PATHS.inbox) ||
-    path === normalizePath(PORTAL_PATHS.membership) ||
-    path.startsWith(normalizePath(PORTAL_PATHS.settings))
-  );
+  if (isPortalWorkspacePath(pathname)) return true;
+  return isLegacyPortalProductPath(pathname);
 }
 
 /**
- * When the user has no selected organization, product routes bounce to the
- * org picker. Returns null when the user may stay on the current path.
+ * When the user has no selected organization, legacy flat product routes bounce
+ * to the org picker. Slug workspace paths resolve org from the URL instead.
  */
 export function portalOrgGateRedirect(
   pathname: string | null | undefined,
   hasSelectedOrg: boolean,
 ): string | null {
   if (hasSelectedOrg) return null;
-  if (!isPortalProductPath(pathname)) return null;
+  if (isPortalWorkspacePath(pathname)) return null;
+  if (!isLegacyPortalProductPath(pathname)) return null;
   return PORTAL_PATHS.orgs;
 }

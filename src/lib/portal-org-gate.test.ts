@@ -12,16 +12,18 @@ describe("portal org gate", () => {
     expect(isPortalOrgPickerPath("/portal/")).toBe(false);
   });
 
-  it("treats inbox/settings/membership/home as product surfaces", () => {
+  it("treats inbox/settings/membership/home and slug workspaces as product surfaces", () => {
     expect(isPortalProductPath("/portal/")).toBe(true);
     expect(isPortalProductPath("/portal/inbox/")).toBe(true);
     expect(isPortalProductPath("/portal/settings/api-keys/")).toBe(true);
     expect(isPortalProductPath("/portal/membership/")).toBe(true);
+    expect(isPortalProductPath("/portal/acme/")).toBe(true);
+    expect(isPortalProductPath("/portal/acme/site/inbox/")).toBe(true);
     expect(isPortalProductPath("/portal/orgs/")).toBe(false);
     expect(isPortalProductPath("/portal/login/")).toBe(false);
   });
 
-  it("sends product routes to the org picker when no org is selected", () => {
+  it("sends legacy product routes to the org picker when no org is selected", () => {
     expect(portalOrgGateRedirect("/portal/inbox/", false)).toBe(
       "/portal/orgs/",
     );
@@ -29,5 +31,8 @@ describe("portal org gate", () => {
     expect(portalOrgGateRedirect("/portal/orgs/", false)).toBe(null);
     expect(portalOrgGateRedirect("/portal/inbox/", true)).toBe(null);
     expect(portalOrgGateRedirect("/portal/login/", false)).toBe(null);
+    expect(portalOrgGateRedirect("/portal/acme/site/inbox/", false)).toBe(
+      null,
+    );
   });
 });

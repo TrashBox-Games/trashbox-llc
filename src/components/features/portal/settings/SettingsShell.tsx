@@ -1,8 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { SettingsSidebar } from "@/components/features/portal/settings/SettingsSidebar";
+import { subscribePortalNavigate } from "@/lib/portal-routes";
 import {
   DEFAULT_SETTINGS_SECTION,
   getSettingsSection,
@@ -29,7 +30,15 @@ function sectionIdFromPath(pathname: string | null | undefined) {
 }
 
 export function SettingsShell({ children }: SettingsShellProps) {
-  const pathname = usePathname() ?? "";
+  const nextPath = usePathname() ?? "";
+  const [pathname, setPathname] = useState(nextPath);
+
+  useEffect(() => {
+    const win = window.location.pathname;
+    setPathname(win.includes("/settings/") ? win : nextPath || win);
+    return subscribePortalNavigate(setPathname);
+  }, [nextPath]);
+
   const sectionId = sectionIdFromPath(pathname);
   const section = getSettingsSection(sectionId);
 

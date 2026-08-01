@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LegacyPortalRedirect } from "@/components/features/portal/LegacyPortalRedirect";
 import { PortalApp } from "@/components/features/portal/leads/PortalPage";
 
 export const metadata: Metadata = {
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <PortalApp tab="membership" />;
+  return (
+    <>
+      <LegacyPortalRedirect />
+      <PortalApp tab="membership" />
+    </>
+  );
 }

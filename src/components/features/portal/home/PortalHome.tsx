@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
+import { PortalLink } from "@/components/features/portal/PortalLink";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,12 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { usePortal } from "@/lib/portal";
 import { portalOrgGateRedirect } from "@/lib/portal-org-gate";
+import {
+  portalNavigate,
+  portalWorkspacePath,
+} from "@/lib/portal-routes";
 import { getSelectedOrgId } from "@/lib/portal-selection";
+import { DEFAULT_SETTINGS_SECTION } from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
 
 /** Workspace home for the selected organization (projects). */
@@ -60,27 +66,7 @@ export function PortalHome() {
     !hasSelectedOrg;
 
   const selectedOrgId = getSelectedOrgId() || portal.account?.orgId || "";
-  const org =
-    portal.orgs.find((entry) => entry.orgId === selectedOrgId) ||
-    (portal.account?.orgId
-      ? {
-          orgId: portal.account.orgId,
-          orgName:
-            portal.account.orgName ||
-            portal.account.clientName ||
-            "Organization",
-          projects: [
-            {
-              projectId:
-                portal.account.projectId || portal.account.clientId || "",
-              projectName:
-                portal.account.projectName ||
-                portal.account.clientName ||
-                "Project",
-            },
-          ].filter((p) => p.projectId),
-        }
-      : null);
+  const org = portal.orgs.find((entry) => entry.orgId === selectedOrgId) || null;
 
   return (
     <div className="space-y-10">
@@ -119,6 +105,22 @@ export function PortalHome() {
                 const active =
                   (portal.account?.projectId || portal.account?.clientId) ===
                   project.projectId;
+                const projectHome =
+                  org?.orgSlug && project.projectSlug
+                    ? portalWorkspacePath({
+                        orgSlug: org.orgSlug,
+                        projectSlug: project.projectSlug,
+                        surface: "projectHome",
+                      })
+                    : null;
+                const inboxHref =
+                  org?.orgSlug && project.projectSlug
+                    ? portalWorkspacePath({
+                        orgSlug: org.orgSlug,
+                        projectSlug: project.projectSlug,
+                        surface: "inbox",
+                      })
+                    : PORTAL_PATHS.inbox;
                 return (
                   <li
                     key={project.projectId}
@@ -137,19 +139,20 @@ export function PortalHome() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() =>
+                          onClick={() => {
                             portal.selectWorkspace(
                               selectedOrgId,
                               project.projectId,
-                            )
-                          }
+                            );
+                            if (projectHome) portalNavigate(projectHome);
+                          }}
                         >
                           Select
                         </Button>
                       )}
                       <Button asChild size="sm">
-                        <Link
-                          href={PORTAL_PATHS.inbox}
+                        <PortalLink
+                          href={inboxHref}
                           onClick={() => {
                             if (selectedOrgId) {
                               portal.selectWorkspace(
@@ -160,7 +163,7 @@ export function PortalHome() {
                           }}
                         >
                           Open inbox
-                        </Link>
+                        </PortalLink>
                       </Button>
                     </div>
                   </li>
@@ -206,12 +209,33 @@ export function PortalHome() {
           </FadeIn>
 
           <div className="flex flex-wrap gap-3">
-            <Button asChild variant="outline">
-              <Link href={PORTAL_PATHS.settings}>Settings</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href={PORTAL_PATHS.membership}>Membership</Link>
-            </Button>
+            {org?.orgSlug && org.projects[0]?.projectSlug ? (
+              <>
+                <Button asChild variant="outline">
+                  <PortalLink
+                    href={portalWorkspacePath({
+                      orgSlug: org.orgSlug,
+                      projectSlug: org.projects[0].projectSlug,
+                      surface: "settings",
+                      settingsRest: DEFAULT_SETTINGS_SECTION,
+                    })}
+                  >
+                    Settings
+                  </PortalLink>
+                </Button>
+                <Button asChild variant="outline">
+                  <PortalLink
+                    href={portalWorkspacePath({
+                      orgSlug: org.orgSlug,
+                      projectSlug: org.projects[0].projectSlug,
+                      surface: "membership",
+                    })}
+                  >
+                    Membership
+                  </PortalLink>
+                </Button>
+              </>
+            ) : null}
           </div>
           {portal.billingError && (
             <p className="text-sm text-red-300">{portal.billingError}</p>

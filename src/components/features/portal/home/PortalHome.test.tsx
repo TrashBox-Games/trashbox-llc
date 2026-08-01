@@ -23,12 +23,13 @@ describe("PortalHome", () => {
               {
                 orgId: "o1",
                 orgName: "Acme Co",
+              orgSlug: "acme-co",
                 role: "owner",
                 tier: "basic",
                 active: true,
                 hasBilling: false,
                 projects: [
-                  { projectId: "p1", projectName: "Marketing site" },
+                  { projectId: "p1", projectName: "Marketing site", projectSlug: "marketing-site" },
                 ],
               },
             ],
@@ -37,6 +38,7 @@ describe("PortalHome", () => {
               email: "owner@example.com",
               orgId: "o1",
               orgName: "Acme Co",
+              orgSlug: "acme-co",
               projectId: "p1",
               projectName: "Marketing site",
               clientId: "p1",
@@ -65,6 +67,6 @@ describe("PortalHome", () => {
     ).toMatch(/\/portal\/orgs\/?$/);
     expect(
       screen.getByRole("link", { name: /open inbox/i }).getAttribute("href"),
-    ).toMatch(/\/portal\/inbox\/?$/);
+    ).toBe("/portal/acme-co/marketing-site/inbox/");
   });
 });

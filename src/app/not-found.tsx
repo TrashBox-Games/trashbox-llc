@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { NotFoundContent } from "@/components/features/marketing/NotFoundContent";
+import { PortalDeepLinkOrNotFound } from "@/components/features/portal/PortalDeepLinkOrNotFound";
 
 export const metadata: Metadata = {
   title: "404",
@@ -11,5 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function NotFound() {
-  return <NotFoundContent />;
+  return <PortalDeepLinkOrNotFound />;
 }

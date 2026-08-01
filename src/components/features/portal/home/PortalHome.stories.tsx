@@ -36,12 +36,13 @@ export const Workspace: Story = {
                 {
                   orgId: "o1",
                   orgName: "Acme Co",
+              orgSlug: "acme-co",
                   role: "owner",
                   tier: "basic",
                   active: true,
                   hasBilling: false,
                   projects: [
-                    { projectId: "p1", projectName: "Marketing site" },
+                    { projectId: "p1", projectName: "Marketing site", projectSlug: "marketing-site" },
                   ],
                 },
               ],
@@ -50,6 +51,7 @@ export const Workspace: Story = {
                 email: "owner@example.com",
                 orgId: "o1",
                 orgName: "Acme Co",
+              orgSlug: "acme-co",
                 projectId: "p1",
                 projectName: "Marketing site",
                 clientId: "p1",

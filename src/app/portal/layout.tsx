@@ -1,4 +1,5 @@
 import { PortalHeader } from "@/components/features/portal/PortalHeader";
+import { PortalRouteOutlet } from "@/components/features/portal/PortalRouteOutlet";
 import { PortalProvider } from "@/lib/portal";
 
 export default function PortalLayout({
@@ -10,7 +11,7 @@ export default function PortalLayout({
     <PortalProvider>
       <PortalHeader />
       <main className="mx-auto w-full max-w-screen-2xl flex-1 px-8 pt-16 pb-24">
-        {children}
+        <PortalRouteOutlet>{children}</PortalRouteOutlet>
       </main>
     </PortalProvider>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import {
   EmailTemplateBuilder,
@@ -13,10 +13,10 @@ import {
   parseDocumentFromHtml,
   type EmailTemplateDocument,
 } from "@/lib/email-template-document";
+import { portalNavigate } from "@/lib/portal-routes";
 import { settingsSectionPath } from "@/lib/portal-settings";
 
 function TemplateBuilderEditInner(): React.ReactElement {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id")?.trim() ?? "";
 
@@ -28,7 +28,7 @@ function TemplateBuilderEditInner(): React.ReactElement {
   const [document, setDocument] = useState<EmailTemplateDocument>(emptyDocument);
 
   function goList() {
-    router.push(settingsSectionPath("templates"));
+    portalNavigate(settingsSectionPath("templates"));
   }
 
   useEffect(() => {

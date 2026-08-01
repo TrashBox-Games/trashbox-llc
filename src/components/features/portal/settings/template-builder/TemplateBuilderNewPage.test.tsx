@@ -4,19 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TemplateBuilderNewPage } from "./TemplateBuilderNewPage";
 import { templateBuilderCreatePath } from "@/lib/portal-settings";
 
-const push = vi.fn();
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
-}));
-
 describe("TemplateBuilderNewPage", () => {
   beforeEach(() => {
-    push.mockReset();
+    vi.restoreAllMocks();
   });
 
   it("opens the full-page builder when a starter is selected", async () => {
     const user = userEvent.setup();
+    const pushState = vi.spyOn(window.history, "pushState");
     render(<TemplateBuilderNewPage />);
 
     expect(
@@ -25,7 +20,9 @@ describe("TemplateBuilderNewPage", () => {
 
     await user.click(screen.getByRole("button", { name: /one column/i }));
 
-    expect(push).toHaveBeenCalledWith(
+    expect(pushState).toHaveBeenCalledWith(
+      null,
+      "",
       templateBuilderCreatePath({ starterId: "basic-one-column" }),
     );
   });

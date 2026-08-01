@@ -1,3 +1,4 @@
+import { LegacyPortalRedirect } from "@/components/features/portal/LegacyPortalRedirect";
 import { SettingsShell } from "@/components/features/portal/settings/SettingsShell";
 
 export default function SettingsLayout({
@@ -5,5 +6,10 @@ export default function SettingsLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <SettingsShell>{children}</SettingsShell>;
+  return (
+    <>
+      <LegacyPortalRedirect />
+      <SettingsShell>{children}</SettingsShell>
+    </>
+  );
 }

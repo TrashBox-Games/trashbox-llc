@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { PortalLink } from "@/components/features/portal/PortalLink";
 import { Button } from "@/components/ui/button";
+import { subscribePortalNavigate } from "@/lib/portal-routes";
 import {
   PORTAL_SETTINGS_NAV,
   getSettingsSection,
@@ -17,12 +18,25 @@ import { cn } from "@/lib/utils";
 function activeSectionFromPath(pathname: string | null | undefined) {
   if (!pathname) return null;
   const parts = pathname.replace(/\/$/, "").split("/").filter(Boolean);
+  const settingsIndex = parts.indexOf("settings");
+  if (settingsIndex >= 0) {
+    const after = parts[settingsIndex + 1];
+    if (after && isSettingsSectionId(after)) return after;
+  }
   const maybe = parts[parts.length - 1];
   return maybe && isSettingsSectionId(maybe) ? maybe : null;
 }
 
 export function SettingsSidebar() {
-  const pathname = usePathname() ?? "";
+  const nextPath = usePathname() ?? "";
+  const [pathname, setPathname] = useState(nextPath);
+
+  useEffect(() => {
+    const win = window.location.pathname;
+    setPathname(win.includes("/settings/") ? win : nextPath || win);
+    return subscribePortalNavigate(setPathname);
+  }, [nextPath]);
+
   const activeSection = activeSectionFromPath(pathname);
   const activeGroupId =
     (activeSection && getSettingsSection(activeSection)?.groupId) || null;
@@ -107,7 +121,7 @@ export function SettingsSidebar() {
                     const active = activeSection === item.id;
                     return (
                       <li key={item.id}>
-                        <Link
+                        <PortalLink
                           href={href}
                           tabIndex={open ? undefined : -1}
                           aria-current={active ? "page" : undefined}
@@ -126,7 +140,7 @@ export function SettingsSidebar() {
                             )}
                           />
                           <span className="min-w-0 truncate">{item.label}</span>
-                        </Link>
+                        </PortalLink>
                       </li>
                     );
                   })}

@@ -1,4 +1,20 @@
+import {
+  parsePortalWorkspacePath,
+  portalWorkspacePath,
+} from "@/lib/portal-routes";
 import { PORTAL_PATHS } from "@/lib/sites";
+
+function currentWorkspaceSlugs(): {
+  orgSlug: string;
+  projectSlug: string;
+} | null {
+  if (typeof window === "undefined") return null;
+  const parsed = parsePortalWorkspacePath(window.location.pathname);
+  if (parsed?.orgSlug && parsed.projectSlug) {
+    return { orgSlug: parsed.orgSlug, projectSlug: parsed.projectSlug };
+  }
+  return null;
+}
 
 export type SettingsGroupId =
   | "workspace"
@@ -186,11 +202,27 @@ export function getSettingsSection(id: string) {
 }
 
 export function settingsSectionPath(section: SettingsSectionId): string {
+  const ws = currentWorkspaceSlugs();
+  if (ws) {
+    return portalWorkspacePath({
+      ...ws,
+      surface: "settings",
+      settingsRest: section,
+    });
+  }
   return `${PORTAL_PATHS.settings}${section}/`;
 }
 
 /** Gallery / starter picker before opening the full-page builder. */
 export function templateBuilderNewPath(): string {
+  const ws = currentWorkspaceSlugs();
+  if (ws) {
+    return portalWorkspacePath({
+      ...ws,
+      surface: "settings",
+      settingsRest: "templates/new",
+    });
+  }
   return `${PORTAL_PATHS.settings}templates/new/`;
 }
 
@@ -199,7 +231,14 @@ export function templateBuilderCreatePath(options?: {
   starterId?: string;
   draft?: boolean;
 }): string {
-  const base = `${PORTAL_PATHS.settings}templates/builder/`;
+  const ws = currentWorkspaceSlugs();
+  const base = ws
+    ? portalWorkspacePath({
+        ...ws,
+        surface: "settings",
+        settingsRest: "templates/builder",
+      })
+    : `${PORTAL_PATHS.settings}templates/builder/`;
   const params = new URLSearchParams();
   if (options?.starterId) params.set("starter", options.starterId);
   if (options?.draft) params.set("draft", "1");
@@ -208,7 +247,15 @@ export function templateBuilderCreatePath(options?: {
 }
 
 export function templateBuilderEditPath(id: string): string {
-  return `${PORTAL_PATHS.settings}templates/edit/?id=${encodeURIComponent(id)}`;
+  const ws = currentWorkspaceSlugs();
+  const base = ws
+    ? portalWorkspacePath({
+        ...ws,
+        surface: "settings",
+        settingsRest: "templates/edit",
+      })
+    : `${PORTAL_PATHS.settings}templates/edit/`;
+  return `${base}?id=${encodeURIComponent(id)}`;
 }
 
 /** True when Settings chrome should hide for a Zoho-style full-page builder. */

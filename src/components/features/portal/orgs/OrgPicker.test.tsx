@@ -21,8 +21,9 @@ describe("OrgPicker", () => {
     });
   });
 
-  it("lists organizations and enters the first project on select", async () => {
+  it("lists organizations and enters the org workspace on select", async () => {
     const user = userEvent.setup();
+    const pushState = vi.spyOn(window.history, "pushState");
     render(
       <StubAuthProvider
         value={{
@@ -38,11 +39,18 @@ describe("OrgPicker", () => {
               {
                 orgId: "o1",
                 orgName: "Acme Co",
+                orgSlug: "acme-co",
                 role: "owner",
                 tier: "basic",
                 active: true,
                 hasBilling: false,
-                projects: [{ projectId: "p1", projectName: "Site" }],
+                projects: [
+                  {
+                    projectId: "p1",
+                    projectName: "Site",
+                    projectSlug: "site",
+                  },
+                ],
               },
             ],
             account: { linked: true, email: "owner@example.com" },
@@ -58,8 +66,8 @@ describe("OrgPicker", () => {
       screen.getByRole("heading", { name: /choose an organization/i }),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /acme co/i }));
-    expect(selectWorkspace).toHaveBeenCalledWith("o1", "p1");
-    expect(assign).toHaveBeenCalledWith("/portal/");
+    expect(selectWorkspace).toHaveBeenCalledWith("o1", "");
+    expect(pushState).toHaveBeenCalledWith(null, "", "/portal/acme-co/");
   });
 
   it("shows create form when the user has no organizations", () => {

@@ -3,30 +3,25 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Skeleton } from "@/components/atoms/Skeleton";
+import { PortalLink } from "@/components/features/portal/PortalLink";
 import { PortalUserMenu } from "@/components/features/portal/PortalUserMenu";
 import { WorkspaceBreadcrumb } from "@/components/features/portal/WorkspaceBreadcrumb";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { teamMemberDisplayName } from "@/lib/api";
 import { usePortal } from "@/lib/portal";
-import { cn } from "@/lib/utils";
 import { isPortalOrgPickerPath } from "@/lib/portal-org-gate";
-import { getSelectedOrgId } from "@/lib/portal-selection";
+import {
+  portalWorkspacePath,
+  subscribePortalNavigate,
+} from "@/lib/portal-routes";
+import { getSelectedOrgId, getSelectedProjectId } from "@/lib/portal-selection";
+import { DEFAULT_SETTINGS_SECTION } from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
-
-const workspaceLinks = [
-  { href: PORTAL_PATHS.home, label: "Projects", icon: "home" },
-  { href: PORTAL_PATHS.inbox, label: "Inbox", icon: "inbox" },
-  { href: PORTAL_PATHS.settings, label: "Settings", icon: "settings" },
-  {
-    href: PORTAL_PATHS.membership,
-    label: "Membership",
-    icon: "workspace_premium",
-  },
-] as const;
+import { cn } from "@/lib/utils";
 
 function linkClass(active: boolean) {
   return cn(
@@ -38,10 +33,6 @@ function linkClass(active: boolean) {
 function isPortalNavActive(pathname: string, href: string): boolean {
   const normalizedHref = href.replace(/\/$/, "") || "/";
   const normalizedPath = pathname.replace(/\/$/, "") || "/";
-  // Home is exactly /portal — don't treat every portal child as active.
-  if (normalizedHref === "/portal") {
-    return normalizedPath === "/portal";
-  }
   return (
     normalizedPath === normalizedHref ||
     normalizedPath.startsWith(`${normalizedHref}/`)
@@ -53,12 +44,20 @@ const SCROLL_DELTA_THRESHOLD = 8;
 
 /** Standalone chrome for /portal — separate from marketing SiteHeader. */
 export function PortalHeader() {
-  const pathname = usePathname() ?? "";
+  const nextPath = usePathname() ?? "";
+  const [pathname, setPathname] = useState(nextPath);
   const auth = useAuth();
   const portal = usePortal();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    const win = window.location.pathname;
+    if (win.startsWith("/portal/")) setPathname(win);
+    else setPathname(nextPath || win);
+    return subscribePortalNavigate(setPathname);
+  }, [nextPath]);
 
   useEffect(() => {
     let lastY = window.scrollY;
@@ -92,11 +91,68 @@ export function PortalHeader() {
     };
   }, [open]);
 
+  const selectedOrgId = getSelectedOrgId() || portal.account?.orgId || null;
+  const selectedProjectId =
+    getSelectedProjectId() ||
+    portal.account?.projectId ||
+    portal.account?.clientId ||
+    null;
+  const selectedOrg = portal.orgs.find((org) => org.orgId === selectedOrgId);
+  const selectedProject =
+    selectedOrg?.projects.find((p) => p.projectId === selectedProjectId) ||
+    selectedOrg?.projects[0];
+
+  const workspaceLinks = useMemo(() => {
+    if (!selectedOrg?.orgSlug) return [];
+    const orgSlug = selectedOrg.orgSlug;
+    const projectSlug = selectedProject?.projectSlug;
+    const projectsHref = portalWorkspacePath({
+      orgSlug,
+      surface: "orgHome",
+    });
+    if (!projectSlug) {
+      return [
+        { href: projectsHref, label: "Projects", icon: "home" as const },
+      ];
+    }
+    return [
+      { href: projectsHref, label: "Projects", icon: "home" as const },
+      {
+        href: portalWorkspacePath({
+          orgSlug,
+          projectSlug,
+          surface: "inbox",
+        }),
+        label: "Inbox",
+        icon: "inbox" as const,
+      },
+      {
+        href: portalWorkspacePath({
+          orgSlug,
+          projectSlug,
+          surface: "settings",
+          settingsRest: DEFAULT_SETTINGS_SECTION,
+        }),
+        label: "Settings",
+        icon: "settings" as const,
+      },
+      {
+        href: portalWorkspacePath({
+          orgSlug,
+          projectSlug,
+          surface: "membership",
+        }),
+        label: "Membership",
+        icon: "workspace_premium" as const,
+      },
+    ];
+  }, [selectedOrg, selectedProject]);
+
   const signedIn = auth.status === "signedIn";
   const authLoading = auth.status === "loading";
   const headerHidden = hidden && !open;
   const onOrgPicker = isPortalOrgPickerPath(pathname);
-  const inWorkspace = Boolean(getSelectedOrgId()) && !onOrgPicker;
+  const inWorkspace = Boolean(selectedOrgId) && !onOrgPicker;
   const signedInLinks = inWorkspace ? workspaceLinks : [];
   const showBreadcrumb = signedIn && !authLoading;
   const currentMember = auth.email
@@ -150,7 +206,7 @@ export function PortalHeader() {
               aria-busy={authLoading}
             >
               {signedInLinks.map((item) => (
-                <Link
+                <PortalLink
                   key={item.href}
                   href={item.href}
                   aria-label={item.label}
@@ -159,7 +215,7 @@ export function PortalHeader() {
                   )}
                 >
                   <MaterialIcon name={item.icon} className="text-[1.15rem]!" />
-                </Link>
+                </PortalLink>
               ))}
             </nav>
           )}
@@ -209,7 +265,7 @@ export function PortalHeader() {
         <div className="fixed inset-0 top-11 z-40 bg-background/95 px-6 pb-10 pt-6 md:hidden">
           <div className="flex flex-col gap-6">
             {signedInLinks.map((item) => (
-              <Link
+              <PortalLink
                 key={item.href}
                 href={item.href}
                 aria-label={item.label}
@@ -221,7 +277,7 @@ export function PortalHeader() {
               >
                 <MaterialIcon name={item.icon} className="text-[1.35rem]!" />
                 <span>{item.label}</span>
-              </Link>
+              </PortalLink>
             ))}
           </div>
         </div>

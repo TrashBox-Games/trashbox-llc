@@ -57,16 +57,18 @@ For GitHub Pages, set the same names as repository **Secrets** (used by `.github
 | `/platform/pricing` | Platform pricing |
 | `/platform/api` | Form API usage |
 | `/platform/documentation` | Platform docs + OpenAPI link |
-| `/portal/orgs` | Org picker — select or create an organization (GitHub-style gate) |
-| `/portal` | Workspace for the selected org (projects); redirects to `/portal/orgs` if none selected |
+| `/portal/orgs` | Org picker — select or create an organization |
+| `/portal/{orgSlug}/` | Org workspace (project list) |
+| `/portal/{orgSlug}/{projectSlug}/` | Project home |
+| `/portal/{orgSlug}/{projectSlug}/inbox/` | Lead inbox |
+| `/portal/{orgSlug}/{projectSlug}/settings/*` | Project/org settings |
+| `/portal/{orgSlug}/{projectSlug}/membership/` | Org subscription / billing |
 | `/portal/login` | Cognito sign-in |
 | `/portal/signup` | Cognito sign-up |
 | `/portal/confirm` | Email verification (after signup) |
 | `/portal/forgot-password` | Password reset |
-| `/portal/inbox` | Lead inbox for the selected project |
-| `/portal/settings/*` | Project/org settings (API keys, team, mailbox, …) |
-| `/portal/membership` | Org subscription / billing |
+| `/portal`, `/portal/inbox`, … | Legacy flat paths — redirect into slug URLs |
 
 Platform marketing lives under `/platform/*` with the main site header. The signed-in product lives under `/portal/*` with its own header.
 
-**Org → Projects:** After sign-in you land on `/portal/orgs` to choose or create an organization. Creating an org does not create a project — add one from the workspace home. Inbox/settings need an org (and a project for product APIs). The portal sends `X-Project-Id` on API calls.
+**Org → Projects:** After sign-in you land on `/portal/orgs` to choose or create an organization. Creating an org does not create a project — add one from the workspace home. Product URLs follow GitHub-style `/portal/{orgSlug}/{projectSlug}/…` (static export uses client routing + 404 bootstrap for deep links). The portal sends `X-Project-Id` on API calls.

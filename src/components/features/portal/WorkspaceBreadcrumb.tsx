@@ -11,6 +11,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { usePortal } from "@/lib/portal";
 import {
+  portalNavigate,
+  portalWorkspacePath,
+} from "@/lib/portal-routes";
+import {
   getSelectedOrgId,
   getSelectedProjectId,
 } from "@/lib/portal-selection";
@@ -37,28 +41,7 @@ export function WorkspaceBreadcrumb() {
 
   const orgs = portal.orgs ?? [];
   const selectedOrg =
-    orgs.find((org) => org.orgId === selectedOrgId) ||
-    (portal.account?.orgId
-      ? {
-          orgId: portal.account.orgId,
-          orgName:
-            portal.account.orgName ||
-            portal.account.clientName ||
-            "Organization",
-          projects: portal.account.projectId || portal.account.clientId
-            ? [
-                {
-                  projectId:
-                    portal.account.projectId || portal.account.clientId || "",
-                  projectName:
-                    portal.account.projectName ||
-                    portal.account.clientName ||
-                    "Project",
-                },
-              ]
-            : [],
-        }
-      : null);
+    orgs.find((org) => org.orgId === selectedOrgId) || null;
 
   const selectedProject =
     selectedOrg?.projects.find((p) => p.projectId === selectedProjectId) ||
@@ -97,14 +80,17 @@ export function WorkspaceBreadcrumb() {
             <DropdownMenuItem
               key={org.orgId}
               onSelect={() => {
-                const firstProjectId = org.projects[0]?.projectId;
-                portal.selectWorkspace(org.orgId, firstProjectId || "");
-                if (
-                  typeof window !== "undefined" &&
-                  window.location.pathname.includes("/portal/orgs")
-                ) {
-                  window.location.assign(PORTAL_PATHS.home);
+                portal.selectWorkspace(org.orgId, "");
+                if (!org.orgSlug) {
+                  window.location.assign(PORTAL_PATHS.orgs);
+                  return;
                 }
+                portalNavigate(
+                  portalWorkspacePath({
+                    orgSlug: org.orgSlug,
+                    surface: "orgHome",
+                  }),
+                );
               }}
             >
               <span className="flex min-w-0 flex-1 items-center gap-2">
@@ -160,8 +146,15 @@ export function WorkspaceBreadcrumb() {
             <DropdownMenuItem
               key={project.projectId}
               onSelect={() => {
-                if (!selectedOrgId) return;
-                portal.selectWorkspace(selectedOrgId, project.projectId);
+                if (!selectedOrg?.orgSlug || !project.projectSlug) return;
+                portal.selectWorkspace(selectedOrg.orgId, project.projectId);
+                portalNavigate(
+                  portalWorkspacePath({
+                    orgSlug: selectedOrg.orgSlug,
+                    projectSlug: project.projectSlug,
+                    surface: "projectHome",
+                  }),
+                );
               }}
             >
               <span className="flex min-w-0 flex-1 items-center gap-2">
@@ -179,9 +172,15 @@ export function WorkspaceBreadcrumb() {
             <DropdownMenuSeparator />
           ) : null}
           <DropdownMenuItem
-            disabled={!selectedOrgId}
+            disabled={!selectedOrg?.orgSlug}
             onSelect={() => {
-              window.location.assign(`${PORTAL_PATHS.home}?createProject=1`);
+              if (!selectedOrg?.orgSlug) return;
+              portalNavigate(
+                `${portalWorkspacePath({
+                  orgSlug: selectedOrg.orgSlug,
+                  surface: "orgHome",
+                })}?createProject=1`,
+              );
             }}
           >
             <MaterialIcon name="add" className="text-base!" />

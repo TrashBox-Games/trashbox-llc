@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import {
   EmailTemplateBuilder,
@@ -14,6 +14,7 @@ import {
   type EmailTemplateDocument,
 } from "@/lib/email-template-document";
 import { getStarterById } from "@/lib/email-template-starters";
+import { portalNavigate } from "@/lib/portal-routes";
 import {
   TEMPLATE_BUILDER_DRAFT_STORAGE_KEY,
   settingsSectionPath,
@@ -61,7 +62,6 @@ function resolveInitial(starterId: string, useDraft: boolean): {
 }
 
 function TemplateBuilderCreateInner(): React.ReactElement {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const starterId = searchParams.get("starter")?.trim() ?? "";
   const useDraft = searchParams.get("draft") === "1";
@@ -71,11 +71,11 @@ function TemplateBuilderCreateInner(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
 
   function goList() {
-    router.push(settingsSectionPath("templates"));
+    portalNavigate(settingsSectionPath("templates"));
   }
 
   function goGallery() {
-    router.push(templateBuilderNewPath());
+    portalNavigate(templateBuilderNewPath());
   }
 
   async function onSave(payload: EmailTemplateBuilderSavePayload) {

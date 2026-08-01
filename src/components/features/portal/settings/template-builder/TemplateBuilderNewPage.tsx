@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { EmailTemplateGallery } from "@/components/features/portal/settings/EmailTemplateGallery";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,6 +10,7 @@ import {
   emptyDocument,
 } from "@/lib/email-template-document";
 import type { EmailTemplateStarter } from "@/lib/email-template-starters";
+import { portalNavigate } from "@/lib/portal-routes";
 import {
   TEMPLATE_BUILDER_DRAFT_STORAGE_KEY,
   settingsSectionPath,
@@ -21,16 +21,15 @@ import {
  * Starter gallery only — selecting a template opens the full-page builder.
  */
 export function TemplateBuilderNewPage(): React.ReactElement {
-  const router = useRouter();
   const [htmlSourceOpen, setHtmlSourceOpen] = useState(false);
   const [pastedSource, setPastedSource] = useState("");
 
   function goList() {
-    router.push(settingsSectionPath("templates"));
+    portalNavigate(settingsSectionPath("templates"));
   }
 
   function selectStarter(starter: EmailTemplateStarter) {
-    router.push(templateBuilderCreatePath({ starterId: starter.id }));
+    portalNavigate(templateBuilderCreatePath({ starterId: starter.id }));
   }
 
   function applyPastedSource() {
@@ -65,7 +64,7 @@ export function TemplateBuilderNewPage(): React.ReactElement {
     } catch {
       // Fall through to blank builder if storage is unavailable.
     }
-    router.push(templateBuilderCreatePath({ draft: true }));
+    portalNavigate(templateBuilderCreatePath({ draft: true }));
   }
 
   if (htmlSourceOpen) {

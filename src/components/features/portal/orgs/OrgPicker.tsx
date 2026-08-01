@@ -8,21 +8,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { usePortal } from "@/lib/portal";
+import {
+  portalNavigate,
+  portalWorkspacePath,
+} from "@/lib/portal-routes";
 import { getSelectedOrgId } from "@/lib/portal-selection";
 import { PORTAL_PATHS } from "@/lib/sites";
 import { cn } from "@/lib/utils";
 
 function enterOrg(
   orgId: string,
-  projectId: string | undefined,
+  orgSlug: string | undefined,
   select: (o: string, p: string) => void,
 ) {
-  if (projectId) {
-    select(orgId, projectId);
-  } else {
-    select(orgId, "");
+  select(orgId, "");
+  if (!orgSlug) {
+    window.location.assign(PORTAL_PATHS.orgs);
+    return;
   }
-  window.location.assign(PORTAL_PATHS.home);
+  portalNavigate(portalWorkspacePath({ orgSlug, surface: "orgHome" }));
 }
 
 export function OrgPicker() {
@@ -51,6 +55,7 @@ export function OrgPicker() {
                 portal.account.orgName ||
                 portal.account.clientName ||
                 "Organization",
+              orgSlug: "",
               role: portal.account.role || "member",
               tier: (portal.account.tier || "basic") as "basic" | "premium",
               active: portal.account.active !== false,
@@ -65,6 +70,7 @@ export function OrgPicker() {
                     portal.account.projectName ||
                     portal.account.clientName ||
                     "Project",
+                  projectSlug: "",
                 },
               ].filter((p) => p.projectId),
             },
@@ -116,7 +122,6 @@ export function OrgPicker() {
             <ul className="space-y-3">
               {orgs.map((org) => {
                 const active = selectedOrgId === org.orgId;
-                const firstProjectId = org.projects[0]?.projectId;
                 return (
                   <li key={org.orgId}>
                     <button
@@ -130,7 +135,7 @@ export function OrgPicker() {
                       onClick={() =>
                         enterOrg(
                           org.orgId,
-                          firstProjectId,
+                          org.orgSlug,
                           portal.selectWorkspace,
                         )
                       }
@@ -193,7 +198,6 @@ export function OrgPicker() {
                   }
                   onClick={async () => {
                     await portal.onCreateOrganization();
-                    window.location.assign(PORTAL_PATHS.home);
                   }}
                 >
                   {portal.billingBusy ? "Creating…" : "Create & continue"}
