@@ -1,24 +1,24 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { AuthProvider } from "@/lib/auth";
-import { PortalLoginPage } from "./PortalPage";
+import { StubAuthProvider } from "@/lib/auth";
+import { SignupForm } from "./SignupForm";
 
 const meta = {
-  title: "Features/Portal/Leads/PortalLoginPage",
-  component: PortalLoginPage,
+  title: "Features/Portal/Auth/SignupForm",
+  component: SignupForm,
   tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
   },
   decorators: [
     (Story) => (
-      <AuthProvider>
+      <StubAuthProvider value={{ status: "signedOut", configured: true }}>
         <div className="mx-auto max-w-screen-2xl px-8 pt-16 pb-24">
           <Story />
         </div>
-      </AuthProvider>
+      </StubAuthProvider>
     ),
   ],
-} satisfies Meta<typeof PortalLoginPage>;
+} satisfies Meta<typeof SignupForm>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

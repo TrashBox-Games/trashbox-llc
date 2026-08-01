@@ -100,6 +100,9 @@ describe("PortalHeader", () => {
     const nav = screen.getByRole("navigation", { name: /portal/i });
 
     expect(
+      within(nav).getByRole("link", { name: /^home$/i }),
+    ).toBeInTheDocument();
+    expect(
       within(nav).getByRole("link", { name: /^inbox$/i }),
     ).toBeInTheDocument();
     expect(
@@ -109,6 +112,7 @@ describe("PortalHeader", () => {
       within(nav).getByRole("link", { name: /^membership$/i }),
     ).toBeInTheDocument();
 
+    expect(within(nav).queryByText("Home")).not.toBeInTheDocument();
     expect(within(nav).queryByText("Inbox")).not.toBeInTheDocument();
     expect(within(nav).queryByText("Settings")).not.toBeInTheDocument();
     expect(within(nav).queryByText("Membership")).not.toBeInTheDocument();

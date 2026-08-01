@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { PORTAL_PATHS } from "@/lib/sites";
 
 const signedInLinks = [
+  { href: PORTAL_PATHS.home, label: "Home", icon: "home" },
   { href: PORTAL_PATHS.inbox, label: "Inbox", icon: "inbox" },
   { href: PORTAL_PATHS.settings, label: "Settings", icon: "settings" },
   {
@@ -28,6 +29,19 @@ function linkClass(active: boolean) {
   return cn(
     "inline-flex items-center justify-center transition-colors",
     active ? "text-white" : "text-outline hover:text-white",
+  );
+}
+
+function isPortalNavActive(pathname: string, href: string): boolean {
+  const normalizedHref = href.replace(/\/$/, "") || "/";
+  const normalizedPath = pathname.replace(/\/$/, "") || "/";
+  // Home is exactly /portal — don't treat every portal child as active.
+  if (normalizedHref === "/portal") {
+    return normalizedPath === "/portal";
+  }
+  return (
+    normalizedPath === normalizedHref ||
+    normalizedPath.startsWith(`${normalizedHref}/`)
   );
 }
 
@@ -138,7 +152,7 @@ export function PortalHeader() {
                       href={item.href}
                       aria-label={item.label}
                       className={linkClass(
-                        pathname.startsWith(item.href.replace(/\/$/, "")),
+                        isPortalNavActive(pathname, item.href),
                       )}
                     >
                       <MaterialIcon name={item.icon} className="text-[1.15rem]!" />
@@ -191,9 +205,7 @@ export function PortalHeader() {
                 href={item.href}
                 aria-label={item.label}
                 className={cn(
-                  linkClass(
-                    pathname.startsWith(item.href.replace(/\/$/, "")),
-                  ),
+                  linkClass(isPortalNavActive(pathname, item.href)),
                   "gap-3 font-label text-[10px] uppercase tracking-widest",
                 )}
                 onClick={() => setOpen(false)}

@@ -10,7 +10,11 @@ import {
 describe("sites helpers", () => {
   it("exposes platform and portal paths", () => {
     expect(PLATFORM_PATHS.features).toBe("/platform/features/");
+    expect(PORTAL_PATHS.home).toBe("/portal/");
     expect(PORTAL_PATHS.login).toBe("/portal/login/");
+    expect(PORTAL_PATHS.signup).toBe("/portal/signup/");
+    expect(PORTAL_PATHS.confirm).toBe("/portal/confirm/");
+    expect(PORTAL_PATHS.forgotPassword).toBe("/portal/forgot-password/");
     expect(PORTAL_PATHS.inbox).toBe("/portal/inbox/");
     expect(PORTAL_PATHS.apiKey).toBe("/portal/settings/api-keys/");
     expect(PORTAL_PATHS.membership).toBe("/portal/membership/");

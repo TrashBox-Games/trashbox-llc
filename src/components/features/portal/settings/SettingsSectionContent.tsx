@@ -72,7 +72,7 @@ export function SettingsSectionContent({
   if (!portal.account?.linked) {
     return (
       <p className="text-on-surface-variant">
-        Create a Form API account from the inbox to manage settings.
+        Create an organization from the portal home before managing settings.
       </p>
     );
   }

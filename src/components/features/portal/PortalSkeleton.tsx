@@ -12,11 +12,6 @@ export function PortalSkeleton({ variant = "inbox" }: PortalSkeletonProps) {
 
       {variant === "login" && (
         <div className="mx-auto max-w-xl space-y-8">
-          <div className="flex gap-6">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-3 w-16" />
-          </div>
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-14 w-full" />

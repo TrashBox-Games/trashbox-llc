@@ -18,7 +18,11 @@ export const PLATFORM_PATHS = {
 
 export const PORTAL_PATHS = {
   root: "/portal/",
+  home: "/portal/",
   login: "/portal/login/",
+  signup: "/portal/signup/",
+  confirm: "/portal/confirm/",
+  forgotPassword: "/portal/forgot-password/",
   inbox: "/portal/inbox/",
   apiKey: "/portal/settings/api-keys/",
   membership: "/portal/membership/",

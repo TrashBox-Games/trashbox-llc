@@ -51,16 +51,16 @@ export default function PlatformHubPage() {
         </p>
         <div className="mt-10 flex flex-wrap gap-4">
           <Link
-            href={PORTAL_PATHS.login}
+            href={PORTAL_PATHS.signup}
             className="bg-primary px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80"
           >
-            Login
+            Get started
           </Link>
           <Link
-            href={PLATFORM_PATHS.pricing}
+            href={PORTAL_PATHS.login}
             className="border border-outline-variant/30 px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-white transition-colors hover:border-white"
           >
-            View pricing
+            Login
           </Link>
         </div>
       </FadeIn>

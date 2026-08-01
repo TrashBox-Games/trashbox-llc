@@ -18,6 +18,10 @@ import {
   type ReactNode,
 } from "react";
 import { authConfigured, configureAmplify } from "./amplify";
+import {
+  confirmForgotPassword as confirmForgotPasswordRequest,
+  requestPasswordReset as requestPasswordResetRequest,
+} from "./auth-password";
 
 type AuthStatus = "loading" | "signedOut" | "signedIn";
 
@@ -29,6 +33,12 @@ export interface AuthContextValue {
   signUpWithPassword: (email: string, password: string) => Promise<"done" | "confirm">;
   confirmSignUpCode: (email: string, code: string) => Promise<void>;
   resendCode: (email: string) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  confirmForgotPassword: (
+    email: string,
+    code: string,
+    newPassword: string,
+  ) => Promise<void>;
   signOutUser: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -51,6 +61,8 @@ export function StubAuthProvider({
     signUpWithPassword: async () => "done",
     confirmSignUpCode: noopAsync,
     resendCode: noopAsync,
+    requestPasswordReset: noopAsync,
+    confirmForgotPassword: noopAsync,
     signOutUser: noopAsync,
     refresh: noopAsync,
     ...value,
@@ -119,6 +131,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async resendCode(loginEmail) {
         await resendSignUpCode({ username: loginEmail.trim().toLowerCase() });
+      },
+      async requestPasswordReset(loginEmail) {
+        await requestPasswordResetRequest(loginEmail);
+      },
+      async confirmForgotPassword(loginEmail, code, newPassword) {
+        await confirmForgotPasswordRequest(loginEmail, code, newPassword);
       },
       async signOutUser() {
         await signOut();

@@ -57,10 +57,13 @@ For GitHub Pages, set the same names as repository **Secrets** (used by `.github
 | `/platform/pricing` | Platform pricing |
 | `/platform/api` | Form API usage |
 | `/platform/documentation` | Platform docs + OpenAPI link |
-| `/portal` | Redirects to inbox or login |
-| `/portal/login` | Cognito sign-in / sign-up (separate portal chrome) |
-| `/portal/inbox` | Notifications inbox |
-| `/portal/api-key` | API key management |
+| `/portal` | Signed-in home (create organization / workspace summary); login if signed out |
+| `/portal/login` | Cognito sign-in |
+| `/portal/signup` | Cognito sign-up |
+| `/portal/confirm` | Email verification (after signup) |
+| `/portal/forgot-password` | Password reset |
+| `/portal/inbox` | Lead inbox |
+| `/portal/settings/*` | Workspace settings (API keys, team, mailbox, …) |
 | `/portal/membership` | Subscription / billing |
 
-Platform marketing lives under `/platform/*` with the main site header. The signed-in product lives under `/portal/*` with its own header.
+Platform marketing lives under `/platform/*` with the main site header. The signed-in product lives under `/portal/*` with its own header. Auth is Cognito-only until the user creates an organization from home (temporary bridge to Form API provision until Org → Projects lands).

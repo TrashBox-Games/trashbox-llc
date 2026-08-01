@@ -44,7 +44,7 @@ import {
   hasPermission as permissionsInclude,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { PORTAL_PATHS } from "@/lib/sites";
+import { portalSignedOutRedirect } from "@/lib/portal-redirects";
 
 export type PortalTab = "inbox" | "membership";
 
@@ -293,10 +293,8 @@ export function PortalProvider({
         sessionStorage.setItem("portalInviteToken", invite);
       }
       if (!disableAuthRedirect) {
-        const path = window.location.pathname.replace(/\/$/, "") || "/";
-        if (path !== PORTAL_PATHS.login.replace(/\/$/, "")) {
-          redirect(PORTAL_PATHS.login);
-        }
+        const target = portalSignedOutRedirect(window.location.pathname);
+        if (target) redirect(target);
       }
       return;
     }
