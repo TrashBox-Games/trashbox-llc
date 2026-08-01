@@ -7,15 +7,18 @@ import { useEffect, useState } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Skeleton } from "@/components/atoms/Skeleton";
 import { PortalUserMenu } from "@/components/features/portal/PortalUserMenu";
+import { WorkspaceBreadcrumb } from "@/components/features/portal/WorkspaceBreadcrumb";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { teamMemberDisplayName } from "@/lib/api";
 import { usePortal } from "@/lib/portal";
 import { cn } from "@/lib/utils";
+import { isPortalOrgPickerPath } from "@/lib/portal-org-gate";
+import { getSelectedOrgId } from "@/lib/portal-selection";
 import { PORTAL_PATHS } from "@/lib/sites";
 
-const signedInLinks = [
-  { href: PORTAL_PATHS.home, label: "Home", icon: "home" },
+const workspaceLinks = [
+  { href: PORTAL_PATHS.home, label: "Projects", icon: "home" },
   { href: PORTAL_PATHS.inbox, label: "Inbox", icon: "inbox" },
   { href: PORTAL_PATHS.settings, label: "Settings", icon: "settings" },
   {
@@ -92,6 +95,10 @@ export function PortalHeader() {
   const signedIn = auth.status === "signedIn";
   const authLoading = auth.status === "loading";
   const headerHidden = hidden && !open;
+  const onOrgPicker = isPortalOrgPickerPath(pathname);
+  const inWorkspace = Boolean(getSelectedOrgId()) && !onOrgPicker;
+  const signedInLinks = inWorkspace ? workspaceLinks : [];
+  const showBreadcrumb = signedIn && !authLoading;
   const currentMember = auth.email
     ? portal.members.find(
         (member) => member.email.toLowerCase() === auth.email!.toLowerCase(),
@@ -117,58 +124,60 @@ export function PortalHeader() {
         )}
       >
         <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-6 py-2 md:px-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2.5"
-            aria-label="Trashbox home"
-          >
-            <Image
-              src="/images/trashbox-logo-white.png"
-              alt=""
-              width={96}
-              height={24}
-              className="h-5"
-              style={{ width: "auto" }}
-              priority
-            />
-            <span className="border-l border-outline-variant/30 pl-2.5 font-headline text-[10px] font-bold uppercase tracking-widest text-white">
-              Portal
-            </span>
-          </Link>
+          <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
+            <Link
+              href={signedIn ? PORTAL_PATHS.orgs : "/"}
+              className="inline-flex shrink-0 items-center gap-2.5"
+              aria-label="Trashbox home"
+            >
+              <Image
+                src="/images/trashbox-logo-white.png"
+                alt=""
+                width={96}
+                height={24}
+                className="h-5"
+                style={{ width: "auto" }}
+                priority
+              />
+            </Link>
+            {showBreadcrumb ? <WorkspaceBreadcrumb /> : null}
+          </div>
 
-          {(signedIn || authLoading) && (
+          {inWorkspace && (
             <nav
               className="hidden items-center gap-5 md:flex"
               aria-label="Portal"
               aria-busy={authLoading}
             >
-              {authLoading
-                ? signedInLinks.map((item) => (
-                    <Skeleton key={item.href} className="size-5 rounded-md" />
-                  ))
-                : signedInLinks.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      aria-label={item.label}
-                      className={linkClass(
-                        isPortalNavActive(pathname, item.href),
-                      )}
-                    >
-                      <MaterialIcon name={item.icon} className="text-[1.15rem]!" />
-                    </Link>
-                  ))}
+              {signedInLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  className={linkClass(
+                    isPortalNavActive(pathname, item.href),
+                  )}
+                >
+                  <MaterialIcon name={item.icon} className="text-[1.15rem]!" />
+                </Link>
+              ))}
             </nav>
           )}
 
-          <div className="flex min-w-26 items-center justify-end gap-2">
+          <div className="flex min-w-26 shrink-0 items-center justify-end gap-2">
             {authLoading ? (
               <Skeleton className="size-8 rounded-full" />
             ) : signedIn && auth.email ? (
               <PortalUserMenu
                 email={auth.email}
                 name={userName}
-                clientName={portal.clientName}
+                clientName={
+                  portal.account?.orgName
+                    ? `${portal.account.orgName}${
+                        portal.clientName ? ` / ${portal.clientName}` : ""
+                      }`
+                    : portal.clientName
+                }
                 onSignOut={() => auth.signOutUser()}
               />
             ) : (
@@ -176,7 +185,7 @@ export function PortalHeader() {
                 <Link href={PORTAL_PATHS.login}>Login</Link>
               </Button>
             )}
-            {signedIn && (
+            {signedIn && inWorkspace && (
               <Button
                 type="button"
                 variant="ghost"
@@ -196,7 +205,7 @@ export function PortalHeader() {
         </div>
       </div>
 
-      {open && signedIn && (
+      {open && signedIn && inWorkspace && (
         <div className="fixed inset-0 top-11 z-40 bg-background/95 px-6 pb-10 pt-6 md:hidden">
           <div className="flex flex-col gap-6">
             {signedInLinks.map((item) => (

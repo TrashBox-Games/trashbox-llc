@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { Button } from "@/components/ui/button";
@@ -9,17 +9,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { usePortal } from "@/lib/portal";
+import { portalOrgGateRedirect } from "@/lib/portal-org-gate";
+import { getSelectedOrgId } from "@/lib/portal-selection";
 import { PORTAL_PATHS } from "@/lib/sites";
 
+/** Workspace home for the selected organization (projects). */
 export function PortalHome() {
   const auth = useAuth();
   const portal = usePortal();
+  const hasSelectedOrg = Boolean(getSelectedOrgId());
+  const projectInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (auth.status === "signedOut") {
       window.location.replace(PORTAL_PATHS.login);
+      return;
     }
-  }, [auth.status]);
+    if (auth.status !== "signedIn" || !portal.ready) return;
+    const gate = portalOrgGateRedirect(
+      window.location.pathname,
+      hasSelectedOrg,
+    );
+    if (gate) window.location.replace(gate);
+  }, [auth.status, portal.ready, hasSelectedOrg]);
+
+  useEffect(() => {
+    if (!portal.ready || !hasSelectedOrg) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("createProject") !== "1") return;
+    projectInputRef.current?.focus();
+    params.delete("createProject");
+    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", next);
+  }, [portal.ready, hasSelectedOrg]);
 
   if (!auth.configured) {
     return (
@@ -34,84 +56,156 @@ export function PortalHome() {
   const pending =
     auth.status === "loading" ||
     auth.status === "signedOut" ||
-    !portal.ready;
+    !portal.ready ||
+    !hasSelectedOrg;
+
+  const selectedOrgId = getSelectedOrgId() || portal.account?.orgId || "";
+  const org =
+    portal.orgs.find((entry) => entry.orgId === selectedOrgId) ||
+    (portal.account?.orgId
+      ? {
+          orgId: portal.account.orgId,
+          orgName:
+            portal.account.orgName ||
+            portal.account.clientName ||
+            "Organization",
+          projects: [
+            {
+              projectId:
+                portal.account.projectId || portal.account.clientId || "",
+              projectName:
+                portal.account.projectName ||
+                portal.account.clientName ||
+                "Project",
+            },
+          ].filter((p) => p.projectId),
+        }
+      : null);
 
   return (
     <div className="space-y-10">
       <FadeIn>
         <p className="font-label text-outline mb-6 text-xs tracking-[0.4em] uppercase">
-          Home
+          Workspace
         </p>
         <h1 className="font-headline max-w-4xl text-4xl leading-tight font-bold tracking-tighter text-white md:text-6xl">
-          Your <span className="text-outline">portal.</span>
+          {org?.orgName || "Your"}{" "}
+          <span className="text-outline">projects.</span>
         </h1>
         <p className="text-on-surface-variant mt-6 max-w-xl text-lg">
-          Organizations hold your team and billing. Projects hold each site&apos;s
-          inbox and API key.
+          Projects hold each site&apos;s inbox and API key.{" "}
+          <Link href={PORTAL_PATHS.orgs} className="text-white underline">
+            Switch organization
+          </Link>
         </p>
       </FadeIn>
 
       {pending ? (
         <PortalSkeleton variant="membership" />
-      ) : !portal.account?.linked ? (
-        <FadeIn
-          className="border-outline-variant/10 bg-surface-container-low border p-6 md:p-8"
-          y={12}
-        >
-          <p className="font-label text-outline text-[10px] tracking-widest uppercase">
-            Get started
-          </p>
-          <h2 className="font-headline mt-3 text-2xl font-bold text-white md:text-3xl">
-            Create an organization
-          </h2>
-          <p className="text-on-surface-variant mt-3 max-w-2xl text-sm leading-relaxed">
-            You&apos;re signed in as {portal.account?.email || auth.email || "your account"}.
-            Create an organization when you&apos;re ready — no payment required.
-            (For now this also creates your first project workspace.)
-          </p>
-          <div className="mt-8 max-w-md">
-            <Label htmlFor="org-name">Organization name</Label>
-            <Input
-              id="org-name"
-              type="text"
-              required
-              value={portal.businessName}
-              onChange={(e) => portal.setBusinessName(e.target.value)}
-              placeholder="Acme Inspections"
-            />
-          </div>
-          <div className="mt-6">
-            <Button
-              type="button"
-              disabled={portal.billingBusy || !portal.businessName.trim()}
-              onClick={() => void portal.onProvisionAccount()}
-            >
-              {portal.billingBusy ? "Creating…" : "Create organization"}
-            </Button>
-          </div>
-          {portal.billingError && (
-            <p className="mt-4 text-sm text-red-300">{portal.billingError}</p>
-          )}
-        </FadeIn>
       ) : (
-        <FadeIn
-          className="border-outline-variant/10 bg-surface-container-low border p-6 md:p-8"
-          y={12}
-        >
-          <p className="font-label text-outline text-[10px] tracking-widest uppercase">
-            Workspace
-          </p>
-          <h2 className="font-headline mt-3 text-2xl font-bold text-white md:text-3xl">
-            {portal.clientName || portal.account.clientName || "Your organization"}
-          </h2>
-          <p className="text-on-surface-variant mt-3 max-w-2xl text-sm leading-relaxed">
-            Multi-project switching arrives next. For now this workspace is your
-            organization and first project.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href={PORTAL_PATHS.inbox}>Open inbox</Link>
-            </Button>
+        <div className="space-y-8">
+          {portal.billingNotice && (
+            <p className="border-outline-variant/20 bg-surface-container-low text-on-surface-variant border p-4 text-sm">
+              {portal.billingNotice}
+            </p>
+          )}
+
+          <FadeIn
+            className="border-outline-variant/10 bg-surface-container-low border p-6 md:p-8"
+            y={12}
+          >
+            <ul className="space-y-3">
+              {(org?.projects || []).map((project) => {
+                const active =
+                  (portal.account?.projectId || portal.account?.clientId) ===
+                  project.projectId;
+                return (
+                  <li
+                    key={project.projectId}
+                    className="flex flex-wrap items-center justify-between gap-3 border-b border-outline-variant/10 pb-3 last:border-0"
+                  >
+                    <div>
+                      <p className="text-white">{project.projectName}</p>
+                      <p className="text-on-surface-variant text-xs">
+                        Project
+                        {active ? " · selected" : ""}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {!active && selectedOrgId && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            portal.selectWorkspace(
+                              selectedOrgId,
+                              project.projectId,
+                            )
+                          }
+                        >
+                          Select
+                        </Button>
+                      )}
+                      <Button asChild size="sm">
+                        <Link
+                          href={PORTAL_PATHS.inbox}
+                          onClick={() => {
+                            if (selectedOrgId) {
+                              portal.selectWorkspace(
+                                selectedOrgId,
+                                project.projectId,
+                              );
+                            }
+                          }}
+                        >
+                          Open inbox
+                        </Link>
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+              {(org?.projects || []).length === 0 && (
+                <li className="text-on-surface-variant text-sm">
+                  No projects yet. Create one below.
+                </li>
+              )}
+            </ul>
+
+            {selectedOrgId && (
+              <div className="mt-8 max-w-md space-y-4 border-t border-outline-variant/10 pt-6">
+                <p className="font-label text-outline text-[10px] tracking-widest uppercase">
+                  New project
+                </p>
+                <div>
+                  <Label htmlFor="project-name">Project name</Label>
+                  <Input
+                    ref={projectInputRef}
+                    id="project-name"
+                    type="text"
+                    value={portal.projectNameDraft}
+                    onChange={(e) =>
+                      portal.setProjectNameDraft(e.target.value)
+                    }
+                    placeholder="Client site"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={
+                    portal.billingBusy || !portal.projectNameDraft.trim()
+                  }
+                  onClick={() => void portal.onCreateProject(selectedOrgId)}
+                >
+                  {portal.billingBusy ? "Creating…" : "Create project"}
+                </Button>
+              </div>
+            )}
+          </FadeIn>
+
+          <div className="flex flex-wrap gap-3">
             <Button asChild variant="outline">
               <Link href={PORTAL_PATHS.settings}>Settings</Link>
             </Button>
@@ -119,7 +213,10 @@ export function PortalHome() {
               <Link href={PORTAL_PATHS.membership}>Membership</Link>
             </Button>
           </div>
-        </FadeIn>
+          {portal.billingError && (
+            <p className="text-sm text-red-300">{portal.billingError}</p>
+          )}
+        </div>
       )}
     </div>
   );

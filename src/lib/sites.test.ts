@@ -10,6 +10,7 @@ import {
 describe("sites helpers", () => {
   it("exposes platform and portal paths", () => {
     expect(PLATFORM_PATHS.features).toBe("/platform/features/");
+    expect(PORTAL_PATHS.orgs).toBe("/portal/orgs/");
     expect(PORTAL_PATHS.home).toBe("/portal/");
     expect(PORTAL_PATHS.login).toBe("/portal/login/");
     expect(PORTAL_PATHS.signup).toBe("/portal/signup/");

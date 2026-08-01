@@ -2,36 +2,26 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { StubAuthProvider } from "@/lib/auth";
 import { StubPortalProvider } from "@/lib/portal";
 import { setSelectedWorkspace } from "@/lib/portal-selection";
-import { PortalHome } from "./PortalHome";
+import { WorkspaceBreadcrumb } from "./WorkspaceBreadcrumb";
 
 const meta = {
-  title: "Features/Portal/Home/PortalHome",
-  component: PortalHome,
+  title: "Features/Portal/WorkspaceBreadcrumb",
+  component: WorkspaceBreadcrumb,
   tags: ["autodocs"],
-  parameters: {
-    layout: "fullscreen",
-  },
-} satisfies Meta<typeof PortalHome>;
+} satisfies Meta<typeof WorkspaceBreadcrumb>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Workspace: Story = {
+export const Default: Story = {
   decorators: [
     (Story) => {
       setSelectedWorkspace("o1", "p1");
       return (
-        <StubAuthProvider
-          value={{
-            status: "signedIn",
-            configured: true,
-            email: "owner@example.com",
-          }}
-        >
+        <StubAuthProvider value={{ status: "signedIn", configured: true }}>
           <StubPortalProvider
             value={{
               ready: true,
-              clientName: "Marketing site",
               orgs: [
                 {
                   orgId: "o1",
@@ -42,27 +32,30 @@ export const Workspace: Story = {
                   hasBilling: false,
                   projects: [
                     { projectId: "p1", projectName: "Marketing site" },
+                    { projectId: "p2", projectName: "App" },
                   ],
+                },
+                {
+                  orgId: "o2",
+                  orgName: "Beta LLC",
+                  role: "member",
+                  tier: "premium",
+                  active: true,
+                  hasBilling: true,
+                  projects: [{ projectId: "p3", projectName: "Docs" }],
                 },
               ],
               account: {
                 linked: true,
-                email: "owner@example.com",
                 orgId: "o1",
                 orgName: "Acme Co",
                 projectId: "p1",
                 projectName: "Marketing site",
-                clientId: "p1",
-                clientName: "Marketing site",
-                tier: "basic",
-                active: true,
-                hasApiKey: true,
-                hasBilling: false,
-                role: "owner",
               },
+              selectWorkspace: () => {},
             }}
           >
-            <div className="mx-auto max-w-screen-2xl px-8 pt-16 pb-24">
+            <div className="bg-background p-8">
               <Story />
             </div>
           </StubPortalProvider>

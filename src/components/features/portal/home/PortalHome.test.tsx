@@ -1,71 +1,51 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StubAuthProvider } from "@/lib/auth";
 import { StubPortalProvider } from "@/lib/portal";
+import { setSelectedWorkspace } from "@/lib/portal-selection";
 import { PortalHome } from "./PortalHome";
 
 describe("PortalHome", () => {
-  it("shows create-organization empty state when unlinked", async () => {
-    const user = userEvent.setup();
-    const onProvisionAccount = vi.fn().mockResolvedValue(undefined);
-
-    function Harness() {
-      const [businessName, setBusinessName] = useState("");
-      return (
-        <StubAuthProvider value={{ status: "signedIn", configured: true }}>
-          <StubPortalProvider
-            value={{
-              ready: true,
-              account: {
-                linked: false,
-                email: "owner@example.com",
-              },
-              businessName,
-              setBusinessName,
-              billingBusy: false,
-              billingError: null,
-              onProvisionAccount,
-            }}
-          >
-            <PortalHome />
-          </StubPortalProvider>
-        </StubAuthProvider>
-      );
-    }
-
-    render(<Harness />);
-
-    expect(
-      screen.getByRole("heading", { name: /create an organization/i }),
-    ).toBeInTheDocument();
-    await user.type(screen.getByLabelText(/organization name/i), "Acme Co");
-    await user.click(
-      screen.getByRole("button", { name: /create organization/i }),
-    );
-    expect(onProvisionAccount).toHaveBeenCalled();
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    setSelectedWorkspace("o1", "p1");
   });
 
-  it("shows workspace summary when linked", () => {
+  it("lists projects for the selected organization", () => {
     render(
       <StubAuthProvider value={{ status: "signedIn", configured: true }}>
         <StubPortalProvider
           value={{
             ready: true,
-            clientName: "Acme Co",
+            clientName: "Marketing site",
+            orgs: [
+              {
+                orgId: "o1",
+                orgName: "Acme Co",
+                role: "owner",
+                tier: "basic",
+                active: true,
+                hasBilling: false,
+                projects: [
+                  { projectId: "p1", projectName: "Marketing site" },
+                ],
+              },
+            ],
             account: {
               linked: true,
               email: "owner@example.com",
-              clientName: "Acme Co",
-              clientId: "c1",
+              orgId: "o1",
+              orgName: "Acme Co",
+              projectId: "p1",
+              projectName: "Marketing site",
+              clientId: "p1",
+              clientName: "Marketing site",
               tier: "basic",
               active: true,
               hasApiKey: true,
               hasBilling: false,
               role: "owner",
-              emailsUsed: 0,
-              emailLimit: 1000,
             },
           }}
         >
@@ -74,7 +54,15 @@ describe("PortalHome", () => {
       </StubAuthProvider>,
     );
 
-    expect(screen.getByText("Acme Co")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /acme co/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Marketing site")).toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("link", { name: /switch organization/i })
+        .getAttribute("href"),
+    ).toMatch(/\/portal\/orgs\/?$/);
     expect(
       screen.getByRole("link", { name: /open inbox/i }).getAttribute("href"),
     ).toMatch(/\/portal\/inbox\/?$/);

@@ -26,7 +26,7 @@ export function AuthShell({
 
   useEffect(() => {
     if (auth.status === "signedIn") {
-      window.location.assign(PORTAL_PATHS.home);
+      window.location.assign(PORTAL_PATHS.orgs);
     }
   }, [auth.status]);
 

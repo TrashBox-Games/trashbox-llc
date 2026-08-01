@@ -15,15 +15,17 @@ import {
   acceptTeamInvite,
   addSubmissionNote,
   connectMailbox,
+  createOrganization,
+  createProject,
   disconnectMailbox,
   getAccount,
   getMailbox,
   getTeam,
   leadStatusOf,
   listLeadMessages,
+  listOrgs,
   listSubmissions,
   openBillingPortal,
-  provisionAccount,
   sendLeadMessage,
   startCheckout,
   syncMailbox,
@@ -36,6 +38,7 @@ import {
   type LeadTag,
   type MailboxProvider,
   type MailboxStatusResponse,
+  type OrgSummary,
   type PatchMailboxInput,
   type Permission,
   type Submission,
@@ -44,7 +47,12 @@ import {
   hasPermission as permissionsInclude,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { portalOrgGateRedirect } from "@/lib/portal-org-gate";
 import { portalSignedOutRedirect } from "@/lib/portal-redirects";
+import {
+  getSelectedOrgId,
+  setSelectedWorkspace,
+} from "@/lib/portal-selection";
 
 export type PortalTab = "inbox" | "membership";
 
@@ -97,6 +105,7 @@ export interface PortalContextValue {
   items: Submission[];
   clientName: string | null;
   account: AccountResponse | null;
+  orgs: OrgSummary[];
   nextCursor: string | undefined;
   listError: string | null;
   listBusy: boolean;
@@ -106,6 +115,8 @@ export interface PortalContextValue {
   billingNotice: string | null;
   businessName: string;
   setBusinessName: (value: string) => void;
+  projectNameDraft: string;
+  setProjectNameDraft: (value: string) => void;
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
   selected: Submission | null;
@@ -147,7 +158,11 @@ export interface PortalContextValue {
   onMailboxDisconnect: () => Promise<void>;
   onMailboxSync: () => Promise<void>;
   onMailboxPatch: (input: PatchMailboxInput) => Promise<void>;
+  /** @deprecated Prefer onCreateOrganization */
   onProvisionAccount: () => Promise<void>;
+  onCreateOrganization: () => Promise<void>;
+  onCreateProject: (orgId: string) => Promise<void>;
+  selectWorkspace: (orgId: string, projectId: string) => void;
   onUpgrade: (plan: "basic" | "premium") => Promise<void>;
   onManageBilling: () => Promise<void>;
 }
@@ -169,6 +184,7 @@ export function StubPortalProvider({
     items: [],
     clientName: null,
     account: null,
+    orgs: [],
     nextCursor: undefined,
     listError: null,
     listBusy: false,
@@ -178,6 +194,8 @@ export function StubPortalProvider({
     billingNotice: null,
     businessName: "",
     setBusinessName: () => {},
+    projectNameDraft: "",
+    setProjectNameDraft: () => {},
     selectedId: null,
     setSelectedId: () => {},
     selected: null,
@@ -206,6 +224,9 @@ export function StubPortalProvider({
     onMailboxSync: portalNoop,
     onMailboxPatch: portalNoop,
     onProvisionAccount: portalNoop,
+    onCreateOrganization: portalNoop,
+    onCreateProject: portalNoop,
+    selectWorkspace: () => {},
     onUpgrade: portalNoop,
     onManageBilling: portalNoop,
     ...value,
@@ -237,6 +258,9 @@ export function PortalProvider({
   const [billingError, setBillingError] = useState<string | null>(null);
   const [billingNotice, setBillingNotice] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState("");
+  const [projectNameDraft, setProjectNameDraft] = useState("");
+  const [orgs, setOrgs] = useState<OrgSummary[]>([]);
+  const [workspaceEpoch, setWorkspaceEpoch] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [filters, setFilters] = useState<LeadInboxFiltersValue>(emptyFilters);
@@ -352,10 +376,18 @@ export function PortalProvider({
           }
         }
 
+        try {
+          const orgList = await listOrgs();
+          if (!cancelled) setOrgs(orgList.orgs);
+        } catch {
+          if (!cancelled) setOrgs([]);
+        }
+
         const acct = await getAccount();
         if (cancelled) return;
         setAccount(acct);
-        setClientName(acct.clientName || null);
+        const projectLabel = acct.projectName || acct.clientName || null;
+        setClientName(projectLabel);
         if (acct.role) setTeamRole(acct.role);
         if (!acct.linked) {
           setItems([]);
@@ -368,7 +400,7 @@ export function PortalProvider({
           return;
         }
 
-        setClientName(acct.clientName || null);
+        setClientName(projectLabel);
         if (acct.role) setTeamRole(acct.role);
 
         try {
@@ -447,7 +479,18 @@ export function PortalProvider({
     return () => {
       cancelled = true;
     };
-  }, [auth.status, appliedFilters, disableAuthRedirect]);
+  }, [auth.status, appliedFilters, disableAuthRedirect, workspaceEpoch]);
+
+  useEffect(() => {
+    if (disableAuthRedirect) return;
+    if (auth.status !== "signedIn" || !ready) return;
+    const hasSelectedOrg = Boolean(getSelectedOrgId());
+    const orgGate = portalOrgGateRedirect(
+      window.location.pathname,
+      hasSelectedOrg,
+    );
+    if (orgGate) redirect(orgGate);
+  }, [auth.status, ready, disableAuthRedirect, workspaceEpoch]);
 
   const loadMore = useCallback(async () => {
     if (!nextCursor) return;
@@ -709,49 +752,71 @@ export function PortalProvider({
     }
   }, []);
 
-  const onProvisionAccount = useCallback(async () => {
+  const selectWorkspace = useCallback((orgId: string, projectId: string) => {
+    setSelectedWorkspace(orgId, projectId.trim() ? projectId : null);
+    setWorkspaceEpoch((n) => n + 1);
+  }, []);
+
+  const onCreateOrganization = useCallback(async () => {
     const name = businessName.trim();
     if (!name) {
-      setBillingError("Enter a business name");
+      setBillingError("Enter an organization name");
       return;
     }
     setBillingBusy(true);
     setBillingError(null);
     try {
-      const result = await provisionAccount(name);
-      if (result.apiKey) {
-        sessionStorage.setItem(PORTAL_ISSUED_API_KEY_STORAGE, result.apiKey);
-        setBillingNotice(
-          "Account created. Open Settings → Developers → API Keys to copy your new key (shown once).",
-        );
-      }
-      setAccount({
-        linked: true,
-        email: result.email,
-        clientId: result.clientId,
-        clientName: result.clientName,
-        role: result.role ?? "owner",
-        tier: result.tier,
-        active: result.active,
-        hasBilling: result.hasBilling,
-        hasApiKey: Boolean(result.apiKey) || result.hasApiKey,
-        emailsUsed: result.emailsUsed,
-        emailLimit: result.emailLimit,
-        usageMonth: result.usageMonth,
-        memberLimit: result.memberLimit ?? 1,
-        memberCount: result.memberCount ?? 1,
-      });
-      setTeamRole(result.role ?? "owner");
-      setClientName(result.clientName || name);
+      const result = await createOrganization({ orgName: name });
+      setBillingNotice(
+        result.message ||
+          "Organization created. Add a project to get an API key and inbox.",
+      );
+      setSelectedWorkspace(result.orgId, null);
       setBusinessName("");
+      setWorkspaceEpoch((n) => n + 1);
     } catch (err) {
       setBillingError(
-        err instanceof ApiError ? err.message : "Could not create Form API account",
+        err instanceof ApiError
+          ? err.message
+          : "Could not create organization",
       );
     } finally {
       setBillingBusy(false);
     }
   }, [businessName]);
+
+  const onCreateProject = useCallback(
+    async (orgId: string) => {
+      const name = projectNameDraft.trim();
+      if (!name) {
+        setBillingError("Enter a project name");
+        return;
+      }
+      setBillingBusy(true);
+      setBillingError(null);
+      try {
+        const result = await createProject({ orgId, projectName: name });
+        if (result.apiKey) {
+          sessionStorage.setItem(PORTAL_ISSUED_API_KEY_STORAGE, result.apiKey);
+          setBillingNotice(
+            "Project created. Open Settings → Developers → API Keys to copy your new key (shown once).",
+          );
+        }
+        setSelectedWorkspace(result.orgId, result.projectId);
+        setProjectNameDraft("");
+        setWorkspaceEpoch((n) => n + 1);
+      } catch (err) {
+        setBillingError(
+          err instanceof ApiError ? err.message : "Could not create project",
+        );
+      } finally {
+        setBillingBusy(false);
+      }
+    },
+    [projectNameDraft],
+  );
+
+  const onProvisionAccount = onCreateOrganization;
 
   const onUpgrade = useCallback(async (plan: "basic" | "premium") => {
     setBillingBusy(true);
@@ -798,6 +863,7 @@ export function PortalProvider({
       items,
       clientName,
       account,
+      orgs,
       nextCursor,
       listError,
       listBusy,
@@ -807,6 +873,8 @@ export function PortalProvider({
       billingNotice,
       businessName,
       setBusinessName,
+      projectNameDraft,
+      setProjectNameDraft,
       selectedId,
       setSelectedId,
       selected,
@@ -835,6 +903,9 @@ export function PortalProvider({
       onMailboxSync,
       onMailboxPatch,
       onProvisionAccount,
+      onCreateOrganization,
+      onCreateProject,
+      selectWorkspace,
       onUpgrade,
       onManageBilling,
     }),
@@ -843,6 +914,7 @@ export function PortalProvider({
       items,
       clientName,
       account,
+      orgs,
       nextCursor,
       listError,
       listBusy,
@@ -851,6 +923,7 @@ export function PortalProvider({
       billingError,
       billingNotice,
       businessName,
+      projectNameDraft,
       selectedId,
       selected,
       filters,
@@ -877,6 +950,9 @@ export function PortalProvider({
       onMailboxSync,
       onMailboxPatch,
       onProvisionAccount,
+      onCreateOrganization,
+      onCreateProject,
+      selectWorkspace,
       onUpgrade,
       onManageBilling,
     ],

@@ -22,9 +22,11 @@ describe("portalSignedOutRedirect", () => {
 });
 
 describe("portalSignedInAuthRedirect", () => {
-  it("sends signed-in users away from auth routes to home", () => {
-    expect(portalSignedInAuthRedirect("/portal/login/")).toBe("/portal/");
-    expect(portalSignedInAuthRedirect("/portal/signup/")).toBe("/portal/");
+  it("sends signed-in users away from auth routes to the org picker", () => {
+    expect(portalSignedInAuthRedirect("/portal/login/")).toBe("/portal/orgs/");
+    expect(portalSignedInAuthRedirect("/portal/signup/")).toBe(
+      "/portal/orgs/",
+    );
   });
 
   it("leaves product routes alone", () => {

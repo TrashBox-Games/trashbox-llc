@@ -1,6 +1,7 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { setSelectedWorkspace } from "@/lib/portal-selection";
 import { PortalHeader } from "./PortalHeader";
 
 vi.mock("next/navigation", () => ({
@@ -36,6 +37,9 @@ function setScrollY(y: number) {
 describe("PortalHeader", () => {
   beforeEach(() => {
     setScrollY(0);
+    localStorage.clear();
+    sessionStorage.clear();
+    setSelectedWorkspace("o1", "p1");
     vi.mocked(useAuth).mockReturnValue({
       configured: true,
       status: "signedIn",
@@ -47,7 +51,29 @@ describe("PortalHeader", () => {
       signOutUser: vi.fn(),
     } as ReturnType<typeof useAuth>);
     vi.mocked(usePortal).mockReturnValue({
-      clientName: "Acme Co",
+      ready: true,
+      clientName: "Marketing site",
+      orgs: [
+        {
+          orgId: "o1",
+          orgName: "Acme Co",
+          role: "owner",
+          tier: "basic",
+          active: true,
+          hasBilling: false,
+          projects: [{ projectId: "p1", projectName: "Marketing site" }],
+        },
+      ],
+      account: {
+        linked: true,
+        orgId: "o1",
+        orgName: "Acme Co",
+        projectId: "p1",
+        projectName: "Marketing site",
+        clientId: "p1",
+        clientName: "Marketing site",
+      },
+      selectWorkspace: vi.fn(),
       members: [
         {
           email: "owner@example.com",
@@ -95,34 +121,27 @@ describe("PortalHeader", () => {
     expect(header.className).not.toMatch(/-translate-y-full/);
   });
 
-  it("renders nav items as icons with accessible labels", () => {
+  it("shows workspace breadcrumb and product nav when an org is selected", () => {
     render(<PortalHeader />);
-    const nav = screen.getByRole("navigation", { name: /portal/i });
-
     expect(
-      within(nav).getByRole("link", { name: /^home$/i }),
+      screen.getByRole("navigation", { name: /workspace/i }),
     ).toBeInTheDocument();
     expect(
-      within(nav).getByRole("link", { name: /^inbox$/i }),
+      screen.getByRole("navigation", { name: /^portal$/i }),
     ).toBeInTheDocument();
     expect(
-      within(nav).getByRole("link", { name: /^settings$/i }),
+      screen.getByRole("button", { name: /organization: acme co/i }),
     ).toBeInTheDocument();
     expect(
-      within(nav).getByRole("link", { name: /^membership$/i }),
+      screen.getByRole("button", { name: /project: marketing site/i }),
     ).toBeInTheDocument();
-
-    expect(within(nav).queryByText("Home")).not.toBeInTheDocument();
-    expect(within(nav).queryByText("Inbox")).not.toBeInTheDocument();
-    expect(within(nav).queryByText("Settings")).not.toBeInTheDocument();
-    expect(within(nav).queryByText("Membership")).not.toBeInTheDocument();
   });
 
-  it("links the logo to the trashbox.io root", () => {
+  it("links the logo to the org picker when signed in", () => {
     render(<PortalHeader />);
     expect(
-      screen.getByRole("link", { name: /trashbox.*home/i }),
-    ).toHaveAttribute("href", "/");
+      screen.getByRole("link", { name: /trashbox.*home/i }).getAttribute("href"),
+    ).toMatch(/\/portal\/orgs\/?$/);
   });
 
   it("uses a compact bar height", () => {

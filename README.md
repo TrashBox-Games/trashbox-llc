@@ -57,13 +57,16 @@ For GitHub Pages, set the same names as repository **Secrets** (used by `.github
 | `/platform/pricing` | Platform pricing |
 | `/platform/api` | Form API usage |
 | `/platform/documentation` | Platform docs + OpenAPI link |
-| `/portal` | Signed-in home (create organization / workspace summary); login if signed out |
+| `/portal/orgs` | Org picker — select or create an organization (GitHub-style gate) |
+| `/portal` | Workspace for the selected org (projects); redirects to `/portal/orgs` if none selected |
 | `/portal/login` | Cognito sign-in |
 | `/portal/signup` | Cognito sign-up |
 | `/portal/confirm` | Email verification (after signup) |
 | `/portal/forgot-password` | Password reset |
-| `/portal/inbox` | Lead inbox |
-| `/portal/settings/*` | Workspace settings (API keys, team, mailbox, …) |
-| `/portal/membership` | Subscription / billing |
+| `/portal/inbox` | Lead inbox for the selected project |
+| `/portal/settings/*` | Project/org settings (API keys, team, mailbox, …) |
+| `/portal/membership` | Org subscription / billing |
 
-Platform marketing lives under `/platform/*` with the main site header. The signed-in product lives under `/portal/*` with its own header. Auth is Cognito-only until the user creates an organization from home (temporary bridge to Form API provision until Org → Projects lands).
+Platform marketing lives under `/platform/*` with the main site header. The signed-in product lives under `/portal/*` with its own header.
+
+**Org → Projects:** After sign-in you land on `/portal/orgs` to choose or create an organization. Creating an org does not create a project — add one from the workspace home. Inbox/settings need an org (and a project for product APIs). The portal sends `X-Project-Id` on API calls.

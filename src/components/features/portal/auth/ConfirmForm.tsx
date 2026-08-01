@@ -42,7 +42,7 @@ export function ConfirmForm() {
       clearPendingSignupPassword();
       if (pendingPassword) {
         await auth.signInWithPassword(email, pendingPassword);
-        redirect(PORTAL_PATHS.home);
+        redirect(PORTAL_PATHS.orgs);
         return;
       }
       redirect(PORTAL_PATHS.login);

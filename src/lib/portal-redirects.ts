@@ -14,5 +14,5 @@ export function portalSignedInAuthRedirect(
   pathname: string | null | undefined,
 ): string | null {
   if (!isPortalAuthPath(pathname)) return null;
-  return PORTAL_PATHS.home;
+  return PORTAL_PATHS.orgs;
 }

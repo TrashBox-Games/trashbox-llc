@@ -1,5 +1,9 @@
 import { fetchAuthSession } from "aws-amplify/auth";
 import { apiUrl } from "./amplify";
+import {
+  getSelectedOrgId,
+  getSelectedProjectId,
+} from "./portal-selection";
 
 export const LEAD_STATUSES = [
   "new",
@@ -117,6 +121,11 @@ export interface SubmissionsListResponse {
 export interface AccountResponse {
   linked: boolean;
   email?: string;
+  orgId?: string;
+  orgName?: string;
+  projectId?: string;
+  projectName?: string;
+  /** Legacy alias for projectId. */
   clientId?: string;
   clientName?: string;
   role?: TeamRole;
@@ -129,6 +138,21 @@ export interface AccountResponse {
   usageMonth?: string;
   memberLimit?: number;
   memberCount?: number;
+}
+
+export interface OrgProjectRef {
+  projectId: string;
+  projectName: string;
+}
+
+export interface OrgSummary {
+  orgId: string;
+  orgName: string;
+  role: TeamRole;
+  tier: "basic" | "premium";
+  active: boolean;
+  hasBilling: boolean;
+  projects: OrgProjectRef[];
 }
 
 export interface ApiKeyResponse {
@@ -280,12 +304,18 @@ function payloadHasEmail(payload: Record<string, unknown>): boolean {
 async function authFetch(path: string, init?: RequestInit) {
   if (!apiUrl) throw new ApiError(500, "NEXT_PUBLIC_API_URL is not configured");
   const token = await idToken();
+  const projectId = getSelectedProjectId();
+  const orgId = getSelectedOrgId();
   const res = await fetch(`${apiUrl}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/json",
       ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(projectId
+        ? { "X-Project-Id": projectId, "X-Client-Id": projectId }
+        : {}),
+      ...(orgId ? { "X-Org-Id": orgId } : {}),
       ...init?.headers,
     },
   });
@@ -458,12 +488,59 @@ export async function getAccount(): Promise<AccountResponse> {
   return (await authFetch("/account")) as unknown as AccountResponse;
 }
 
-export async function provisionAccount(businessName: string): Promise<
+export async function listOrgs(): Promise<{ orgs: OrgSummary[] }> {
+  return (await authFetch("/orgs")) as unknown as { orgs: OrgSummary[] };
+}
+
+export async function createOrganization(input: {
+  orgName: string;
+}): Promise<{
+  orgId: string;
+  orgName: string;
+  message?: string;
+}> {
+  return (await authFetch("/orgs", {
+    method: "POST",
+    body: JSON.stringify(input),
+  })) as unknown as {
+    orgId: string;
+    orgName: string;
+    message?: string;
+  };
+}
+
+export async function createProject(input: {
+  orgId: string;
+  projectName: string;
+}): Promise<{
+  orgId: string;
+  projectId: string;
+  projectName: string;
+  apiKey?: string;
+  message?: string;
+}> {
+  return (await authFetch(
+    `/orgs/${encodeURIComponent(input.orgId)}/projects`,
+    {
+      method: "POST",
+      body: JSON.stringify({ projectName: input.projectName }),
+    },
+  )) as unknown as {
+    orgId: string;
+    projectId: string;
+    projectName: string;
+    apiKey?: string;
+    message?: string;
+  };
+}
+
+/** @deprecated Prefer createOrganization — still calls provision with orgName. */
+export async function provisionAccount(orgName: string): Promise<
   AccountResponse & { apiKey?: string; created?: boolean; message?: string }
 > {
   return (await authFetch("/account/provision", {
     method: "POST",
-    body: JSON.stringify({ businessName }),
+    body: JSON.stringify({ orgName, businessName: orgName }),
   })) as unknown as AccountResponse & {
     apiKey?: string;
     created?: boolean;

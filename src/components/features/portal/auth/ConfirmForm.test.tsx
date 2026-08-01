@@ -51,7 +51,7 @@ describe("ConfirmForm", () => {
       "owner@example.com",
       "password123",
     );
-    expect(assign).toHaveBeenCalledWith("/portal/");
+    expect(assign).toHaveBeenCalledWith("/portal/orgs/");
   });
 
   it("sends to login when password was lost", async () => {

@@ -73,6 +73,8 @@ export function SettingsSectionContent({
     return (
       <p className="text-on-surface-variant">
         Create an organization from the portal home before managing settings.
+        Team and billing are organization-scoped; API keys and mailbox are
+        project-scoped.
       </p>
     );
   }
