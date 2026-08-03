@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,9 +11,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { usePortal } from "@/lib/portal";
+import { isPortalOrgPickerPath } from "@/lib/portal-org-gate";
 import {
+  isOrgScopedPortalPath,
   portalNavigate,
   portalWorkspacePath,
+  subscribePortalNavigate,
 } from "@/lib/portal-routes";
 import {
   getSelectedOrgId,
@@ -35,13 +39,25 @@ function crumbTriggerClass(className?: string) {
 /** GitHub-style Organization / Project breadcrumb with switcher dropdowns. */
 export function WorkspaceBreadcrumb() {
   const portal = usePortal();
+  const [pathname, setPathname] = useState(() =>
+    typeof window !== "undefined" ? window.location.pathname : "",
+  );
+
+  useEffect(() => {
+    setPathname(window.location.pathname);
+    return subscribePortalNavigate(setPathname);
+  }, []);
+
+  const hideProjectCrumb =
+    isOrgScopedPortalPath(pathname) || isPortalOrgPickerPath(pathname);
   const selectedOrgId =
     getSelectedOrgId() || portal.account?.orgId || null;
-  const selectedProjectId =
-    getSelectedProjectId() ||
-    portal.account?.projectId ||
-    portal.account?.clientId ||
-    null;
+  const selectedProjectId = hideProjectCrumb
+    ? null
+    : getSelectedProjectId() ||
+      portal.account?.projectId ||
+      portal.account?.clientId ||
+      null;
 
   const orgs = portal.orgs ?? [];
   const selectedOrg =
@@ -132,78 +148,85 @@ export function WorkspaceBreadcrumb() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <span className="text-outline px-0.5 select-none" aria-hidden>
-        /
-      </span>
+      {hideProjectCrumb ? null : (
+        <>
+          <span className="text-outline px-0.5 select-none" aria-hidden>
+            /
+          </span>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={crumbTriggerClass()}
-            aria-label={`Project: ${projectLabel}`}
-            disabled={!selectedOrgId}
-          >
-            <MaterialIcon
-              name="folder"
-              className="text-outline shrink-0 text-base!"
-            />
-            <span className="truncate">{projectLabel}</span>
-            <MaterialIcon
-              name="expand_more"
-              className="text-outline shrink-0 text-base!"
-            />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-56">
-          {(selectedOrg?.projects || []).map((project) => (
-            <DropdownMenuItem
-              key={project.projectId}
-              onSelect={() => {
-                if (!selectedOrg?.orgSlug || !project.projectSlug) return;
-                portal.selectWorkspace(selectedOrg.orgId, project.projectId);
-                portalNavigate(
-                  portalWorkspacePath({
-                    orgSlug: selectedOrg.orgSlug,
-                    projectSlug: project.projectSlug,
-                    surface: "projectHome",
-                  }),
-                );
-              }}
-            >
-              <span className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="truncate">{project.projectName}</span>
-                {project.projectId === selectedProjectId ? (
-                  <MaterialIcon
-                    name="check"
-                    className="text-outline ml-auto shrink-0 text-base!"
-                  />
-                ) : null}
-              </span>
-            </DropdownMenuItem>
-          ))}
-          {(selectedOrg?.projects.length || 0) > 0 ? (
-            <DropdownMenuSeparator />
-          ) : null}
-          <DropdownMenuItem
-            disabled={!selectedOrg?.orgSlug}
-            onSelect={() => {
-              if (!selectedOrg?.orgSlug) return;
-              portalNavigate(
-                `${portalWorkspacePath({
-                  orgSlug: selectedOrg.orgSlug,
-                  surface: "orgHome",
-                })}?createProject=1`,
-              );
-            }}
-          >
-            <MaterialIcon name="add" className="text-base!" />
-            Create project
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={crumbTriggerClass()}
+                aria-label={`Project: ${projectLabel}`}
+                disabled={!selectedOrgId}
+              >
+                <MaterialIcon
+                  name="folder"
+                  className="text-outline shrink-0 text-base!"
+                />
+                <span className="truncate">{projectLabel}</span>
+                <MaterialIcon
+                  name="expand_more"
+                  className="text-outline shrink-0 text-base!"
+                />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-56">
+              {(selectedOrg?.projects || []).map((project) => (
+                <DropdownMenuItem
+                  key={project.projectId}
+                  onSelect={() => {
+                    if (!selectedOrg?.orgSlug || !project.projectSlug) return;
+                    portal.selectWorkspace(
+                      selectedOrg.orgId,
+                      project.projectId,
+                    );
+                    portalNavigate(
+                      portalWorkspacePath({
+                        orgSlug: selectedOrg.orgSlug,
+                        projectSlug: project.projectSlug,
+                        surface: "inbox",
+                      }),
+                    );
+                  }}
+                >
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="truncate">{project.projectName}</span>
+                    {project.projectId === selectedProjectId ? (
+                      <MaterialIcon
+                        name="check"
+                        className="text-outline ml-auto shrink-0 text-base!"
+                      />
+                    ) : null}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+              {(selectedOrg?.projects.length || 0) > 0 ? (
+                <DropdownMenuSeparator />
+              ) : null}
+              <DropdownMenuItem
+                disabled={!selectedOrg?.orgSlug}
+                onSelect={() => {
+                  if (!selectedOrg?.orgSlug) return;
+                  portalNavigate(
+                    `${portalWorkspacePath({
+                      orgSlug: selectedOrg.orgSlug,
+                      surface: "orgHome",
+                    })}?createProject=1`,
+                  );
+                }}
+              >
+                <MaterialIcon name="add" className="text-base!" />
+                Create project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      )}
     </nav>
   );
 }

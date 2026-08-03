@@ -15,11 +15,16 @@ import { getAccountProfile, teamMemberDisplayName } from "@/lib/api";
 import { usePortal } from "@/lib/portal";
 import { isPortalOrgPickerPath } from "@/lib/portal-org-gate";
 import {
+  isOrgScopedPortalPath,
+  parsePortalWorkspacePath,
   portalWorkspacePath,
   subscribePortalNavigate,
 } from "@/lib/portal-routes";
 import { getSelectedOrgId, getSelectedProjectId } from "@/lib/portal-selection";
-import { DEFAULT_SETTINGS_SECTION } from "@/lib/portal-settings";
+import {
+  DEFAULT_SETTINGS_SECTION,
+  orgSettingsSectionPath,
+} from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
 import { cn } from "@/lib/utils";
 
@@ -92,29 +97,47 @@ export function PortalHeader() {
   }, [open]);
 
   const selectedOrgId = getSelectedOrgId() || portal.account?.orgId || null;
-  const selectedProjectId =
-    getSelectedProjectId() ||
-    portal.account?.projectId ||
-    portal.account?.clientId ||
-    null;
   const selectedOrg = portal.orgs.find((org) => org.orgId === selectedOrgId);
+  const orgScoped = isOrgScopedPortalPath(pathname);
+  const parsedPath = parsePortalWorkspacePath(pathname);
+  const selectedProjectId = orgScoped
+    ? null
+    : (parsedPath?.projectSlug
+        ? selectedOrg?.projects.find(
+            (p) => p.projectSlug === parsedPath.projectSlug,
+          )?.projectId
+        : null) ||
+      getSelectedProjectId() ||
+      null;
   const selectedProject =
     selectedOrg?.projects.find((p) => p.projectId === selectedProjectId) ||
-    selectedOrg?.projects[0];
+    null;
 
   const workspaceLinks = useMemo(() => {
     if (!selectedOrg?.orgSlug) return [];
     const orgSlug = selectedOrg.orgSlug;
-    const projectSlug = selectedProject?.projectSlug;
     const projectsHref = portalWorkspacePath({
       orgSlug,
       surface: "orgHome",
     });
-    if (!projectSlug) {
+
+    if (orgScoped || !selectedProject?.projectSlug) {
       return [
         { href: projectsHref, label: "Projects", icon: "home" as const },
+        {
+          href: orgSettingsSectionPath(orgSlug, "members"),
+          label: "Members",
+          icon: "group" as const,
+        },
+        {
+          href: orgSettingsSectionPath(orgSlug, DEFAULT_SETTINGS_SECTION),
+          label: "Settings",
+          icon: "settings" as const,
+        },
       ];
     }
+
+    const projectSlug = selectedProject.projectSlug;
     return [
       { href: projectsHref, label: "Projects", icon: "home" as const },
       {
@@ -146,7 +169,7 @@ export function PortalHeader() {
         icon: "tune" as const,
       },
     ];
-  }, [selectedOrg, selectedProject]);
+  }, [selectedOrg, selectedProject, orgScoped]);
 
   const signedIn = auth.status === "signedIn";
   const authLoading = auth.status === "loading";
@@ -206,21 +229,45 @@ export function PortalHeader() {
       >
         <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-6 py-2 md:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
-            <Link
-              href={signedIn ? PORTAL_PATHS.orgs : "/"}
-              className="inline-flex shrink-0 items-center gap-2.5"
-              aria-label="Trashbox home"
-            >
-              <Image
-                src="/images/trashbox-logo-white.png"
-                alt=""
-                width={96}
-                height={24}
-                className="h-5"
-                style={{ width: "auto" }}
-                priority
-              />
-            </Link>
+            {signedIn ? (
+              <a
+                href={PORTAL_PATHS.orgs}
+                className="inline-flex shrink-0 items-center gap-2.5"
+                aria-label="Trashbox home"
+                onClick={(event) => {
+                  // Soft history + Next Link leave the SPA outlet on the old
+                  // workspace page; hard-nav loads the org picker shell.
+                  event.preventDefault();
+                  window.location.assign(PORTAL_PATHS.orgs);
+                }}
+              >
+                <Image
+                  src="/images/trashbox-logo-white.png"
+                  alt=""
+                  width={96}
+                  height={24}
+                  className="h-5"
+                  style={{ width: "auto" }}
+                  priority
+                />
+              </a>
+            ) : (
+              <Link
+                href="/"
+                className="inline-flex shrink-0 items-center gap-2.5"
+                aria-label="Trashbox home"
+              >
+                <Image
+                  src="/images/trashbox-logo-white.png"
+                  alt=""
+                  width={96}
+                  height={24}
+                  className="h-5"
+                  style={{ width: "auto" }}
+                  priority
+                />
+              </Link>
+            )}
             {showBreadcrumb ? <WorkspaceBreadcrumb /> : null}
           </div>
 

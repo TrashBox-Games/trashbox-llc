@@ -46,7 +46,7 @@ const baseOrg = {
 export const Workspace: Story = {
   decorators: [
     (Story) => {
-      setSelectedWorkspace("o1", "p1");
+      setSelectedWorkspace("o1", null);
       return (
         <StubAuthProvider
           value={{
@@ -66,11 +66,6 @@ export const Workspace: Story = {
                 orgId: "o1",
                 orgName: "Acme Co",
                 orgSlug: "acme-co",
-                projectId: "p1",
-                projectName: "Marketing site",
-                projectSlug: "marketing-site",
-                clientId: "p1",
-                clientName: "Marketing site",
                 tier: "free",
                 active: true,
                 hasApiKey: true,

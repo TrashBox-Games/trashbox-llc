@@ -124,6 +124,11 @@ describe("PortalHeader", () => {
   });
 
   it("shows workspace breadcrumb and product nav when an org is selected", () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/portal/acme-co/marketing-site/inbox/",
+    );
     render(<PortalHeader />);
     expect(
       screen.getByRole("navigation", { name: /workspace/i }),
@@ -137,16 +142,50 @@ describe("PortalHeader", () => {
     expect(
       screen.getByRole("button", { name: /project: marketing site/i }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^inbox$/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^forms$/i })).toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: /org settings/i }),
+      screen.getByRole("link", { name: /^settings$/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("uses org dashboard nav without a project crumb on org home", () => {
+    window.history.replaceState({}, "", "/portal/acme-co/");
+    setSelectedWorkspace("o1", null);
+    render(<PortalHeader />);
+
+    expect(
+      screen.getByRole("button", { name: /organization: acme co/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /project:/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /^projects$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /^members$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /^settings$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /^inbox$/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /^forms$/i }),
     ).not.toBeInTheDocument();
   });
 
-  it("links the logo to the org picker when signed in", () => {
+  it("hard-navigates the logo to the org picker when signed in", async () => {
+    const user = userEvent.setup();
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign });
     render(<PortalHeader />);
-    expect(
-      screen.getByRole("link", { name: /trashbox.*home/i }).getAttribute("href"),
-    ).toMatch(/\/portal\/orgs\/?$/);
+    const logo = screen.getByRole("link", { name: /trashbox.*home/i });
+    expect(logo.getAttribute("href")).toMatch(/\/portal\/orgs\/?$/);
+    await user.click(logo);
+    expect(assign).toHaveBeenCalledWith(expect.stringMatching(/\/portal\/orgs\/?$/));
   });
 
   it("uses a compact bar height", () => {

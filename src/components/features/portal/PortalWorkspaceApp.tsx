@@ -192,7 +192,18 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
   if (!project) return <PortalSkeleton />;
 
   if (parsed.surface === "projectHome") {
-    return <PortalHome />;
+    const inbox = portalWorkspacePath({
+      orgSlug: org.orgSlug,
+      projectSlug: project.projectSlug,
+      surface: "inbox",
+    });
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname.replace(/\/$/, "") !== inbox.replace(/\/$/, "")
+    ) {
+      portalNavigate(inbox, { replace: true });
+    }
+    return <PortalSkeleton />;
   }
   if (parsed.surface === "inbox") {
     return <PortalApp tab="inbox" />;

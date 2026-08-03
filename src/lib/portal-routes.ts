@@ -68,6 +68,14 @@ export function isReservedOrgSlug(slug: string): boolean {
 }
 
 /** Parse GitHub-style workspace paths under `/portal/{org}/{project?}/…`. */
+/** Org home / org settings — no project in chrome. */
+export function isOrgScopedPortalPath(
+  pathname: string | null | undefined,
+): boolean {
+  const surface = parsePortalWorkspacePath(pathname)?.surface;
+  return surface === "orgHome" || surface === "orgSettings";
+}
+
 export function parsePortalWorkspacePath(
   pathname: string | null | undefined,
 ): ParsedPortalWorkspacePath | null {

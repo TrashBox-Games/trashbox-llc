@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { StubAuthProvider } from "@/lib/auth";
 import { StubPortalProvider } from "@/lib/portal";
 import { setSelectedWorkspace } from "@/lib/portal-selection";
@@ -9,10 +9,10 @@ describe("PortalHome", () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
-    setSelectedWorkspace("o1", "p1");
+    setSelectedWorkspace("o1", null);
   });
 
-  it("lists projects for the selected organization", () => {
+  it("lists projects that open into the project inbox", () => {
     render(
       <StubAuthProvider value={{ status: "signedIn", configured: true }}>
         <StubPortalProvider
@@ -23,13 +23,17 @@ describe("PortalHome", () => {
               {
                 orgId: "o1",
                 orgName: "Acme Co",
-              orgSlug: "acme-co",
+                orgSlug: "acme-co",
                 role: "owner",
                 tier: "free",
                 active: true,
                 hasBilling: false,
                 projects: [
-                  { projectId: "p1", projectName: "Marketing site", projectSlug: "marketing-site" },
+                  {
+                    projectId: "p1",
+                    projectName: "Marketing site",
+                    projectSlug: "marketing-site",
+                  },
                 ],
               },
             ],
@@ -39,10 +43,6 @@ describe("PortalHome", () => {
               orgId: "o1",
               orgName: "Acme Co",
               orgSlug: "acme-co",
-              projectId: "p1",
-              projectName: "Marketing site",
-              clientId: "p1",
-              clientName: "Marketing site",
               tier: "free",
               active: true,
               hasApiKey: true,
@@ -60,17 +60,14 @@ describe("PortalHome", () => {
       screen.getByRole("heading", { name: /acme co/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /select project marketing site/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Selected")).toBeInTheDocument();
+      screen.getByRole("link", { name: /open project marketing site/i }),
+    ).toHaveAttribute("href", "/portal/acme-co/marketing-site/inbox/");
+    expect(screen.queryByText("Selected")).not.toBeInTheDocument();
     expect(
       screen
         .getByRole("link", { name: /switch organization/i })
         .getAttribute("href"),
     ).toMatch(/\/portal\/orgs\/?$/);
-    expect(
-      screen.getByRole("link", { name: /open inbox/i }).getAttribute("href"),
-    ).toBe("/portal/acme-co/marketing-site/inbox/");
     expect(
       screen.getByRole("button", { name: /^create project$/i }),
     ).toBeInTheDocument();

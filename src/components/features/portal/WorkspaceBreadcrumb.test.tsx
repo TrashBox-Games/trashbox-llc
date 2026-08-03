@@ -8,6 +8,13 @@ import { WorkspaceBreadcrumb } from "./WorkspaceBreadcrumb";
 
 const selectWorkspace = vi.fn();
 const assign = vi.fn();
+const locationStub = {
+  pathname: "/",
+  assign,
+  search: "",
+  hash: "",
+  href: "http://localhost/",
+};
 
 const orgs = [
   {
@@ -72,10 +79,8 @@ describe("WorkspaceBreadcrumb", () => {
     localStorage.clear();
     sessionStorage.clear();
     setSelectedWorkspace("o1", "p1");
-    vi.stubGlobal("location", {
-      ...window.location,
-      assign,
-    });
+    locationStub.pathname = "/portal/acme-co/marketing-site/";
+    vi.stubGlobal("location", locationStub);
   });
 
   it("renders organization / project crumb labels", () => {
@@ -118,8 +123,9 @@ describe("WorkspaceBreadcrumb", () => {
     expect(assign).toHaveBeenCalledWith("/portal/orgs/");
   });
 
-  it("switches project from the project dropdown", async () => {
+  it("opens the chosen project inbox from the project dropdown", async () => {
     const user = userEvent.setup();
+    const pushState = vi.spyOn(window.history, "pushState");
     renderBreadcrumb();
 
     await user.click(
@@ -127,5 +133,36 @@ describe("WorkspaceBreadcrumb", () => {
     );
     await user.click(screen.getByRole("menuitem", { name: /^app$/i }));
     expect(selectWorkspace).toHaveBeenCalledWith("o1", "p2");
+    expect(pushState).toHaveBeenCalledWith(
+      null,
+      "",
+      "/portal/acme-co/app/inbox/",
+    );
+  });
+
+  it("hides the project crumb on organization home", () => {
+    locationStub.pathname = "/portal/acme-co/";
+    setSelectedWorkspace("o1", null);
+    renderBreadcrumb();
+
+    expect(
+      screen.getByRole("button", { name: /organization: acme co/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /project:/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides the project crumb on the organization picker", () => {
+    locationStub.pathname = "/portal/orgs/";
+    setSelectedWorkspace("o1", "p1");
+    renderBreadcrumb();
+
+    expect(
+      screen.getByRole("button", { name: /organization: acme co/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /project:/i }),
+    ).not.toBeInTheDocument();
   });
 });

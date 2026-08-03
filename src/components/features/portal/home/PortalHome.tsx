@@ -12,17 +12,10 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { usePortal } from "@/lib/portal";
 import { portalOrgGateRedirect } from "@/lib/portal-org-gate";
-import {
-  portalNavigate,
-  portalWorkspacePath,
-} from "@/lib/portal-routes";
-import {
-  getSelectedOrgId,
-  getSelectedProjectId,
-} from "@/lib/portal-selection";
+import { portalWorkspacePath } from "@/lib/portal-routes";
+import { getSelectedOrgId } from "@/lib/portal-selection";
 import { DEFAULT_SETTINGS_SECTION } from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
-import { cn } from "@/lib/utils";
 
 /** Workspace home for the selected organization (projects). */
 export function PortalHome() {
@@ -77,11 +70,6 @@ export function PortalHome() {
     !hasSelectedOrg;
 
   const selectedOrgId = getSelectedOrgId() || portal.account?.orgId || "";
-  const selectedProjectId =
-    getSelectedProjectId() ||
-    portal.account?.projectId ||
-    portal.account?.clientId ||
-    null;
   const org = portal.orgs.find((entry) => entry.orgId === selectedOrgId) || null;
   const projects = org?.projects || [];
 
@@ -125,15 +113,6 @@ export function PortalHome() {
 
             <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {projects.map((project) => {
-                const active = selectedProjectId === project.projectId;
-                const projectHome =
-                  org?.orgSlug && project.projectSlug
-                    ? portalWorkspacePath({
-                        orgSlug: org.orgSlug,
-                        projectSlug: project.projectSlug,
-                        surface: "projectHome",
-                      })
-                    : null;
                 const inboxHref =
                   org?.orgSlug && project.projectSlug
                     ? portalWorkspacePath({
@@ -142,55 +121,38 @@ export function PortalHome() {
                         surface: "inbox",
                       })
                     : PORTAL_PATHS.inbox;
+                const settingsHref =
+                  org?.orgSlug && project.projectSlug
+                    ? portalWorkspacePath({
+                        orgSlug: org.orgSlug,
+                        projectSlug: project.projectSlug,
+                        surface: "settings",
+                        settingsRest: DEFAULT_SETTINGS_SECTION,
+                      })
+                    : null;
 
                 return (
                   <li key={project.projectId}>
-                    <article
-                      className={cn(
-                        "group flex h-full flex-col border p-5 transition-colors",
-                        active
-                          ? "border-white/35 bg-surface-container-high"
-                          : "border-outline-variant/20 bg-surface-container-low hover:border-outline-variant/45 hover:bg-surface-container-high/70",
-                      )}
-                    >
-                      <button
-                        type="button"
+                    <article className="group border-outline-variant/20 bg-surface-container-low hover:border-outline-variant/45 hover:bg-surface-container-high/70 flex h-full flex-col border p-5 transition-colors">
+                      <PortalLink
+                        href={inboxHref}
+                        aria-label={`Open project ${project.projectName}`}
                         className="flex min-h-28 flex-1 flex-col text-left"
-                        aria-pressed={active}
-                        aria-label={`Select project ${project.projectName}`}
                         onClick={() => {
-                          if (!selectedOrgId) return;
-                          portal.selectWorkspace(
-                            selectedOrgId,
-                            project.projectId,
-                          );
-                          if (projectHome) portalNavigate(projectHome);
+                          if (selectedOrgId) {
+                            portal.selectWorkspace(
+                              selectedOrgId,
+                              project.projectId,
+                            );
+                          }
                         }}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <span
-                            className={cn(
-                              "inline-flex size-10 items-center justify-center border",
-                              active
-                                ? "border-white/30 bg-white/10 text-white"
-                                : "border-outline-variant/25 bg-background/40 text-outline group-hover:text-white",
-                            )}
-                          >
-                            <MaterialIcon
-                              name="folder"
-                              className="text-[1.25rem]!"
-                            />
-                          </span>
-                          {active ? (
-                            <span className="font-label text-outline inline-flex items-center gap-1 text-[10px] tracking-widest uppercase">
-                              <MaterialIcon
-                                name="check_circle"
-                                className="text-sm! text-white"
-                              />
-                              Selected
-                            </span>
-                          ) : null}
-                        </div>
+                        <span className="border-outline-variant/25 bg-background/40 text-outline group-hover:text-white inline-flex size-10 items-center justify-center border">
+                          <MaterialIcon
+                            name="folder"
+                            className="text-[1.25rem]!"
+                          />
+                        </span>
                         <h2 className="font-headline mt-4 text-xl font-bold tracking-tight text-white">
                           {project.projectName}
                         </h2>
@@ -199,33 +161,13 @@ export function PortalHome() {
                             ? `/${project.projectSlug}`
                             : "Project"}
                         </p>
-                      </button>
+                      </PortalLink>
 
-                      <div className="mt-5 flex flex-wrap gap-2 border-t border-outline-variant/15 pt-4">
-                        <Button asChild size="sm" className="flex-1">
-                          <PortalLink
-                            href={inboxHref}
-                            onClick={() => {
-                              if (selectedOrgId) {
-                                portal.selectWorkspace(
-                                  selectedOrgId,
-                                  project.projectId,
-                                );
-                              }
-                            }}
-                          >
-                            Open inbox
-                          </PortalLink>
-                        </Button>
-                        {org?.orgSlug && project.projectSlug ? (
+                      {settingsHref ? (
+                        <div className="border-outline-variant/15 mt-5 border-t pt-4">
                           <Button asChild size="sm" variant="outline">
                             <PortalLink
-                              href={portalWorkspacePath({
-                                orgSlug: org.orgSlug,
-                                projectSlug: project.projectSlug,
-                                surface: "settings",
-                                settingsRest: DEFAULT_SETTINGS_SECTION,
-                              })}
+                              href={settingsHref}
                               onClick={() => {
                                 if (selectedOrgId) {
                                   portal.selectWorkspace(
@@ -238,8 +180,8 @@ export function PortalHome() {
                               Settings
                             </PortalLink>
                           </Button>
-                        ) : null}
-                      </div>
+                        </div>
+                      ) : null}
                     </article>
                   </li>
                 );

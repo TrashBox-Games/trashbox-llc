@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { PortalWorkspaceApp } from "@/components/features/portal/PortalWorkspaceApp";
 import {
@@ -12,6 +13,7 @@ import {
  * workspace app instead of the static page child (orgs/auth/legacy).
  */
 export function PortalRouteOutlet({ children }: { children: ReactNode }) {
+  const nextPath = usePathname() ?? "";
   const [path, setPath] = useState(() =>
     typeof window !== "undefined" ? window.location.pathname : "",
   );
@@ -19,7 +21,7 @@ export function PortalRouteOutlet({ children }: { children: ReactNode }) {
   useEffect(() => {
     setPath(window.location.pathname);
     return subscribePortalNavigate(setPath);
-  }, []);
+  }, [nextPath]);
 
   if (isPortalWorkspacePath(path)) {
     return <PortalWorkspaceApp pathname={path} />;

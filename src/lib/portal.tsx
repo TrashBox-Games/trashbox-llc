@@ -882,7 +882,7 @@ export function PortalProvider({
             portalWorkspacePath({
               orgSlug,
               projectSlug: result.projectSlug,
-              surface: "projectHome",
+              surface: "inbox",
             }),
           );
         }
