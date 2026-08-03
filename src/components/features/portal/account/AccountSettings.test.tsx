@@ -120,18 +120,20 @@ describe("AccountSettings", () => {
       </StubAuthProvider>,
     );
 
+    const ownedMessage = screen.getByText(
+      (_, element) =>
+        element?.tagName === "P" &&
+        element.textContent ===
+          "Your account is currently an owner in these organizations: TrashBox-Games, Hixclipz, and Built-Different-By-God-s-Design",
+    );
+    expect(ownedMessage).toBeInTheDocument();
     expect(
-      screen.getByText(
-        (_, element) =>
-          element?.tagName === "P" &&
-          element.textContent ===
-            "Your account is currently an owner in these organizations: TrashBox-Games, Hixclipz, and Built-Different-By-God-s-Design",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText("TrashBox-Games").tagName).toBe("STRONG");
-    expect(screen.getByText("Hixclipz").tagName).toBe("STRONG");
+      within(ownedMessage).getByText("TrashBox-Games").tagName,
+    ).toBe("STRONG");
+    expect(within(ownedMessage).getByText("Hixclipz").tagName).toBe("STRONG");
     expect(
-      screen.getByText("Built-Different-By-God-s-Design").tagName,
+      within(ownedMessage).getByText("Built-Different-By-God-s-Design")
+        .tagName,
     ).toBe("STRONG");
     expect(
       screen.getByText(DELETE_ACCOUNT_OWNERSHIP_REQUIREMENT),
