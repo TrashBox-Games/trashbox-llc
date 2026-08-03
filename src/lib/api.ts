@@ -1,9 +1,6 @@
 import { fetchAuthSession } from "aws-amplify/auth";
 import { apiUrl } from "./amplify";
-import {
-  getSelectedOrgId,
-  getSelectedProjectId,
-} from "./portal-selection";
+import { getSelectedOrgId, getSelectedProjectId } from "./portal-selection";
 
 export const LEAD_STATUSES = [
   "new",
@@ -15,12 +12,7 @@ export const LEAD_STATUSES = [
 
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
-export const LEAD_TAGS = [
-  "website_quote",
-  "support",
-  "sales",
-  "vip",
-] as const;
+export const LEAD_TAGS = ["website_quote", "support", "sales", "vip"] as const;
 
 export type LeadTag = (typeof LEAD_TAGS)[number];
 
@@ -288,11 +280,7 @@ export class ApiError extends Error {
   status: number;
   data?: Record<string, unknown>;
 
-  constructor(
-    status: number,
-    message: string,
-    data?: Record<string, unknown>,
-  ) {
+  constructor(status: number, message: string, data?: Record<string, unknown>) {
     super(message);
     this.status = status;
     this.data = data;
@@ -326,7 +314,12 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
 }
 
 function payloadHasEmail(payload: Record<string, unknown>): boolean {
-  for (const key of ["email", "cognito:username", "username", "preferred_username"]) {
+  for (const key of [
+    "email",
+    "cognito:username",
+    "username",
+    "preferred_username",
+  ]) {
     const value = payload[key];
     if (typeof value === "string" && value.includes("@")) return true;
   }
@@ -352,7 +345,10 @@ async function authFetch(path: string, init?: RequestInit) {
     },
   });
 
-  const data = (await res.json().catch(() => ({}))) as Record<string, unknown> & {
+  const data = (await res.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  > & {
     message?: string;
   };
 
@@ -598,9 +594,7 @@ export async function listOrgs(): Promise<{ orgs: OrgSummary[] }> {
   return (await authFetch("/orgs")) as unknown as { orgs: OrgSummary[] };
 }
 
-export async function createOrganization(input: {
-  orgName: string;
-}): Promise<{
+export async function createOrganization(input: { orgName: string }): Promise<{
   orgId: string;
   orgName: string;
   orgSlug: string;
@@ -629,13 +623,10 @@ export async function createProject(input: {
   apiKey?: string;
   message?: string;
 }> {
-  return (await authFetch(
-    `/orgs/${encodeURIComponent(input.orgId)}/projects`,
-    {
-      method: "POST",
-      body: JSON.stringify({ projectName: input.projectName }),
-    },
-  )) as unknown as {
+  return (await authFetch(`/orgs/${encodeURIComponent(input.orgId)}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ projectName: input.projectName }),
+  })) as unknown as {
     orgId: string;
     orgSlug?: string;
     projectId: string;
@@ -679,7 +670,9 @@ export async function deleteOrganization(input: {
 }
 
 /** @deprecated Prefer createOrganization — still calls provision with orgName. */
-export async function provisionAccount(orgName: string): Promise<
+export async function provisionAccount(
+  orgName: string,
+): Promise<
   AccountResponse & { apiKey?: string; created?: boolean; message?: string }
 > {
   return (await authFetch("/account/provision", {

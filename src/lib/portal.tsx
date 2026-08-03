@@ -76,9 +76,7 @@ const emptyFilters: LeadInboxFiltersValue = {
 };
 
 /** Deep-link filters from `?formId=` (kept in the URL for shareable inbox links). */
-function filtersFromFormIdSearch(
-  search: string,
-): LeadInboxFiltersValue | null {
+function filtersFromFormIdSearch(search: string): LeadInboxFiltersValue | null {
   const formId = new URLSearchParams(search).get("formId")?.trim();
   if (!formId) return null;
   return { ...emptyFilters, formId };
@@ -112,7 +110,10 @@ function mergeMessageCounts(
 ): Submission[] {
   return items.map((item) => {
     const messageCount = counts.get(item.submissionId);
-    if (messageCount === undefined || messageCount === (item.messageCount ?? 0)) {
+    if (
+      messageCount === undefined ||
+      messageCount === (item.messageCount ?? 0)
+    ) {
       return item;
     }
     return { ...item, messageCount };
@@ -393,8 +394,7 @@ export function PortalProvider({
       try {
         const params = new URLSearchParams(window.location.search);
         const inviteToken =
-          params.get("invite") ||
-          sessionStorage.getItem("portalInviteToken");
+          params.get("invite") || sessionStorage.getItem("portalInviteToken");
         if (inviteToken) {
           sessionStorage.removeItem("portalInviteToken");
           try {
@@ -485,16 +485,12 @@ export function PortalProvider({
         try {
           const subs = await listSubmissions({
             limit: 50,
-            ...(appliedFilters.status
-              ? { status: appliedFilters.status }
-              : {}),
+            ...(appliedFilters.status ? { status: appliedFilters.status } : {}),
             ...(appliedFilters.tag ? { tag: appliedFilters.tag } : {}),
             ...(appliedFilters.assignedTo
               ? { assignedTo: appliedFilters.assignedTo }
               : {}),
-            ...(appliedFilters.formId
-              ? { formId: appliedFilters.formId }
-              : {}),
+            ...(appliedFilters.formId ? { formId: appliedFilters.formId } : {}),
             ...(appliedFilters.q.trim() ? { q: appliedFilters.q.trim() } : {}),
           });
           if (cancelled) return;
@@ -572,7 +568,9 @@ export function PortalProvider({
       const counts = await fetchMessageCounts(data.items);
       setItems((prev) => mergeMessageCounts(prev, counts));
     } catch (err) {
-      setListError(err instanceof ApiError ? err.message : "Failed to load more");
+      setListError(
+        err instanceof ApiError ? err.message : "Failed to load more",
+      );
     } finally {
       setListBusy(false);
     }
@@ -658,9 +656,7 @@ export function PortalProvider({
       } catch (err) {
         if (!cancelled) {
           setMessageError(
-            err instanceof ApiError
-              ? err.message
-              : "Failed to load messages",
+            err instanceof ApiError ? err.message : "Failed to load messages",
           );
         }
       }
@@ -697,8 +693,7 @@ export function PortalProvider({
             if (item.submissionId !== selectedId) return item;
             return {
               ...item,
-              status:
-                leadStatusOf(item) === "new" ? "contacted" : item.status,
+              status: leadStatusOf(item) === "new" ? "contacted" : item.status,
               messageCount: (item.messageCount ?? 0) + 1,
             };
           }),
@@ -741,9 +736,7 @@ export function PortalProvider({
       setMailboxNotice("Mailbox disconnected.");
     } catch (err) {
       setMailboxError(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to disconnect mailbox",
+        err instanceof ApiError ? err.message : "Failed to disconnect mailbox",
       );
     } finally {
       setMailboxBusy(false);
@@ -854,9 +847,7 @@ export function PortalProvider({
       }
     } catch (err) {
       setBillingError(
-        err instanceof ApiError
-          ? err.message
-          : "Could not create organization",
+        err instanceof ApiError ? err.message : "Could not create organization",
       );
     } finally {
       setBillingBusy(false);
@@ -915,7 +906,9 @@ export function PortalProvider({
       const url = await startCheckout(plan);
       window.location.href = url;
     } catch (err) {
-      setBillingError(err instanceof ApiError ? err.message : "Checkout failed");
+      setBillingError(
+        err instanceof ApiError ? err.message : "Checkout failed",
+      );
       setBillingBusy(false);
     }
   }, []);

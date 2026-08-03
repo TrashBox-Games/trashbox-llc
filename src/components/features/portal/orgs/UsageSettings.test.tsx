@@ -25,7 +25,11 @@ describe("UsageSettings", () => {
   it("shows a submission progress bar for the current plan", () => {
     render(
       <StubAuthProvider
-        value={{ status: "signedIn", configured: true, email: "owner@example.com" }}
+        value={{
+          status: "signedIn",
+          configured: true,
+          email: "owner@example.com",
+        }}
       >
         <StubPortalProvider
           value={{
@@ -46,7 +50,9 @@ describe("UsageSettings", () => {
       </StubAuthProvider>,
     );
 
-    expect(screen.getByRole("heading", { name: /^Free$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /^Free$/i }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("progressbar", { name: /monthly form submissions/i }),
     ).toHaveAttribute("aria-valuenow", "4");

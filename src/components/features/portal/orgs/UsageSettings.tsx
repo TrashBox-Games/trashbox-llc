@@ -16,10 +16,7 @@ interface UsageSettingsProps {
   org: OrgSummary;
 }
 
-function resolveTier(
-  tier: PlanTier,
-  hasBilling: boolean,
-): PlanTier {
+function resolveTier(tier: PlanTier, hasBilling: boolean): PlanTier {
   if (!hasBilling && (tier === "solo" || tier === "free")) return "free";
   return tier;
 }
@@ -56,10 +53,7 @@ export function UsageSettings({ org }: UsageSettingsProps) {
       </div>
 
       {hasLimit ? (
-        <SubmissionUsageMeter
-          used={submissionsUsed}
-          limit={submissionLimit}
-        />
+        <SubmissionUsageMeter used={submissionsUsed} limit={submissionLimit} />
       ) : (
         <p className="text-on-surface-variant text-sm">
           Usage will appear once this organization has billing data loaded.

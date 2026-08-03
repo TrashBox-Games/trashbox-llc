@@ -113,7 +113,9 @@ export function OrgSettingsSectionContent({
     return (
       <BillingPlanSettings
         org={org}
-        showActions={sectionId === "current-plan" || sectionId === "upgrade-cancel"}
+        showActions={
+          sectionId === "current-plan" || sectionId === "upgrade-cancel"
+        }
       />
     );
   }

@@ -38,7 +38,9 @@ vi.mock("@/lib/api", async (importOriginal) => {
       memberCount: 1,
     }),
     listSubmissions: vi.fn(),
-    listLeadMessages: vi.fn().mockResolvedValue({ submissionId: "", items: [] }),
+    listLeadMessages: vi
+      .fn()
+      .mockResolvedValue({ submissionId: "", items: [] }),
     provisionAccount: vi.fn(),
     startCheckout: vi.fn(),
     openBillingPortal: vi.fn(),
@@ -108,7 +110,7 @@ describe("PortalProvider session", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: /no paid plan yet|basic|premium/i,
+        name: /free|solo|team/i,
       }),
     ).toBeInTheDocument();
     expect(getAccount).toHaveBeenCalledTimes(1);
