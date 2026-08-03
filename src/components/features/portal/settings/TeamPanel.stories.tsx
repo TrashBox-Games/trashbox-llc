@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "storybook/test";
+import { expect, fn, userEvent, within } from "storybook/test";
 import type { ClientRole, TeamInvite, TeamMember } from "@/lib/api";
 import { TeamPanel } from "./TeamPanel";
 
@@ -101,6 +101,24 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const InviteDialog: Story = {
+  name: "Invite dialog",
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: /invite member/i }),
+    );
+    const dialog = within(canvasElement.ownerDocument.body).getByRole(
+      "dialog",
+      { name: /invite member/i },
+    );
+    await expect(dialog).toBeInTheDocument();
+    await expect(
+      within(dialog).queryByLabelText(/first name/i),
+    ).not.toBeInTheDocument();
+  },
+};
 
 export const OwnerAtCapSolo: Story = {
   args: {

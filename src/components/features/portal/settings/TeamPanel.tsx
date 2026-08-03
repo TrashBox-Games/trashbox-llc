@@ -88,6 +88,10 @@ function memberAllowsAllSenderNames(
   return hasPermission(found.permissions, "allow_all_sender_display_names");
 }
 
+function defaultInviteRoleId(roles: ClientRole[]): string {
+  return roles.find((r) => r.id === "member")?.id ?? roles[0]?.id ?? "member";
+}
+
 export function TeamPanel({
   role,
   currentUserEmail,
@@ -107,12 +111,11 @@ export function TeamPanel({
   onRemoveMember,
   onUpdateMember,
 }: TeamPanelProps) {
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [inviteRoleId, setInviteRoleId] = useState(
-    () => roles.find((r) => r.id === "member")?.id ?? roles[0]?.id ?? "member",
+  const [inviteRoleId, setInviteRoleId] = useState(() =>
+    defaultInviteRoleId(roles),
   );
   const [editingEmail, setEditingEmail] = useState<string | null>(null);
   const [editFirst, setEditFirst] = useState("");
@@ -126,24 +129,30 @@ export function TeamPanel({
   const selfEmail = currentUserEmail?.toLowerCase();
   const assignableRoles = roles.filter((r) => r.id !== "owner");
 
+  function openInviteDialog() {
+    setEmail("");
+    setEmailNotifications(true);
+    setInviteRoleId(defaultInviteRoleId(roles));
+    setInviteOpen(true);
+  }
+
+  function closeInviteDialog() {
+    setInviteOpen(false);
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const next = email.trim();
     if (!next || atCap) return;
     await onInvite({
       email: next,
-      ...(firstName.trim() ? { firstName: firstName.trim() } : {}),
-      ...(lastName.trim() ? { lastName: lastName.trim() } : {}),
       emailNotifications,
       ...(inviteRoleId ? { roleId: inviteRoleId } : {}),
     });
     setEmail("");
-    setFirstName("");
-    setLastName("");
     setEmailNotifications(true);
-    setInviteRoleId(
-      roles.find((r) => r.id === "member")?.id ?? roles[0]?.id ?? "member",
-    );
+    setInviteRoleId(defaultInviteRoleId(roles));
+    setInviteOpen(false);
   }
 
   function canRemove(member: TeamMember): boolean {
@@ -255,19 +264,31 @@ export function TeamPanel({
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3 px-1">
-          <p className="font-label text-[10px] uppercase tracking-widest text-outline">
-            Members
-          </p>
-          <p className="font-label text-[10px] uppercase tracking-widest text-outline">
-            Seats {memberCount} / {memberLimit}
-            {tier === "free"
-              ? " · Free"
-              : tier === "solo"
-                ? " · Solo"
-                : tier === "team"
-                  ? " · Team"
-                  : ""}
-          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+              Members
+            </p>
+            <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+              Seats {memberCount} / {memberLimit}
+              {tier === "free"
+                ? " · Free"
+                : tier === "solo"
+                  ? " · Solo"
+                  : tier === "team"
+                    ? " · Team"
+                    : ""}
+            </p>
+          </div>
+          {canManage ? (
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy}
+              onClick={openInviteDialog}
+            >
+              Invite member
+            </Button>
+          ) : null}
         </div>
         <Table>
           <TableHeader>
@@ -562,66 +583,132 @@ export function TeamPanel({
       </section>
 
       {canManage && (
-        <>
-          <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
-            <p className="font-label text-[10px] uppercase tracking-widest text-outline">
-              Invite Teammate
+        <section className="space-y-4">
+          <p className="font-label px-1 text-[10px] uppercase tracking-widest text-outline">
+            Pending Invites
+          </p>
+          {invites.length === 0 ? (
+            <p className="text-on-surface-variant px-1 text-sm">
+              No pending invites.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>Invite</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Invited by</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invites.map((invite) => {
+                  const displayName = teamMemberDisplayName(invite);
+                  return (
+                    <TableRow key={invite.email}>
+                      <TableCell>
+                        <div className="flex min-w-0 items-center gap-3">
+                          <PortalUserAvatar label={displayName} size="sm" />
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-white">
+                              {displayName}
+                            </p>
+                            {displayName !== invite.email ? (
+                              <p className="text-on-surface-variant truncate text-xs">
+                                {invite.email}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {invite.roleId
+                          ? roles.find((r) => r.id === invite.roleId)?.name ??
+                            invite.role
+                          : invite.role}
+                      </TableCell>
+                      <TableCell className="text-on-surface-variant text-sm">
+                        {invite.invitedBy}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => void onRevokeInvite(invite.email)}
+                        >
+                          Revoke
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </section>
+      )}
+
+      {inviteOpen ? (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4"
+          role="presentation"
+          onClick={closeInviteDialog}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="invite-member-title"
+            className="border-outline-variant/25 bg-background w-full max-w-md space-y-5 border p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p
+              id="invite-member-title"
+              className="font-headline text-xl font-bold text-white"
+            >
+              Invite member
             </p>
             {atCap ? (
-              <div className="mt-4 space-y-4">
+              <div className="space-y-4">
                 <p className="text-sm text-on-surface-variant">
                   {memberLimit <= 1
                     ? `${tier === "solo" ? "Solo" : "Free"} includes only the owner.`
                     : `Team is at the ${memberLimit}-seat limit. Remove someone before inviting.`}
                 </p>
-                {memberLimit <= 1 ? (
-                  <Button asChild type="button" size="sm">
-                    <PortalLink href={settingsSectionPath("current-plan")}>
-                      View plans
-                    </PortalLink>
+                <div className="flex flex-wrap justify-end gap-2">
+                  {memberLimit <= 1 ? (
+                    <Button asChild type="button">
+                      <PortalLink href={settingsSectionPath("current-plan")}>
+                        View plans
+                      </PortalLink>
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="font-headline text-xs font-bold uppercase tracking-widest"
+                    disabled={busy}
+                    onClick={closeInviteDialog}
+                  >
+                    Close
                   </Button>
-                ) : null}
+                </div>
               </div>
             ) : (
-              <form
-                className="mt-6 max-w-md space-y-6"
-                onSubmit={(e) => void onSubmit(e)}
-              >
+              <form className="space-y-5" onSubmit={(e) => void onSubmit(e)}>
                 <div>
                   <Label htmlFor="invite-email">Email</Label>
                   <Input
                     id="invite-email"
                     type="email"
                     required
+                    autoFocus
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="teammate@company.com"
                     disabled={busy}
                   />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="invite-first">First Name</Label>
-                    <Input
-                      id="invite-first"
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Ada"
-                      disabled={busy}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="invite-last">Last Name</Label>
-                    <Input
-                      id="invite-last"
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Lovelace"
-                      disabled={busy}
-                    />
-                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-on-surface-variant">
                   <Checkbox
@@ -639,7 +726,7 @@ export function TeamPanel({
                     Receive form email notifications
                   </Label>
                 </div>
-                {assignableRoles.length > 0 && (
+                {assignableRoles.length > 0 ? (
                   <div>
                     <Label htmlFor="invite-role">Role</Label>
                     <Select
@@ -659,81 +746,26 @@ export function TeamPanel({
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-                <Button type="submit" disabled={busy || !email.trim()}>
-                  {busy ? "Sending…" : "Send Invite"}
-                </Button>
+                ) : null}
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="font-headline text-xs font-bold uppercase tracking-widest"
+                    disabled={busy}
+                    onClick={closeInviteDialog}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={busy || !email.trim()}>
+                    {busy ? "Sending…" : "Send Invite"}
+                  </Button>
+                </div>
               </form>
             )}
-          </section>
-
-          <section className="space-y-4">
-            <p className="font-label px-1 text-[10px] uppercase tracking-widest text-outline">
-              Pending Invites
-            </p>
-            {invites.length === 0 ? (
-              <p className="text-on-surface-variant px-1 text-sm">
-                No pending invites.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>Invite</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Invited by</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {invites.map((invite) => {
-                    const displayName = teamMemberDisplayName(invite);
-                    return (
-                      <TableRow key={invite.email}>
-                        <TableCell>
-                          <div className="flex min-w-0 items-center gap-3">
-                            <PortalUserAvatar label={displayName} size="sm" />
-                            <div className="min-w-0">
-                              <p className="truncate font-medium text-white">
-                                {displayName}
-                              </p>
-                              {displayName !== invite.email ? (
-                                <p className="text-on-surface-variant truncate text-xs">
-                                  {invite.email}
-                                </p>
-                              ) : null}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {invite.roleId
-                            ? roles.find((r) => r.id === invite.roleId)?.name ??
-                              invite.role
-                            : invite.role}
-                        </TableCell>
-                        <TableCell className="text-on-surface-variant text-sm">
-                          {invite.invitedBy}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={busy}
-                            onClick={() => void onRevokeInvite(invite.email)}
-                          >
-                            Revoke
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </section>
-        </>
-      )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

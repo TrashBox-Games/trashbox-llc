@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ClientRole, TeamMember } from "@/lib/api";
@@ -97,7 +97,18 @@ const defaultProps = {
 };
 
 describe("TeamPanel", () => {
-  it("invites with first and last name and roleId", async () => {
+  it("keeps invite form hidden until Invite member is clicked", () => {
+    render(<TeamPanel {...defaultProps} />);
+
+    expect(
+      screen.getByRole("button", { name: /invite member/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^email$/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/first name/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/last name/i)).not.toBeInTheDocument();
+  });
+
+  it("invites by email and roleId from the dialog", async () => {
     const user = userEvent.setup();
     const onInvite = vi.fn().mockResolvedValue(undefined);
 
@@ -108,16 +119,27 @@ describe("TeamPanel", () => {
       />,
     );
 
-    await user.type(screen.getByLabelText(/^email$/i), "new@example.com");
-    await user.type(screen.getByLabelText(/first name/i), "New");
-    await user.type(screen.getByLabelText(/last name/i), "Hire");
-    selectOption(screen.getByRole("combobox", { name: /^role$/i }), "admin");
-    await user.click(screen.getByRole("button", { name: /send invite/i }));
+    await user.click(screen.getByRole("button", { name: /invite member/i }));
+    const dialog = screen.getByRole("dialog", { name: /invite member/i });
+    expect(dialog).toBeInTheDocument();
+    expect(
+      within(dialog).queryByLabelText(/first name/i),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByLabelText(/last name/i),
+    ).not.toBeInTheDocument();
+
+    await user.type(within(dialog).getByLabelText(/^email$/i), "new@example.com");
+    selectOption(
+      within(dialog).getByRole("combobox", { name: /^role$/i }),
+      "admin",
+    );
+    await user.click(
+      within(dialog).getByRole("button", { name: /send invite/i }),
+    );
 
     expect(onInvite).toHaveBeenCalledWith({
       email: "new@example.com",
-      firstName: "New",
-      lastName: "Hire",
       emailNotifications: true,
       roleId: "admin",
     });
@@ -190,7 +212,7 @@ describe("TeamPanel", () => {
 
     expect(screen.getByText("Owner")).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /send invite/i }),
+      screen.queryByRole("button", { name: /invite member/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -241,7 +263,9 @@ describe("TeamPanel", () => {
     expect(screen.getByRole("button", { name: /^revoke$/i })).toBeInTheDocument();
   });
 
-  it("links to current plan when Solo is at the seat cap", () => {
+  it("links to current plan when Solo is at the seat cap", async () => {
+    const user = userEvent.setup();
+
     render(
       <TeamPanel
         {...defaultProps}
@@ -251,14 +275,18 @@ describe("TeamPanel", () => {
       />,
     );
 
-    const plans = screen.getByRole("link", { name: /view plans/i });
+    await user.click(screen.getByRole("button", { name: /invite member/i }));
+    const dialog = screen.getByRole("dialog", { name: /invite member/i });
+    const plans = within(dialog).getByRole("link", { name: /view plans/i });
     expect(plans).toHaveAttribute("href", expect.stringContaining("current-plan"));
     expect(
-      screen.queryByRole("button", { name: /send invite/i }),
+      within(dialog).queryByRole("button", { name: /send invite/i }),
     ).not.toBeInTheDocument();
   });
 
-  it("does not show View plans when Team is at the seat cap", () => {
+  it("does not show View plans when Team is at the seat cap", async () => {
+    const user = userEvent.setup();
+
     render(
       <TeamPanel
         {...defaultProps}
@@ -269,11 +297,13 @@ describe("TeamPanel", () => {
       />,
     );
 
+    await user.click(screen.getByRole("button", { name: /invite member/i }));
+    const dialog = screen.getByRole("dialog", { name: /invite member/i });
     expect(
-      screen.getByText(/at the 5-seat limit/i),
+      within(dialog).getByText(/at the 5-seat limit/i),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: /view plans/i }),
+      within(dialog).queryByRole("link", { name: /view plans/i }),
     ).not.toBeInTheDocument();
   });
 });
