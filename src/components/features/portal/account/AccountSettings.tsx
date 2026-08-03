@@ -508,7 +508,7 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
             <div>
               <Label htmlFor="delete-account-confirm">
                 Type{" "}
-                <span className="text-white">
+                <span className="normal-case text-white">
                   {DELETE_ACCOUNT_CONFIRM_PHRASE}
                 </span>{" "}
                 to confirm

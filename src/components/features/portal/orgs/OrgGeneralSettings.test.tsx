@@ -76,4 +76,40 @@ describe("OrgGeneralSettings", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByLabelText(/^name$/i)).toBeDisabled();
   });
+
+  it("shows the delete confirm name in its true casing", () => {
+    render(
+      <StubAuthProvider value={{ status: "signedIn", configured: true }}>
+        <StubPortalProvider value={{ ready: true }}>
+          <OrgGeneralSettings org={org} />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    expect(screen.getByText(org.orgName)).toHaveClass("normal-case");
+  });
+
+  it("enables delete only when the typed name matches exact casing", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(
+      <StubAuthProvider value={{ status: "signedIn", configured: true }}>
+        <StubPortalProvider value={{ ready: true }}>
+          <OrgGeneralSettings org={org} />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    const confirm = screen.getByLabelText(/type .+ to confirm/i);
+    const deleteButton = screen.getByRole("button", {
+      name: /delete organization/i,
+    });
+
+    await user.type(confirm, "ACME CO");
+    expect(deleteButton).toBeDisabled();
+
+    await user.clear(confirm);
+    await user.type(confirm, "Acme Co");
+    expect(deleteButton).toBeEnabled();
+  });
 });

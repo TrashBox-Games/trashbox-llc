@@ -138,7 +138,9 @@ export function OrgGeneralSettings({ org }: OrgGeneralSettingsProps) {
           </div>
           <div>
             <Label htmlFor="org-settings-confirm">
-              Type <span className="text-white">{org.orgName}</span> to confirm
+              Type{" "}
+              <span className="normal-case text-white">{org.orgName}</span> to
+              confirm
             </Label>
             <Input
               id="org-settings-confirm"

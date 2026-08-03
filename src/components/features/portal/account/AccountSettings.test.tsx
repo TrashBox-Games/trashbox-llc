@@ -216,6 +216,10 @@ describe("AccountSettings", () => {
     const dialog = screen.getByRole("dialog", { name: /delete account/i });
     expect(dialog).toBeInTheDocument();
 
+    expect(
+      within(dialog).getByText(DELETE_ACCOUNT_CONFIRM_PHRASE),
+    ).toHaveClass("normal-case");
+
     const confirmDelete = within(dialog).getByRole("button", {
       name: /^delete account$/i,
     });
