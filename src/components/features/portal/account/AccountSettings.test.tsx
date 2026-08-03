@@ -6,6 +6,7 @@ import { StubPortalProvider } from "@/lib/portal";
 import {
   AccountSettings,
   DELETE_ACCOUNT_CONFIRM_PHRASE,
+  DELETE_ACCOUNT_OWNERSHIP_REQUIREMENT,
 } from "./AccountSettings";
 
 const updateAccountProfile = vi.fn();
@@ -68,6 +69,73 @@ describe("AccountSettings", () => {
         lastName: "Lovelace",
       },
     });
+  });
+
+  it("lists owned organizations in the danger zone", () => {
+    render(
+      <StubAuthProvider
+        value={{
+          status: "signedIn",
+          configured: true,
+          email: "owner@example.com",
+        }}
+      >
+        <StubPortalProvider value={{ ready: true, refreshWorkspace: vi.fn() }}>
+          <AccountSettings
+            initialState={{
+              ...initialState,
+              organizations: [
+                {
+                  orgId: "o1",
+                  orgName: "TrashBox-Games",
+                  orgSlug: "trashbox-games",
+                  role: "owner",
+                  isOwner: true,
+                },
+                {
+                  orgId: "o2",
+                  orgName: "Hixclipz",
+                  orgSlug: "hixclipz",
+                  role: "owner",
+                  isOwner: true,
+                },
+                {
+                  orgId: "o3",
+                  orgName: "Built-Different-By-God-s-Design",
+                  orgSlug: "built-different",
+                  role: "owner",
+                  isOwner: true,
+                },
+                {
+                  orgId: "o4",
+                  orgName: "Member Org",
+                  orgSlug: "member-org",
+                  role: "member",
+                  isOwner: false,
+                },
+              ],
+            }}
+          />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.tagName === "P" &&
+          element.textContent ===
+            "Your account is currently an owner in these organizations: TrashBox-Games, Hixclipz, and Built-Different-By-God-s-Design",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("TrashBox-Games").tagName).toBe("STRONG");
+    expect(screen.getByText("Hixclipz").tagName).toBe("STRONG");
+    expect(
+      screen.getByText("Built-Different-By-God-s-Design").tagName,
+    ).toBe("STRONG");
+    expect(
+      screen.getByText(DELETE_ACCOUNT_OWNERSHIP_REQUIREMENT),
+    ).toBeInTheDocument();
   });
 
   it("saves the global profile", async () => {

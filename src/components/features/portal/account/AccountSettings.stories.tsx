@@ -70,3 +70,38 @@ export const NoOrganizations: Story = {
     },
   },
 };
+
+export const MultipleOwnedOrganizations: Story = {
+  args: {
+    initialState: {
+      profile: {
+        email: "owner@example.com",
+        firstName: "Ada",
+        lastName: "Lovelace",
+      },
+      organizations: [
+        {
+          orgId: "o1",
+          orgName: "TrashBox-Games",
+          orgSlug: "trashbox-games",
+          role: "owner",
+          isOwner: true,
+        },
+        {
+          orgId: "o2",
+          orgName: "Hixclipz",
+          orgSlug: "hixclipz",
+          role: "owner",
+          isOwner: true,
+        },
+        {
+          orgId: "o3",
+          orgName: "Built-Different-By-God-s-Design",
+          orgSlug: "built-different",
+          role: "owner",
+          isOwner: true,
+        },
+      ],
+    },
+  },
+};

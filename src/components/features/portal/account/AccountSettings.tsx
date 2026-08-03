@@ -37,6 +37,53 @@ export type AccountSettingsInitialState = {
 /** Phrase the user must type to confirm account deletion. */
 export const DELETE_ACCOUNT_CONFIRM_PHRASE = "delete-my-account";
 
+export const DELETE_ACCOUNT_OWNERSHIP_REQUIREMENT =
+  "You must remove yourself from these organizations, transfer ownership, or delete these organizations before you can delete your user.";
+
+function BoldOrgName({ name }: { name: string }) {
+  return <strong className="font-semibold text-white">{name}</strong>;
+}
+
+/** Natural-language list for owned orgs that block account deletion. */
+export function OwnedOrganizationsMessage({
+  orgNames,
+}: {
+  orgNames: string[];
+}) {
+  if (orgNames.length === 0) return null;
+
+  if (orgNames.length === 1) {
+    return (
+      <p>
+        Your account is currently an owner in this organization:{" "}
+        <BoldOrgName name={orgNames[0]!} />
+      </p>
+    );
+  }
+
+  if (orgNames.length === 2) {
+    return (
+      <p>
+        Your account is currently an owner in these organizations:{" "}
+        <BoldOrgName name={orgNames[0]!} /> and{" "}
+        <BoldOrgName name={orgNames[1]!} />
+      </p>
+    );
+  }
+
+  return (
+    <p>
+      Your account is currently an owner in these organizations:{" "}
+      {orgNames.slice(0, -1).map((name) => (
+        <span key={name}>
+          <BoldOrgName name={name} />,{" "}
+        </span>
+      ))}
+      and <BoldOrgName name={orgNames[orgNames.length - 1]!} />
+    </p>
+  );
+}
+
 interface AccountSettingsProps {
   initialState?: AccountSettingsInitialState;
 }
@@ -241,6 +288,9 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
   const email = profile?.email || auth.email || "";
   const composedName = [firstName, lastName].filter(Boolean).join(" ").trim();
   const displayName = portalUserDisplayName(email, composedName || null);
+  const ownedOrgNames = organizations
+    .filter((org) => org.isOwner)
+    .map((org) => org.orgName);
 
   return (
     <div className="mx-auto max-w-2xl space-y-10">
@@ -388,6 +438,12 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
           <p className="font-label text-[10px] tracking-widest text-red-300 uppercase">
             Danger zone
           </p>
+          {ownedOrgNames.length > 0 ? (
+            <div className="text-on-surface-variant space-y-2 text-sm">
+              <OwnedOrganizationsMessage orgNames={ownedOrgNames} />
+              <p>{DELETE_ACCOUNT_OWNERSHIP_REQUIREMENT}</p>
+            </div>
+          ) : null}
           {blockers.length > 0 ? (
             <ul className="text-on-surface-variant list-inside list-disc text-sm">
               {blockers.map((blocker) => (
@@ -442,6 +498,12 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
               <p className="text-on-surface-variant mt-2 text-sm">
                 This permanently removes your login. It cannot be undone.
               </p>
+              {ownedOrgNames.length > 0 ? (
+                <div className="text-on-surface-variant mt-2 space-y-2 text-sm">
+                  <OwnedOrganizationsMessage orgNames={ownedOrgNames} />
+                  <p>{DELETE_ACCOUNT_OWNERSHIP_REQUIREMENT}</p>
+                </div>
+              ) : null}
             </div>
             <div>
               <Label htmlFor="delete-account-confirm">
