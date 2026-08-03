@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import {
+  PortalUserAvatar,
+  portalUserDisplayName,
+} from "@/components/features/portal/PortalUserMenu";
 import { PortalLink } from "@/components/features/portal/PortalLink";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { Button } from "@/components/ui/button";
@@ -217,6 +221,10 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
     return <PortalSkeleton variant="settings" />;
   }
 
+  const email = profile?.email || auth.email || "";
+  const composedName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  const displayName = portalUserDisplayName(email, composedName || null);
+
   return (
     <div className="mx-auto max-w-2xl space-y-10">
       <FadeIn>
@@ -233,11 +241,12 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
           <p className="font-label text-outline text-[10px] tracking-widest uppercase">
             Profile
           </p>
+          <PortalUserAvatar label={displayName} size="lg" />
           <div>
             <Label htmlFor="account-email">Email</Label>
             <Input
               id="account-email"
-              value={profile?.email || auth.email || ""}
+              value={email}
               disabled
               readOnly
             />

@@ -49,12 +49,13 @@ function initialsFromLabel(label: string): string {
   return (label.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2) || "?").toUpperCase();
 }
 
-function UserAvatar({
+/** Initials avatar used in the account menu and account settings. */
+export function PortalUserAvatar({
   label,
-  size,
+  size = "md",
 }: {
   label: string;
-  size: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 }): JSX.Element {
   return (
     <span
@@ -63,6 +64,7 @@ function UserAvatar({
         "inline-flex shrink-0 items-center justify-center rounded-full border border-outline-variant/30 bg-white/10 font-bold tracking-wide text-white",
         size === "sm" && "size-8 text-[10px]",
         size === "md" && "size-10 text-xs",
+        size === "lg" && "size-16 text-lg",
       )}
     >
       {initialsFromLabel(label)}
@@ -89,13 +91,13 @@ export function PortalUserMenu({
           className="size-8 rounded-full p-0 hover:bg-transparent"
           aria-label="Account menu"
         >
-          <UserAvatar label={displayName} size="sm" />
+          <PortalUserAvatar label={displayName} size="sm" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-60">
         <DropdownMenuLabel className="font-normal">
           <div className="flex items-center gap-3 py-1">
-            <UserAvatar label={displayName} size="md" />
+            <PortalUserAvatar label={displayName} size="md" />
             <div className="min-w-0 flex flex-col gap-0.5">
               <span className="truncate text-sm font-medium text-foreground">
                 {displayName}

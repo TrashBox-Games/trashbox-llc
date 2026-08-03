@@ -83,6 +83,8 @@ describe("AccountSettings", () => {
       </StubAuthProvider>,
     );
 
+    expect(screen.getByLabelText(/^ada lovelace$/i)).toBeInTheDocument();
+
     await user.clear(screen.getByLabelText(/first name/i));
     await user.type(screen.getByLabelText(/first name/i), "Augusta");
     await user.click(screen.getByRole("button", { name: /save profile/i }));
