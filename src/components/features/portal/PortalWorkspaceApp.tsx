@@ -31,15 +31,29 @@ import {
 } from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
 
+type ProjectSettingsSurface =
+  | SettingsSectionId
+  | "templates/new"
+  | "templates/builder"
+  | "templates/edit";
+
+function settingsSurface(
+  settingsRest: string | undefined,
+  scope: "org",
+): SettingsSectionId;
+function settingsSurface(
+  settingsRest: string | undefined,
+  scope: "project",
+): ProjectSettingsSurface;
 function settingsSurface(
   settingsRest: string | undefined,
   scope: "org" | "project",
-) {
+): ProjectSettingsSurface {
   const rest = (settingsRest || "").replace(/^\/+|\/+$/g, "");
   if (scope === "project") {
-    if (rest === "templates/new") return "templates/new" as const;
-    if (rest === "templates/builder") return "templates/builder" as const;
-    if (rest === "templates/edit") return "templates/edit" as const;
+    if (rest === "templates/new") return "templates/new";
+    if (rest === "templates/builder") return "templates/builder";
+    if (rest === "templates/edit") return "templates/edit";
   }
   if (!rest) return DEFAULT_SETTINGS_SECTION;
   const section = rest.split("/")[0] || DEFAULT_SETTINGS_SECTION;
@@ -178,10 +192,7 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
     }
     return (
       <SettingsShell scope="org">
-        <OrgSettingsSectionContent
-          org={org}
-          sectionId={sectionId as SettingsSectionId}
-        />
+        <OrgSettingsSectionContent org={org} sectionId={sectionId} />
       </SettingsShell>
     );
   }
