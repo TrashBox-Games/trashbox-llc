@@ -230,16 +230,10 @@ export function PortalHeader() {
         <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-6 py-2 md:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
             {signedIn ? (
-              <a
+              <PortalLink
                 href={PORTAL_PATHS.orgs}
                 className="inline-flex shrink-0 items-center gap-2.5"
                 aria-label="Trashbox home"
-                onClick={(event) => {
-                  // Soft history + Next Link leave the SPA outlet on the old
-                  // workspace page; hard-nav loads the org picker shell.
-                  event.preventDefault();
-                  window.location.assign(PORTAL_PATHS.orgs);
-                }}
               >
                 <Image
                   src="/images/trashbox-logo-white.png"
@@ -250,7 +244,7 @@ export function PortalHeader() {
                   style={{ width: "auto" }}
                   priority
                 />
-              </a>
+              </PortalLink>
             ) : (
               <Link
                 href="/"

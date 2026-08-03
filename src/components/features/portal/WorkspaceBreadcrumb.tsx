@@ -20,6 +20,7 @@ import {
 } from "@/lib/portal-routes";
 import {
   getSelectedOrgId,
+  getSelectedOrgName,
   getSelectedProjectId,
 } from "@/lib/portal-selection";
 import {
@@ -67,7 +68,10 @@ export function WorkspaceBreadcrumb() {
     selectedOrg?.projects.find((p) => p.projectId === selectedProjectId) ||
     null;
 
-  const orgLabel = selectedOrg?.orgName || "Select organization";
+  const orgLabel =
+    selectedOrg?.orgName ||
+    (selectedOrgId ? getSelectedOrgName() : null) ||
+    (selectedOrgId ? "Organization" : "Select organization");
   const projectLabel = selectedProject?.projectName || "Select project";
 
   return (
@@ -139,7 +143,7 @@ export function WorkspaceBreadcrumb() {
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => {
-              window.location.assign(PORTAL_PATHS.orgs);
+              portalNavigate(PORTAL_PATHS.orgs);
             }}
           >
             <MaterialIcon name="apps" className="text-base!" />

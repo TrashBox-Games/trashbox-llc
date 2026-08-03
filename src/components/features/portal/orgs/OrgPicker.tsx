@@ -106,7 +106,7 @@ export function OrgPicker() {
 
   return (
     <div className="mx-auto max-w-xl space-y-10">
-      <FadeIn>
+      <FadeIn className="text-center">
         <p className="font-label text-outline mb-6 text-xs tracking-[0.4em] uppercase">
           Organizations
         </p>
@@ -114,7 +114,6 @@ export function OrgPicker() {
           Choose an organization
         </h1>
         <p className="text-on-surface-variant mt-4 text-lg">
-          Signed in as {auth.email || portal.account?.email || "your account"}.
           Select where you want to work, or create a new organization.
         </p>
       </FadeIn>
@@ -122,7 +121,7 @@ export function OrgPicker() {
       {pending ? (
         <PortalSkeleton variant="membership" />
       ) : (
-        <FadeIn className="space-y-6" y={12}>
+        <FadeIn className="space-y-6" y={12} delay={0.28}>
           {orgs.length > 0 && (
             <ul className="space-y-3">
               {orgs.map((org) => {

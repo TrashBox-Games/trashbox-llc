@@ -3,14 +3,16 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { PortalWorkspaceApp } from "@/components/features/portal/PortalWorkspaceApp";
+import { OrgPicker } from "@/components/features/portal/orgs/OrgPicker";
+import { isPortalOrgPickerPath } from "@/lib/portal-org-gate";
 import {
   isPortalWorkspacePath,
   subscribePortalNavigate,
 } from "@/lib/portal-routes";
 
 /**
- * When the browser path is a GitHub-style workspace URL, render the SPA
- * workspace app instead of the static page child (orgs/auth/legacy).
+ * Soft-route GitHub-style workspace URLs and the org picker inside the portal
+ * shell so logo / breadcrumb navigation does not full-reload the app.
  */
 export function PortalRouteOutlet({ children }: { children: ReactNode }) {
   const nextPath = usePathname() ?? "";
@@ -22,6 +24,10 @@ export function PortalRouteOutlet({ children }: { children: ReactNode }) {
     setPath(window.location.pathname);
     return subscribePortalNavigate(setPath);
   }, [nextPath]);
+
+  if (isPortalOrgPickerPath(path)) {
+    return <OrgPicker />;
+  }
 
   if (isPortalWorkspacePath(path)) {
     return <PortalWorkspaceApp pathname={path} />;

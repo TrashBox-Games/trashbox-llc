@@ -7,10 +7,8 @@ import { setSelectedWorkspace } from "@/lib/portal-selection";
 import { WorkspaceBreadcrumb } from "./WorkspaceBreadcrumb";
 
 const selectWorkspace = vi.fn();
-const assign = vi.fn();
 const locationStub = {
   pathname: "/",
-  assign,
   search: "",
   hash: "",
   href: "http://localhost/",
@@ -75,10 +73,9 @@ function renderBreadcrumb() {
 describe("WorkspaceBreadcrumb", () => {
   beforeEach(() => {
     selectWorkspace.mockReset();
-    assign.mockReset();
     localStorage.clear();
     sessionStorage.clear();
-    setSelectedWorkspace("o1", "p1");
+    setSelectedWorkspace("o1", "p1", "Acme Co");
     locationStub.pathname = "/portal/acme-co/marketing-site/";
     vi.stubGlobal("location", locationStub);
   });
@@ -112,6 +109,7 @@ describe("WorkspaceBreadcrumb", () => {
 
   it("sends All organizations to the org picker", async () => {
     const user = userEvent.setup();
+    const pushState = vi.spyOn(window.history, "pushState");
     renderBreadcrumb();
 
     await user.click(
@@ -120,7 +118,7 @@ describe("WorkspaceBreadcrumb", () => {
     await user.click(
       screen.getByRole("menuitem", { name: /all organizations/i }),
     );
-    expect(assign).toHaveBeenCalledWith("/portal/orgs/");
+    expect(pushState).toHaveBeenCalledWith(null, "", "/portal/orgs/");
   });
 
   it("opens the chosen project inbox from the project dropdown", async () => {
@@ -155,7 +153,7 @@ describe("WorkspaceBreadcrumb", () => {
 
   it("hides the project crumb on the organization picker", () => {
     locationStub.pathname = "/portal/orgs/";
-    setSelectedWorkspace("o1", "p1");
+    setSelectedWorkspace("o1", "p1", "Acme Co");
     renderBreadcrumb();
 
     expect(
@@ -163,6 +161,32 @@ describe("WorkspaceBreadcrumb", () => {
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /project:/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the cached org name while orgs are still loading", () => {
+    locationStub.pathname = "/portal/orgs/";
+    setSelectedWorkspace("o1", null, "Acme Co");
+    render(
+      <StubAuthProvider value={{ status: "signedIn", configured: true }}>
+        <StubPortalProvider
+          value={{
+            ready: false,
+            orgs: [],
+            account: null,
+            selectWorkspace,
+          }}
+        >
+          <WorkspaceBreadcrumb />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /organization: acme co/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /organization: select organization/i }),
     ).not.toBeInTheDocument();
   });
 });

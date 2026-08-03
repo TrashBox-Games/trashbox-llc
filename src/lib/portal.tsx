@@ -58,6 +58,7 @@ import {
 } from "@/lib/portal-routes";
 import {
   getSelectedOrgId,
+  getSelectedOrgName,
   getSelectedProjectId,
   setSelectedWorkspace,
 } from "@/lib/portal-selection";
@@ -425,7 +426,20 @@ export function PortalProvider({
 
         try {
           const orgList = await listOrgs();
-          if (!cancelled) setOrgs(orgList.orgs);
+          if (!cancelled) {
+            setOrgs(orgList.orgs);
+            const selectedId = getSelectedOrgId();
+            const selected = orgList.orgs.find(
+              (entry) => entry.orgId === selectedId,
+            );
+            if (selected?.orgName) {
+              setSelectedWorkspace(
+                selected.orgId,
+                getSelectedProjectId(),
+                selected.orgName,
+              );
+            }
+          }
         } catch {
           if (!cancelled) setOrgs([]);
         }
@@ -805,16 +819,24 @@ export function PortalProvider({
     }
   }, []);
 
-  const selectWorkspace = useCallback((orgId: string, projectId: string) => {
-    const nextProjectId = projectId.trim() ? projectId.trim() : null;
-    const currentOrgId = getSelectedOrgId();
-    const currentProjectId = getSelectedProjectId();
-    if (currentOrgId === orgId && currentProjectId === nextProjectId) {
-      return;
-    }
-    setSelectedWorkspace(orgId, nextProjectId);
-    setWorkspaceEpoch((n) => n + 1);
-  }, []);
+  const selectWorkspace = useCallback(
+    (orgId: string, projectId: string) => {
+      const nextProjectId = projectId.trim() ? projectId.trim() : null;
+      const currentOrgId = getSelectedOrgId();
+      const currentProjectId = getSelectedProjectId();
+      const orgName = orgs.find((entry) => entry.orgId === orgId)?.orgName;
+      if (
+        currentOrgId === orgId &&
+        currentProjectId === nextProjectId &&
+        (!orgName || getSelectedOrgName() === orgName)
+      ) {
+        return;
+      }
+      setSelectedWorkspace(orgId, nextProjectId, orgName);
+      setWorkspaceEpoch((n) => n + 1);
+    },
+    [orgs],
+  );
 
   const refreshWorkspace = useCallback(() => {
     setWorkspaceEpoch((n) => n + 1);
@@ -834,7 +856,7 @@ export function PortalProvider({
         result.message ||
           "Organization created. Add a project to get an API key and inbox.",
       );
-      setSelectedWorkspace(result.orgId, null);
+      setSelectedWorkspace(result.orgId, null, name);
       setBusinessName("");
       setWorkspaceEpoch((n) => n + 1);
       if (result.orgSlug) {
@@ -871,7 +893,9 @@ export function PortalProvider({
             "Project created. Open Settings → Developers → API Keys to copy your new key (shown once).",
           );
         }
-        setSelectedWorkspace(result.orgId, result.projectId);
+        const orgName = orgs.find((entry) => entry.orgId === result.orgId)
+          ?.orgName;
+        setSelectedWorkspace(result.orgId, result.projectId, orgName);
         setProjectNameDraft("");
         setWorkspaceEpoch((n) => n + 1);
         const orgSlug =

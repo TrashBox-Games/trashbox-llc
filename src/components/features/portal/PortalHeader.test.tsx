@@ -177,15 +177,18 @@ describe("PortalHeader", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hard-navigates the logo to the org picker when signed in", async () => {
+  it("soft-navigates the logo to the org picker when signed in", async () => {
     const user = userEvent.setup();
-    const assign = vi.fn();
-    vi.stubGlobal("location", { ...window.location, assign });
+    const pushState = vi.spyOn(window.history, "pushState");
     render(<PortalHeader />);
     const logo = screen.getByRole("link", { name: /trashbox.*home/i });
     expect(logo.getAttribute("href")).toMatch(/\/portal\/orgs\/?$/);
     await user.click(logo);
-    expect(assign).toHaveBeenCalledWith(expect.stringMatching(/\/portal\/orgs\/?$/));
+    expect(pushState).toHaveBeenCalledWith(
+      null,
+      "",
+      expect.stringMatching(/\/portal\/orgs\/?$/),
+    );
   });
 
   it("uses a compact bar height", () => {

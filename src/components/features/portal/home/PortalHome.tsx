@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
@@ -85,9 +84,9 @@ export function PortalHome() {
         </h1>
         <p className="text-on-surface-variant mt-6 max-w-xl text-lg">
           Choose a project to open its inbox and settings.{" "}
-          <Link href={PORTAL_PATHS.orgs} className="text-white underline">
+          <PortalLink href={PORTAL_PATHS.orgs} className="text-white underline">
             Switch organization
-          </Link>
+          </PortalLink>
         </p>
       </FadeIn>
 

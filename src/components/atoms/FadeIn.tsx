@@ -27,14 +27,20 @@ export function FadeIn({ children, className, delay = 0, y = 18 }: FadeInProps) 
           duration: 0.55,
           delay,
           ease: "power3.out",
+          // First paint already matches the "from" state (inline style below).
+          immediateRender: false,
         },
       );
     },
-    { scope: ref },
+    { scope: ref, dependencies: [delay, y] },
   );
 
   return (
-    <div ref={ref} className={cn(className)}>
+    <div
+      ref={ref}
+      className={cn(className)}
+      style={{ opacity: 0, transform: `translateY(${y}px)` }}
+    >
       {children}
     </div>
   );
