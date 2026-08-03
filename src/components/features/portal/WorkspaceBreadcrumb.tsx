@@ -18,6 +18,10 @@ import {
   getSelectedOrgId,
   getSelectedProjectId,
 } from "@/lib/portal-selection";
+import {
+  DEFAULT_SETTINGS_SECTION,
+  orgSettingsSectionPath,
+} from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
 import { cn } from "@/lib/utils";
 
@@ -55,22 +59,78 @@ export function WorkspaceBreadcrumb() {
       aria-label="Workspace"
       className="flex min-w-0 items-center gap-0.5 text-sm"
     >
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className={crumbTriggerClass()}
-        aria-label={`Organization: ${orgLabel}`}
-        onClick={() => {
-          window.location.assign(PORTAL_PATHS.orgs);
-        }}
-      >
-        <MaterialIcon
-          name="corporate_fare"
-          className="text-outline shrink-0 text-base!"
-        />
-        <span className="truncate">{orgLabel}</span>
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={crumbTriggerClass()}
+            aria-label={`Organization: ${orgLabel}`}
+          >
+            <MaterialIcon
+              name="corporate_fare"
+              className="text-outline shrink-0 text-base!"
+            />
+            <span className="truncate">{orgLabel}</span>
+            <MaterialIcon
+              name="expand_more"
+              className="text-outline shrink-0 text-base!"
+            />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="min-w-56 p-2">
+          {orgs.map((org) => (
+            <DropdownMenuItem
+              key={org.orgId}
+              onSelect={() => {
+                if (!org.orgSlug) return;
+                portal.selectWorkspace(org.orgId, "");
+                portalNavigate(
+                  portalWorkspacePath({
+                    orgSlug: org.orgSlug,
+                    surface: "orgHome",
+                  }),
+                );
+              }}
+            >
+              <span className="flex min-w-0 flex-1 items-center gap-2">
+                <span className="truncate">{org.orgName}</span>
+                {org.orgId === selectedOrgId ? (
+                  <MaterialIcon
+                    name="check"
+                    className="text-outline ml-auto shrink-0 text-base!"
+                  />
+                ) : null}
+              </span>
+            </DropdownMenuItem>
+          ))}
+          {orgs.length > 0 ? <DropdownMenuSeparator /> : null}
+          <DropdownMenuItem
+            disabled={!selectedOrg?.orgSlug}
+            onSelect={() => {
+              if (!selectedOrg?.orgSlug) return;
+              portalNavigate(
+                orgSettingsSectionPath(
+                  selectedOrg.orgSlug,
+                  DEFAULT_SETTINGS_SECTION,
+                ),
+              );
+            }}
+          >
+            <MaterialIcon name="settings" className="text-base!" />
+            Settings
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => {
+              window.location.assign(PORTAL_PATHS.orgs);
+            }}
+          >
+            <MaterialIcon name="apps" className="text-base!" />
+            All organizations
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <span className="text-outline px-0.5 select-none" aria-hidden>
         /

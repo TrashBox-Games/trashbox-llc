@@ -137,6 +137,9 @@ describe("PortalHeader", () => {
     expect(
       screen.getByRole("button", { name: /project: marketing site/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /org settings/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("links the logo to the org picker when signed in", () => {

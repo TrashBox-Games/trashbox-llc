@@ -117,31 +117,10 @@ export function PortalHome() {
             className="border-outline-variant/15 bg-surface-container-low/60 border p-5 md:p-8"
             y={12}
           >
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="font-label text-outline text-[10px] tracking-widest uppercase">
-                  Projects
-                </p>
-                <p className="text-on-surface-variant mt-1 text-sm">
-                  {projects.length === 0
-                    ? "No projects yet — create one to get started."
-                    : `${projects.length} project${projects.length === 1 ? "" : "s"} in this organization`}
-                </p>
-              </div>
-              {org?.orgSlug ? (
-                <Button asChild variant="outline" size="sm">
-                  <PortalLink
-                    href={portalWorkspacePath({
-                      orgSlug: org.orgSlug,
-                      surface: "orgSettings",
-                      settingsRest: "general",
-                    })}
-                  >
-                    <MaterialIcon name="settings" className="text-base!" />
-                    Organization settings
-                  </PortalLink>
-                </Button>
-              ) : null}
+            <div className="mb-6">
+              <p className="font-label text-outline text-[10px] tracking-widest uppercase">
+                Projects
+              </p>
             </div>
 
             <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

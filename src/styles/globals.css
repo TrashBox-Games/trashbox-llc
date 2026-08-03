@@ -61,6 +61,11 @@
   --color-outline-variant: #474747;
   --color-on-error: #690005;
   --color-inverse-on-surface: #313030;
+  /* Solid menu surfaces (shadcn DropdownMenu / Popover use these). */
+  --color-popover: #131313;
+  --color-popover-foreground: #e5e2e1;
+  --color-accent: #2a2a2a;
+  --color-accent-foreground: #ffffff;
 }
 
 @layer base {

@@ -65,9 +65,63 @@ describe("OrgPicker", () => {
     expect(
       screen.getByRole("heading", { name: /choose an organization/i }),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /acme co/i }));
+    await user.click(
+      screen.getByRole("button", { name: /acme co.*project/i }),
+    );
     expect(selectWorkspace).toHaveBeenCalledWith("o1", "");
     expect(pushState).toHaveBeenCalledWith(null, "", "/portal/acme-co/");
+  });
+
+  it("opens organization settings from the gear on a card", async () => {
+    const user = userEvent.setup();
+    const pushState = vi.spyOn(window.history, "pushState");
+    render(
+      <StubAuthProvider
+        value={{
+          status: "signedIn",
+          configured: true,
+          email: "owner@example.com",
+        }}
+      >
+        <StubPortalProvider
+          value={{
+            ready: true,
+            orgs: [
+              {
+                orgId: "o1",
+                orgName: "Acme Co",
+                orgSlug: "acme-co",
+                role: "owner",
+                tier: "basic",
+                active: true,
+                hasBilling: false,
+                projects: [
+                  {
+                    projectId: "p1",
+                    projectName: "Site",
+                    projectSlug: "site",
+                  },
+                ],
+              },
+            ],
+            account: { linked: true, email: "owner@example.com" },
+            selectWorkspace,
+          }}
+        >
+          <OrgPicker />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /settings for acme co/i }),
+    );
+    expect(selectWorkspace).toHaveBeenCalledWith("o1", "");
+    expect(pushState).toHaveBeenCalledWith(
+      null,
+      "",
+      "/portal/acme-co/settings/general/",
+    );
   });
 
   it("shows create form when the user has no organizations", () => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FadeIn } from "@/components/atoms/FadeIn";
+import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,10 @@ import {
   portalWorkspacePath,
 } from "@/lib/portal-routes";
 import { getSelectedOrgId } from "@/lib/portal-selection";
+import {
+  DEFAULT_SETTINGS_SECTION,
+  orgSettingsSectionPath,
+} from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
 import { cn } from "@/lib/utils";
 
@@ -124,33 +129,61 @@ export function OrgPicker() {
                 const active = selectedOrgId === org.orgId;
                 return (
                   <li key={org.orgId}>
-                    <button
-                      type="button"
+                    <div
                       className={cn(
-                        "border-outline-variant/15 hover:border-outline-variant/40 w-full border px-5 py-4 text-left transition-colors",
+                        "border-outline-variant/15 hover:border-outline-variant/40 flex items-stretch border transition-colors",
                         active
                           ? "bg-surface-container-high border-white/30"
                           : "bg-surface-container-low",
                       )}
-                      onClick={() =>
-                        enterOrg(
-                          org.orgId,
-                          org.orgSlug,
-                          portal.selectWorkspace,
-                        )
-                      }
                     >
-                      <p className="font-headline text-lg font-bold text-white">
-                        {org.orgName}
-                      </p>
-                      <p className="text-on-surface-variant mt-1 text-xs">
-                        {org.role}
-                        {org.projects.length > 0
-                          ? ` · ${org.projects.length} project${org.projects.length === 1 ? "" : "s"}`
-                          : " · no projects yet"}
-                        {active ? " · current" : ""}
-                      </p>
-                    </button>
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 px-5 py-4 text-left"
+                        onClick={() =>
+                          enterOrg(
+                            org.orgId,
+                            org.orgSlug,
+                            portal.selectWorkspace,
+                          )
+                        }
+                      >
+                        <p className="font-headline text-lg font-bold text-white">
+                          {org.orgName}
+                        </p>
+                        <p className="text-on-surface-variant mt-1 text-xs">
+                          {org.role}
+                          {org.projects.length > 0
+                            ? ` · ${org.projects.length} project${org.projects.length === 1 ? "" : "s"}`
+                            : " · no projects yet"}
+                          {active ? " · current" : ""}
+                        </p>
+                      </button>
+                      {org.orgSlug ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-outline hover:text-white m-2 size-10 shrink-0 self-center"
+                          aria-label={`Settings for ${org.orgName}`}
+                          onClick={() => {
+                            const orgSlug = org.orgSlug;
+                            portal.selectWorkspace(org.orgId, "");
+                            portalNavigate(
+                              orgSettingsSectionPath(
+                                orgSlug,
+                                DEFAULT_SETTINGS_SECTION,
+                              ),
+                            );
+                          }}
+                        >
+                          <MaterialIcon
+                            name="settings"
+                            className="text-[1.25rem]!"
+                          />
+                        </Button>
+                      ) : null}
+                    </div>
                   </li>
                 );
               })}
