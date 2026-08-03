@@ -34,6 +34,9 @@ export type AccountSettingsInitialState = {
   organizations: AccountOrganization[];
 };
 
+/** Phrase the user must type to confirm account deletion. */
+export const DELETE_ACCOUNT_CONFIRM_PHRASE = "delete-my-account";
+
 interface AccountSettingsProps {
   initialState?: AccountSettingsInitialState;
 }
@@ -62,6 +65,8 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [blockers, setBlockers] = useState<AccountDeleteBlocker[]>([]);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
 
   const load = useCallback(async () => {
     const [profileRes, orgsRes] = await Promise.all([
@@ -178,11 +183,21 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
     }
   }
 
+  function openDeleteDialog() {
+    setDeleteConfirm("");
+    setError(null);
+    setBlockers([]);
+    setDeleteOpen(true);
+  }
+
+  function closeDeleteDialog() {
+    if (busy) return;
+    setDeleteOpen(false);
+    setDeleteConfirm("");
+  }
+
   async function onDeleteAccount() {
-    const ok = window.confirm(
-      "Delete your account permanently? This cannot be undone.",
-    );
-    if (!ok) return;
+    if (deleteConfirm.trim() !== DELETE_ACCOUNT_CONFIRM_PHRASE) return;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -198,6 +213,8 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
           : [];
         setBlockers(next);
         setError(err.message);
+        setDeleteOpen(false);
+        setDeleteConfirm("");
       } else {
         setError(
           err instanceof ApiError
@@ -387,7 +404,7 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
             variant="outline"
             className="border-red-400/40 text-red-300 hover:bg-red-400/10 hover:text-red-200"
             disabled={busy}
-            onClick={() => void onDeleteAccount()}
+            onClick={openDeleteDialog}
           >
             <MaterialIcon name="delete" className="text-base!" />
             Delete account
@@ -401,6 +418,82 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
         ) : null}
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
       </FadeIn>
+
+      {deleteOpen ? (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4"
+          role="presentation"
+          onClick={closeDeleteDialog}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-account-title"
+            className="border-outline-variant/25 bg-background w-full max-w-md space-y-5 border p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <p
+                id="delete-account-title"
+                className="font-headline text-xl font-bold text-white"
+              >
+                Delete account
+              </p>
+              <p className="text-on-surface-variant mt-2 text-sm">
+                This permanently removes your login. It cannot be undone.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="delete-account-confirm">
+                Type{" "}
+                <span className="text-white">
+                  {DELETE_ACCOUNT_CONFIRM_PHRASE}
+                </span>{" "}
+                to confirm
+              </Label>
+              <Input
+                id="delete-account-confirm"
+                value={deleteConfirm}
+                disabled={busy}
+                autoComplete="off"
+                autoFocus
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  e.preventDefault();
+                  if (
+                    !busy &&
+                    deleteConfirm.trim() === DELETE_ACCOUNT_CONFIRM_PHRASE
+                  ) {
+                    void onDeleteAccount();
+                  }
+                }}
+              />
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={closeDeleteDialog}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={
+                  busy ||
+                  deleteConfirm.trim() !== DELETE_ACCOUNT_CONFIRM_PHRASE
+                }
+                onClick={() => void onDeleteAccount()}
+              >
+                {busy ? "Deleting…" : "Delete account"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

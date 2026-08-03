@@ -1,9 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StubAuthProvider } from "@/lib/auth";
 import { StubPortalProvider } from "@/lib/portal";
-import { AccountSettings } from "./AccountSettings";
+import {
+  AccountSettings,
+  DELETE_ACCOUNT_CONFIRM_PHRASE,
+} from "./AccountSettings";
 
 const updateAccountProfile = vi.fn();
 const leaveOrganization = vi.fn();
@@ -94,6 +97,47 @@ describe("AccountSettings", () => {
       lastName: "Lovelace",
     });
     expect(await screen.findByText(/profile updated/i)).toBeInTheDocument();
+  });
+
+  it("requires typing the confirm phrase before deleting the account", async () => {
+    const user = userEvent.setup();
+    deleteUserAccount.mockResolvedValue(undefined);
+
+    render(
+      <StubAuthProvider
+        value={{
+          status: "signedIn",
+          configured: true,
+          email: "owner@example.com",
+          signOutUser: vi.fn(),
+        }}
+      >
+        <StubPortalProvider value={{ ready: true, refreshWorkspace: vi.fn() }}>
+          <AccountSettings
+            initialState={{ ...initialState, organizations: [] }}
+          />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /delete account/i }));
+    const dialog = screen.getByRole("dialog", { name: /delete account/i });
+    expect(dialog).toBeInTheDocument();
+
+    const confirmDelete = within(dialog).getByRole("button", {
+      name: /^delete account$/i,
+    });
+    expect(confirmDelete).toBeDisabled();
+
+    await user.type(
+      within(dialog).getByLabelText(
+        new RegExp(DELETE_ACCOUNT_CONFIRM_PHRASE, "i"),
+      ),
+      DELETE_ACCOUNT_CONFIRM_PHRASE,
+    );
+    expect(confirmDelete).toBeEnabled();
+    await user.click(confirmDelete);
+    expect(deleteUserAccount).toHaveBeenCalledTimes(1);
   });
 
   it("lets non-owners leave an organization", async () => {
