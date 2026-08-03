@@ -11,7 +11,7 @@ import { PortalUserMenu } from "@/components/features/portal/PortalUserMenu";
 import { WorkspaceBreadcrumb } from "@/components/features/portal/WorkspaceBreadcrumb";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { teamMemberDisplayName } from "@/lib/api";
+import { getAccountProfile, teamMemberDisplayName } from "@/lib/api";
 import { usePortal } from "@/lib/portal";
 import { isPortalOrgPickerPath } from "@/lib/portal-org-gate";
 import {
@@ -155,14 +155,39 @@ export function PortalHeader() {
   const inWorkspace = Boolean(selectedOrgId) && !onOrgPicker;
   const signedInLinks = inWorkspace ? workspaceLinks : [];
   const showBreadcrumb = signedIn && !authLoading;
+  const [profileName, setProfileName] = useState<string | null>(null);
   const currentMember = auth.email
     ? portal.members.find(
         (member) => member.email.toLowerCase() === auth.email!.toLowerCase(),
       )
     : undefined;
-  const userName = currentMember
+  const membershipName = currentMember
     ? teamMemberDisplayName(currentMember)
     : null;
+  const userName = profileName || membershipName;
+
+  useEffect(() => {
+    if (!signedIn || !auth.email) {
+      setProfileName(null);
+      return;
+    }
+    let cancelled = false;
+    void getAccountProfile()
+      .then((res) => {
+        if (cancelled) return;
+        const composed = [res.profile.firstName, res.profile.lastName]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        setProfileName(composed || null);
+      })
+      .catch(() => {
+        if (!cancelled) setProfileName(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [signedIn, auth.email, pathname]);
 
   return (
     <header
@@ -227,6 +252,7 @@ export function PortalHeader() {
               <PortalUserMenu
                 email={auth.email}
                 name={userName}
+                settingsHref={PORTAL_PATHS.account}
                 clientName={
                   portal.account?.orgName
                     ? `${portal.account.orgName}${

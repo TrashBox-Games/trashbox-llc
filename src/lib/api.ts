@@ -284,10 +284,16 @@ export function teamMemberDisplayName(member: {
 
 export class ApiError extends Error {
   status: number;
+  data?: Record<string, unknown>;
 
-  constructor(status: number, message: string) {
+  constructor(
+    status: number,
+    message: string,
+    data?: Record<string, unknown>,
+  ) {
     super(message);
     this.status = status;
+    this.data = data;
   }
 }
 
@@ -349,7 +355,11 @@ async function authFetch(path: string, init?: RequestInit) {
   };
 
   if (!res.ok) {
-    throw new ApiError(res.status, data.message || `Request failed (${res.status})`);
+    throw new ApiError(
+      res.status,
+      data.message || `Request failed (${res.status})`,
+      data,
+    );
   }
 
   return data;
@@ -512,6 +522,74 @@ export async function updateTeamMember(
 
 export async function getAccount(): Promise<AccountResponse> {
   return (await authFetch("/account")) as unknown as AccountResponse;
+}
+
+export interface UserProfile {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AccountOrganization {
+  orgId: string;
+  orgName: string;
+  orgSlug: string;
+  role: "owner" | "admin" | "member";
+  isOwner: boolean;
+}
+
+export type AccountDeleteBlocker = {
+  orgId: string;
+  orgName: string;
+  orgSlug: string;
+  reason: "owner" | "member";
+};
+
+export async function getAccountProfile(): Promise<{ profile: UserProfile }> {
+  return (await authFetch("/account/profile")) as unknown as {
+    profile: UserProfile;
+  };
+}
+
+export async function updateAccountProfile(patch: {
+  firstName?: string | null;
+  lastName?: string | null;
+}): Promise<{ success: boolean; profile: UserProfile }> {
+  return (await authFetch("/account/profile", {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  })) as unknown as { success: boolean; profile: UserProfile };
+}
+
+export async function listAccountOrganizations(): Promise<{
+  organizations: AccountOrganization[];
+}> {
+  return (await authFetch("/account/organizations")) as unknown as {
+    organizations: AccountOrganization[];
+  };
+}
+
+export async function leaveOrganization(orgId: string): Promise<void> {
+  await authFetch(`/orgs/${encodeURIComponent(orgId)}/leave`, {
+    method: "POST",
+    body: "{}",
+  });
+}
+
+export async function transferOrganizationOwnership(
+  orgId: string,
+  email: string,
+): Promise<void> {
+  await authFetch(`/orgs/${encodeURIComponent(orgId)}/transfer`, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function deleteUserAccount(): Promise<void> {
+  await authFetch("/account", { method: "DELETE" });
 }
 
 export async function listOrgs(): Promise<{ orgs: OrgSummary[] }> {

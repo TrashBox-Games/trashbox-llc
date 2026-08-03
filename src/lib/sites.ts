@@ -20,6 +20,8 @@ export const PORTAL_PATHS = {
   root: "/portal/",
   /** Org picker — select or create an organization before product surfaces. */
   orgs: "/portal/orgs/",
+  /** Personal account settings (global profile, leave/transfer, delete). */
+  account: "/portal/account/",
   /** Workspace home for the selected organization (projects). */
   home: "/portal/",
   login: "/portal/login/",

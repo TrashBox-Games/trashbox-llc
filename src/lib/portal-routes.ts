@@ -10,6 +10,7 @@ export const RESERVED_ORG_SLUGS = new Set([
   "confirm",
   "forgot-password",
   "orgs",
+  "account",
   "inbox",
   "membership",
   "settings",

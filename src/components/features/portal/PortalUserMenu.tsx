@@ -17,6 +17,7 @@ interface PortalUserMenuProps {
   email: string;
   name?: string | null;
   clientName?: string | null;
+  settingsHref?: string;
   onSignOut: () => void | Promise<void>;
 }
 
@@ -75,6 +76,7 @@ export function PortalUserMenu({
   email,
   name,
   clientName,
+  settingsHref = "/portal/account/",
   onSignOut,
 }: PortalUserMenuProps): JSX.Element {
   const displayName = portalUserDisplayName(email, name);
@@ -112,6 +114,14 @@ export function PortalUserMenu({
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => {
+            window.location.assign(settingsHref);
+          }}
+        >
+          <MaterialIcon name="settings" className="text-base!" />
+          Settings
+        </DropdownMenuItem>
         <DropdownMenuItem
           variant="destructive"
           onSelect={() => {
