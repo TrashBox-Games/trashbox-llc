@@ -8,6 +8,7 @@ import {
   type EmailContentEntry,
   type EmailContentKind,
 } from "@/components/features/portal/settings/EmailContentSettings";
+import { toast } from "@/components/ui/sonner";
 import {
   ApiError,
   createEmailSignature,
@@ -129,7 +130,6 @@ export function EmailContentSettingsSection({
   const [ready, setReady] = useState(Boolean(initialState));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const response = await api.list();
@@ -172,11 +172,10 @@ export function EmailContentSettingsSection({
     async (action: () => Promise<unknown>, successNotice: string) => {
       setBusy(true);
       setError(null);
-      setNotice(null);
       try {
         await action();
         await load();
-        setNotice(successNotice);
+        toast.success(successNotice);
       } catch (err) {
         setError(
           err instanceof ApiError
@@ -203,7 +202,6 @@ export function EmailContentSettingsSection({
       canManage={canManage}
       busy={busy}
       error={error}
-      notice={notice}
       previewContext={businessName ? { business: { name: businessName } } : undefined}
       onCreate={(draft) =>
         mutate(() => api.create(draft), `${label} saved.`)

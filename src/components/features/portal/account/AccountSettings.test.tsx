@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "@/components/ui/sonner";
 import { StubAuthProvider } from "@/lib/auth";
 import { StubPortalProvider } from "@/lib/portal";
 import {
@@ -15,6 +16,15 @@ const transferOrganizationOwnership = vi.fn();
 const deleteUserAccount = vi.fn();
 const getAccountProfile = vi.fn();
 const listAccountOrganizations = vi.fn();
+
+vi.mock("@/components/ui/sonner", () => ({
+  Toaster: () => null,
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    message: vi.fn(),
+  },
+}));
 
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
@@ -57,6 +67,8 @@ const initialState = {
 
 describe("AccountSettings", () => {
   beforeEach(() => {
+    vi.mocked(toast.success).mockClear();
+    vi.mocked(toast.message).mockClear();
     updateAccountProfile.mockReset();
     leaveOrganization.mockReset();
     transferOrganizationOwnership.mockReset();
@@ -188,7 +200,8 @@ describe("AccountSettings", () => {
       firstName: "Augusta",
       lastName: "Lovelace",
     });
-    expect(await screen.findByText(/profile updated/i)).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith("Profile updated.");
+    expect(screen.queryByText(/profile updated/i)).not.toBeInTheDocument();
   });
 
   it("requires typing the confirm phrase before deleting the account", async () => {

@@ -20,7 +20,6 @@ export interface RolesPermissionsSettingsProps {
   canManage?: boolean;
   busy?: boolean;
   error?: string | null;
-  notice?: string | null;
   onCreateRole: (input: CreateTeamRoleInput) => Promise<void>;
   onUpdateRole: (roleId: string, patch: UpdateTeamRoleInput) => Promise<void>;
   onDeleteRole: (roleId: string) => Promise<void>;
@@ -32,7 +31,6 @@ export function RolesPermissionsSettings({
   canManage = false,
   busy = false,
   error,
-  notice,
   onCreateRole,
   onUpdateRole,
   onDeleteRole,
@@ -58,11 +56,6 @@ export function RolesPermissionsSettings({
 
   return (
     <div className="space-y-10">
-      {notice && (
-        <p className="border border-outline-variant/20 bg-surface-container-low p-4 text-sm text-on-surface-variant">
-          {notice}
-        </p>
-      )}
       {error && <p className="text-sm text-red-300">{error}</p>}
 
       {isOwner && (

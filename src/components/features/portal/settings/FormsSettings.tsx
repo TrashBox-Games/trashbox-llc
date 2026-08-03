@@ -8,6 +8,7 @@ import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/sonner";
 import {
   ApiError,
   createForm,
@@ -48,7 +49,6 @@ export function FormsSettings({ initialState }: FormsSettingsProps) {
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(Boolean(initialState));
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editSlug, setEditSlug] = useState("");
@@ -111,7 +111,6 @@ export function FormsSettings({ initialState }: FormsSettingsProps) {
     }
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       const result = await createForm({
         name,
@@ -125,7 +124,7 @@ export function FormsSettings({ initialState }: FormsSettingsProps) {
       setNameDraft("");
       setSlugDraft("");
       setShowCreate(false);
-      setNotice(`Created “${result.form.name}”.`);
+      toast.success(`Created “${result.form.name}”.`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not create form");
     } finally {
@@ -138,14 +137,12 @@ export function FormsSettings({ initialState }: FormsSettingsProps) {
     setEditName(form.name);
     setEditSlug(form.slug);
     setError(null);
-    setNotice(null);
   }
 
   async function onSaveEdit() {
     if (!editingId) return;
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       const result = await updateForm(editingId, {
         name: editName.trim(),
@@ -161,7 +158,7 @@ export function FormsSettings({ initialState }: FormsSettingsProps) {
           .sort((a, b) => a.name.localeCompare(b.name)),
       );
       setEditingId(null);
-      setNotice("Form updated.");
+      toast.success("Form updated.");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not update form");
     } finally {
@@ -172,7 +169,6 @@ export function FormsSettings({ initialState }: FormsSettingsProps) {
   async function onToggleActive(form: ProjectForm) {
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       const result = await updateForm(form.formId, { active: !form.active });
       setForms((prev) =>
@@ -182,7 +178,7 @@ export function FormsSettings({ initialState }: FormsSettingsProps) {
             : entry,
         ),
       );
-      setNotice(
+      toast.success(
         result.form.active
           ? `“${result.form.name}” is active.`
           : `“${result.form.name}” is inactive.`,
@@ -442,11 +438,6 @@ export function FormsSettings({ initialState }: FormsSettingsProps) {
         </p>
       ) : null}
 
-      {notice ? (
-        <p className="border-outline-variant/20 bg-surface-container-low text-on-surface-variant border p-4 text-sm">
-          {notice}
-        </p>
-      ) : null}
       {error ? <p className="text-sm text-red-300">{error}</p> : null}
     </div>
   );

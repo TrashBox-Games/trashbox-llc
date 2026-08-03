@@ -94,12 +94,6 @@ export function PortalHome() {
         <PortalSkeleton variant="membership" />
       ) : (
         <div className="space-y-8">
-          {portal.billingNotice && (
-            <p className="border-outline-variant/20 bg-surface-container-low text-on-surface-variant border p-4 text-sm">
-              {portal.billingNotice}
-            </p>
-          )}
-
           <FadeIn
             className="border-outline-variant/15 bg-surface-container-low/60 border p-5 md:p-8"
             y={12}

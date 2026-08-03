@@ -121,7 +121,6 @@ export const Snippets: Story = {
 export const Saving: Story = {
   args: {
     busy: true,
-    notice: "Template saved.",
   },
 };
 

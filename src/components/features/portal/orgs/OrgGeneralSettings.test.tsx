@@ -1,12 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "@/components/ui/sonner";
 import { StubAuthProvider } from "@/lib/auth";
 import { StubPortalProvider } from "@/lib/portal";
 import { OrgGeneralSettings } from "./OrgGeneralSettings";
 
 const updateOrganization = vi.fn();
 const deleteOrganization = vi.fn();
+
+vi.mock("@/components/ui/sonner", () => ({
+  Toaster: () => null,
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    message: vi.fn(),
+  },
+}));
 
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
@@ -30,6 +40,8 @@ const org = {
 
 describe("OrgGeneralSettings", () => {
   beforeEach(() => {
+    vi.mocked(toast.success).mockClear();
+    vi.mocked(toast.message).mockClear();
     updateOrganization.mockReset();
     deleteOrganization.mockReset();
     updateOrganization.mockResolvedValue({
@@ -60,6 +72,25 @@ describe("OrgGeneralSettings", () => {
       orgName: "Acme Renamed",
     });
     expect(refreshWorkspace).toHaveBeenCalled();
+    expect(toast.success).toHaveBeenCalledWith("Organization name updated.");
+    expect(
+      screen.queryByText(/organization name updated/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("toasts when there are no rename changes", async () => {
+    const user = userEvent.setup();
+    render(
+      <StubAuthProvider value={{ status: "signedIn", configured: true }}>
+        <StubPortalProvider value={{ ready: true }}>
+          <OrgGeneralSettings org={org} />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+    expect(toast.message).toHaveBeenCalledWith("No changes to save.");
+    expect(updateOrganization).not.toHaveBeenCalled();
   });
 
   it("hides danger zone for non-owners", () => {

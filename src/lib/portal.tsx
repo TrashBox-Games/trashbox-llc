@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type { LeadInboxFiltersValue } from "@/components/features/portal/leads/LeadInboxFilters";
+import { toast } from "@/components/ui/sonner";
 import {
   ApiError,
   acceptTeamInvite,
@@ -137,7 +138,6 @@ export interface PortalContextValue {
   crmBusy: boolean;
   billingBusy: boolean;
   billingError: string | null;
-  billingNotice: string | null;
   businessName: string;
   setBusinessName: (value: string) => void;
   projectNameDraft: string;
@@ -158,7 +158,6 @@ export interface PortalContextValue {
   mailbox: MailboxStatusResponse | null;
   mailboxBusy: boolean;
   mailboxError: string | null;
-  mailboxNotice: string | null;
   /** Cached message threads keyed by submission id (survives tab switches). */
   messagesById: Record<string, LeadMessage[]>;
   /** Messages for the currently selected lead (convenience over messagesById). */
@@ -219,7 +218,6 @@ export function StubPortalProvider({
     crmBusy: false,
     billingBusy: false,
     billingError: null,
-    billingNotice: null,
     businessName: "",
     setBusinessName: () => {},
     projectNameDraft: "",
@@ -240,7 +238,6 @@ export function StubPortalProvider({
     mailbox: null,
     mailboxBusy: false,
     mailboxError: null,
-    mailboxNotice: null,
     messagesById: {},
     leadMessages: [],
     messageError: null,
@@ -286,7 +283,6 @@ export function PortalProvider({
   const [crmBusy, setCrmBusy] = useState(false);
   const [billingBusy, setBillingBusy] = useState(false);
   const [billingError, setBillingError] = useState<string | null>(null);
-  const [billingNotice, setBillingNotice] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState("");
   const [projectNameDraft, setProjectNameDraft] = useState("");
   const [orgs, setOrgs] = useState<OrgSummary[]>([]);
@@ -307,7 +303,6 @@ export function PortalProvider({
   const [mailbox, setMailbox] = useState<MailboxStatusResponse | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
   const [mailboxError, setMailboxError] = useState<string | null>(null);
-  const [mailboxNotice, setMailboxNotice] = useState<string | null>(null);
   const [messagesById, setMessagesById] = useState<
     Record<string, LeadMessage[]>
   >({});
@@ -320,15 +315,15 @@ export function PortalProvider({
     const mailboxMessage = params.get("message");
 
     if (billing === "success") {
-      setBillingNotice(
+      toast.success(
         "Billing updated. Plan status refreshes after Stripe confirms payment.",
       );
     } else if (billing === "cancel") {
-      setBillingNotice("Checkout canceled. Your plan was not changed.");
+      toast.message("Checkout canceled. Your plan was not changed.");
     }
 
     if (mailboxParam === "connected") {
-      setMailboxNotice("Mailbox connected successfully.");
+      toast.success("Mailbox connected successfully.");
     } else if (mailboxParam === "error") {
       setMailboxError(
         mailboxMessage || "Mailbox connection failed. Try again.",
@@ -726,7 +721,6 @@ export function PortalProvider({
   const onMailboxConnect = useCallback(async (provider: MailboxProvider) => {
     setMailboxBusy(true);
     setMailboxError(null);
-    setMailboxNotice(null);
     try {
       const { authUrl } = await connectMailbox(provider);
       window.location.assign(authUrl);
@@ -743,11 +737,10 @@ export function PortalProvider({
   const onMailboxDisconnect = useCallback(async () => {
     setMailboxBusy(true);
     setMailboxError(null);
-    setMailboxNotice(null);
     try {
       await disconnectMailbox();
       setMailbox({ connected: false });
-      setMailboxNotice("Mailbox disconnected.");
+      toast.success("Mailbox disconnected.");
     } catch (err) {
       setMailboxError(
         err instanceof ApiError ? err.message : "Failed to disconnect mailbox",
@@ -760,16 +753,17 @@ export function PortalProvider({
   const onMailboxSync = useCallback(async () => {
     setMailboxBusy(true);
     setMailboxError(null);
-    setMailboxNotice(null);
     try {
       const result = await syncMailbox();
       const box = await getMailbox();
       setMailbox(box);
-      setMailboxNotice(
-        result.imported > 0
-          ? `Synced ${result.imported} new message${result.imported === 1 ? "" : "s"}.`
-          : "Sync complete. No new replies.",
-      );
+      if (result.imported > 0) {
+        toast.success(
+          `Synced ${result.imported} new message${result.imported === 1 ? "" : "s"}.`,
+        );
+      } else {
+        toast.message("Sync complete. No new replies.");
+      }
       if (selectedId) {
         try {
           const res = await listLeadMessages(selectedId);
@@ -800,14 +794,13 @@ export function PortalProvider({
   const onMailboxPatch = useCallback(async (input: PatchMailboxInput) => {
     setMailboxBusy(true);
     setMailboxError(null);
-    setMailboxNotice(null);
     try {
       const box = await updateMailboxSettings(input);
       setMailbox((prev) => ({
         ...(prev ?? { connected: false }),
         ...box,
       }));
-      setMailboxNotice("Sending Preferences updated.");
+      toast.success("Sending Preferences updated.");
     } catch (err) {
       setMailboxError(
         err instanceof ApiError
@@ -852,7 +845,7 @@ export function PortalProvider({
     setBillingError(null);
     try {
       const result = await createOrganization({ orgName: name });
-      setBillingNotice(
+      toast.success(
         result.message ||
           "Organization created. Add a project to get an API key and inbox.",
       );
@@ -889,7 +882,7 @@ export function PortalProvider({
         const result = await createProject({ orgId, projectName: name });
         if (result.apiKey) {
           sessionStorage.setItem(PORTAL_ISSUED_API_KEY_STORAGE, result.apiKey);
-          setBillingNotice(
+          toast.success(
             "Project created. Open Settings → Developers → API Keys to copy your new key (shown once).",
           );
         }
@@ -977,7 +970,6 @@ export function PortalProvider({
       crmBusy,
       billingBusy,
       billingError,
-      billingNotice,
       businessName,
       setBusinessName,
       projectNameDraft,
@@ -998,7 +990,6 @@ export function PortalProvider({
       mailbox,
       mailboxBusy,
       mailboxError,
-      mailboxNotice,
       messagesById,
       leadMessages,
       messageError,
@@ -1030,7 +1021,6 @@ export function PortalProvider({
       crmBusy,
       billingBusy,
       billingError,
-      billingNotice,
       businessName,
       projectNameDraft,
       selectedId,
@@ -1047,7 +1037,6 @@ export function PortalProvider({
       mailbox,
       mailboxBusy,
       mailboxError,
-      mailboxNotice,
       messagesById,
       leadMessages,
       messageError,

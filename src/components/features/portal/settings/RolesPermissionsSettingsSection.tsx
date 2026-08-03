@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { RolesPermissionsSettings } from "@/components/features/portal/settings/RolesPermissionsSettings";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
+import { toast } from "@/components/ui/sonner";
 import {
   ApiError,
   createTeamRole,
@@ -21,7 +22,6 @@ export function RolesPermissionsSettingsSection() {
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const loadRoles = useCallback(async () => {
     const team = await getTeam();
@@ -54,11 +54,10 @@ export function RolesPermissionsSettingsSection() {
   async function onCreateRole(input: CreateTeamRoleInput) {
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       await createTeamRole(input);
       await loadRoles();
-      setNotice(`Created role ${input.name}.`);
+      toast.success(`Created role ${input.name}.`);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Failed to create role",
@@ -71,7 +70,6 @@ export function RolesPermissionsSettingsSection() {
   async function onUpdateRole(roleId: string, patch: UpdateTeamRoleInput) {
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       await updateTeamRole(roleId, patch);
       await loadRoles();
@@ -87,11 +85,10 @@ export function RolesPermissionsSettingsSection() {
   async function onDeleteRole(roleId: string) {
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       await deleteTeamRole(roleId);
       await loadRoles();
-      setNotice("Role deleted.");
+      toast.success("Role deleted.");
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Failed to delete role",
@@ -120,7 +117,6 @@ export function RolesPermissionsSettingsSection() {
       canManage={portal.hasPermission("manage_roles_and_permissions")}
       busy={busy}
       error={error}
-      notice={notice}
       onCreateRole={onCreateRole}
       onUpdateRole={onUpdateRole}
       onDeleteRole={onDeleteRole}

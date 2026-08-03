@@ -1,7 +1,17 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "@/components/ui/sonner";
 import { EmailContentSettingsSection } from "./EmailContentSettingsSection";
+
+vi.mock("@/components/ui/sonner", () => ({
+  Toaster: () => null,
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    message: vi.fn(),
+  },
+}));
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
@@ -66,6 +76,7 @@ const signatures: EmailSignature[] = [
 describe("EmailContentSettingsSection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(toast.success).mockClear();
     vi.mocked(listEmailTemplates).mockResolvedValue({
       items: [template],
       canManage: true,
@@ -126,7 +137,8 @@ describe("EmailContentSettingsSection", () => {
       ),
     );
     expect(listEmailTemplates).toHaveBeenCalledTimes(2);
-    expect(await screen.findByText(/template saved/i)).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith("Template saved.");
+    expect(screen.queryByText(/template saved/i)).not.toBeInTheDocument();
   });
 
   it("shows the API message when a write fails", async () => {

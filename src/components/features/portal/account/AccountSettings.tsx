@@ -12,6 +12,7 @@ import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/sonner";
 import {
   ApiError,
   deleteUserAccount,
@@ -110,7 +111,6 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
   const [ready, setReady] = useState(Boolean(initialState));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [blockers, setBlockers] = useState<AccountDeleteBlocker[]>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -158,14 +158,13 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
   async function onSaveProfile() {
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       const result = await updateAccountProfile({
         firstName: firstName.trim() || null,
         lastName: lastName.trim() || null,
       });
       setProfile(result.profile);
-      setNotice("Profile updated.");
+      toast.success("Profile updated.");
       portal.refreshWorkspace();
     } catch (err) {
       setError(
@@ -183,10 +182,9 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
     if (!ok) return;
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       await leaveOrganization(orgId);
-      setNotice(`Left ${org.orgName}.`);
+      toast.success(`Left ${org.orgName}.`);
       await load();
       portal.refreshWorkspace();
     } catch (err) {
@@ -212,10 +210,9 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
     if (!ok) return;
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       await transferOrganizationOwnership(orgId, email);
-      setNotice(`Ownership of ${org.orgName} transferred.`);
+      toast.success(`Ownership of ${org.orgName} transferred.`);
       setTransferEmail((prev) => ({ ...prev, [orgId]: "" }));
       await load();
       portal.refreshWorkspace();
@@ -247,7 +244,6 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
     if (deleteConfirm.trim() !== DELETE_ACCOUNT_CONFIRM_PHRASE) return;
     setBusy(true);
     setError(null);
-    setNotice(null);
     setBlockers([]);
     try {
       await deleteUserAccount();
@@ -467,11 +463,6 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
           </Button>
         </section>
 
-        {notice ? (
-          <p className="border-outline-variant/20 bg-surface-container-low text-on-surface-variant border p-4 text-sm">
-            {notice}
-          </p>
-        ) : null}
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
       </FadeIn>
 

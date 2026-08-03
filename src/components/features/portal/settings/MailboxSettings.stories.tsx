@@ -66,10 +66,3 @@ export const Busy: Story = {
     busy: true,
   },
 };
-
-export const WithNotice: Story = {
-  args: {
-    mailbox: connected,
-    notice: "Mailbox connected successfully.",
-  },
-};

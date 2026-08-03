@@ -14,7 +14,6 @@ export interface MailboxSettingsProps {
   mailbox: MailboxStatusResponse | null;
   busy?: boolean;
   error?: string | null;
-  notice?: string | null;
   onConnect: (provider: MailboxProvider) => Promise<void>;
   onDisconnect: () => Promise<void>;
   onSync: () => Promise<void>;
@@ -25,7 +24,6 @@ export function MailboxSettings({
   mailbox,
   busy = false,
   error,
-  notice,
   onConnect,
   onDisconnect,
   onSync,
@@ -50,11 +48,6 @@ export function MailboxSettings({
         </p>
       </div>
 
-      {notice && (
-        <p className="border border-outline-variant/20 bg-background/40 p-4 text-sm text-white">
-          {notice}
-        </p>
-      )}
       {error && (
         <p className="border border-error/40 bg-error/10 p-4 text-sm text-error">
           {error}

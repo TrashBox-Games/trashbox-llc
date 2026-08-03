@@ -15,7 +15,6 @@ export interface SendingPreferencesSettingsProps {
   mailbox: MailboxStatusResponse | null;
   busy?: boolean;
   error?: string | null;
-  notice?: string | null;
   onPatch: (input: PatchMailboxInput) => Promise<void>;
 }
 
@@ -24,7 +23,6 @@ export function SendingPreferencesSettings({
   mailbox,
   busy = false,
   error,
-  notice,
   onPatch,
 }: SendingPreferencesSettingsProps) {
   const identities = mailbox?.fromIdentities ?? [];
@@ -57,11 +55,6 @@ export function SendingPreferencesSettings({
         </p>
       </div>
 
-      {notice && (
-        <p className="border border-outline-variant/20 bg-background/40 p-4 text-sm text-white">
-          {notice}
-        </p>
-      )}
       {error && (
         <p className="border border-error/40 bg-error/10 p-4 text-sm text-error">
           {error}

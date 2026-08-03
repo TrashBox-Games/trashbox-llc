@@ -57,7 +57,6 @@ export interface EmailContentSettingsProps {
   canManage?: boolean;
   busy?: boolean;
   error?: string | null;
-  notice?: string | null;
   /** Values used to resolve merge fields in the preview. */
   previewContext?: TemplateVariableContext;
   onCreate: (draft: EmailContentDraft) => Promise<void>;
@@ -156,7 +155,6 @@ export function EmailContentSettings({
   canManage = false,
   busy = false,
   error,
-  notice,
   previewContext,
   onCreate,
   onUpdate,
@@ -250,11 +248,6 @@ export function EmailContentSettings({
         </p>
       </div>
 
-      {notice && (
-        <p className="border border-outline-variant/20 bg-background/40 p-4 text-sm text-white">
-          {notice}
-        </p>
-      )}
       {error && (
         <p className="border border-error/40 bg-error/10 p-4 text-sm text-error">
           {error}

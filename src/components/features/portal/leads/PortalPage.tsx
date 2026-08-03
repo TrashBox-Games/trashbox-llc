@@ -148,12 +148,6 @@ export function PortalApp({ tab }: PortalAppProps) {
         <PortalSkeleton variant={tab} />
       ) : (
         <>
-          {tab === "inbox" && portal.billingNotice && (
-            <p className="border-outline-variant/20 bg-surface-container-low text-on-surface-variant border p-4 text-sm">
-              {portal.billingNotice}
-            </p>
-          )}
-
           {tab === "membership" &&
             portal.account?.linked &&
             portal.account.role === "owner" && (

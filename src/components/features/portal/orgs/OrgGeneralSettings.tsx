@@ -5,6 +5,7 @@ import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/sonner";
 import {
   ApiError,
   deleteOrganization,
@@ -27,7 +28,6 @@ export function OrgGeneralSettings({ org }: OrgGeneralSettingsProps) {
   const [confirmName, setConfirmName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     setNameDraft(org.orgName);
@@ -40,15 +40,14 @@ export function OrgGeneralSettings({ org }: OrgGeneralSettingsProps) {
       return;
     }
     if (next === org.orgName) {
-      setNotice("No changes to save.");
+      toast.message("No changes to save.");
       return;
     }
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       await updateOrganization({ orgId: org.orgId, orgName: next });
-      setNotice("Organization name updated.");
+      toast.success("Organization name updated.");
       portal.refreshWorkspace();
     } catch (err) {
       setError(
@@ -71,7 +70,6 @@ export function OrgGeneralSettings({ org }: OrgGeneralSettingsProps) {
 
     setBusy(true);
     setError(null);
-    setNotice(null);
     try {
       await deleteOrganization({
         orgId: org.orgId,
@@ -163,11 +161,6 @@ export function OrgGeneralSettings({ org }: OrgGeneralSettingsProps) {
         </div>
       ) : null}
 
-      {notice ? (
-        <p className="border-outline-variant/20 bg-surface-container-low text-on-surface-variant max-w-xl border p-4 text-sm">
-          {notice}
-        </p>
-      ) : null}
       {error ? (
         <p className="max-w-xl text-sm text-red-300">{error}</p>
       ) : null}

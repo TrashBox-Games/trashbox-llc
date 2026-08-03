@@ -226,7 +226,7 @@ describe("EmailContentSettings", () => {
     });
   });
 
-  it("surfaces errors and notices from the caller", () => {
+  it("surfaces errors from the caller", () => {
     renderSettings({ error: "Shortcut /hours is already in use" });
     expect(
       screen.getByText("Shortcut /hours is already in use"),

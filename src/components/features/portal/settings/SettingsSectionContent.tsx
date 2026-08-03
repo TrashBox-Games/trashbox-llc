@@ -93,7 +93,6 @@ export function SettingsSectionContent({
         mailbox={portal.mailbox}
         busy={portal.mailboxBusy}
         error={portal.mailboxError}
-        notice={portal.mailboxNotice}
         onConnect={portal.onMailboxConnect}
         onDisconnect={portal.onMailboxDisconnect}
         onSync={portal.onMailboxSync}
@@ -108,7 +107,6 @@ export function SettingsSectionContent({
         mailbox={portal.mailbox}
         busy={portal.mailboxBusy}
         error={portal.mailboxError}
-        notice={portal.mailboxNotice}
         onPatch={portal.onMailboxPatch}
       />
     );
