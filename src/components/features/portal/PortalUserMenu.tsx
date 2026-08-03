@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 interface PortalUserMenuProps {
   email: string;
   name?: string | null;
-  clientName?: string | null;
   settingsHref?: string;
   onSignOut: () => void | Promise<void>;
 }
@@ -75,7 +74,6 @@ function UserAvatar({
 export function PortalUserMenu({
   email,
   name,
-  clientName,
   settingsHref = "/portal/account/",
   onSignOut,
 }: PortalUserMenuProps): JSX.Element {
@@ -105,11 +103,6 @@ export function PortalUserMenu({
               <span className="truncate text-xs text-muted-foreground">
                 {email}
               </span>
-              {clientName ? (
-                <span className="font-label truncate text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {clientName}
-                </span>
-              ) : null}
             </div>
           </div>
         </DropdownMenuLabel>

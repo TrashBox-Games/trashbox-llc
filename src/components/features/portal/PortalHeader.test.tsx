@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setSelectedWorkspace } from "@/lib/portal-selection";
@@ -184,9 +184,10 @@ describe("PortalHeader", () => {
     ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /account menu/i }));
-    expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
-    expect(screen.getByText("owner@example.com")).toBeInTheDocument();
-    expect(screen.getByText("Acme Co")).toBeInTheDocument();
+    const panel = screen.getByRole("menu");
+    expect(within(panel).getByText("Ada Lovelace")).toBeInTheDocument();
+    expect(within(panel).getByText("owner@example.com")).toBeInTheDocument();
+    expect(within(panel).queryByText("Acme Co")).not.toBeInTheDocument();
     await user.click(screen.getByRole("menuitem", { name: /sign out/i }));
     expect(signOutUser).toHaveBeenCalledTimes(1);
   });

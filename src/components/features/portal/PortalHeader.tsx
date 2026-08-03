@@ -253,13 +253,6 @@ export function PortalHeader() {
                 email={auth.email}
                 name={userName}
                 settingsHref={PORTAL_PATHS.account}
-                clientName={
-                  portal.account?.orgName
-                    ? `${portal.account.orgName}${
-                        portal.clientName ? ` / ${portal.clientName}` : ""
-                      }`
-                    : portal.clientName
-                }
                 onSignOut={() => auth.signOutUser()}
               />
             ) : (

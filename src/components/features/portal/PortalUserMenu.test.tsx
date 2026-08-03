@@ -62,18 +62,4 @@ describe("PortalUserMenu", () => {
     expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
   });
 
-  it("shows optional workspace name in the panel", async () => {
-    const user = userEvent.setup();
-    render(
-      <PortalUserMenu
-        email="owner@example.com"
-        name="Ada Lovelace"
-        clientName="Acme Co"
-        onSignOut={vi.fn()}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /account menu/i }));
-    expect(screen.getByText("Acme Co")).toBeInTheDocument();
-  });
 });
