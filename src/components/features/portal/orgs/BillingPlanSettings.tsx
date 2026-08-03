@@ -1,8 +1,10 @@
 "use client";
 
+import { PortalLink } from "@/components/features/portal/PortalLink";
 import { Button } from "@/components/ui/button";
 import type { OrgSummary } from "@/lib/api";
 import { usePortal } from "@/lib/portal";
+import { portalWorkspacePath } from "@/lib/portal-routes";
 
 interface BillingPlanSettingsProps {
   org: OrgSummary;
@@ -33,9 +35,21 @@ export function BillingPlanSettings({
 
   if (!hasProjects) {
     return (
-      <p className="text-on-surface-variant">
-        Create a project in this organization before starting a paid plan.
-      </p>
+      <div className="space-y-4">
+        <p className="text-on-surface-variant">
+          Create a project before starting a paid plan.
+        </p>
+        <Button asChild type="button" size="sm">
+          <PortalLink
+            href={portalWorkspacePath({
+              orgSlug: org.orgSlug,
+              surface: "orgHome",
+            })}
+          >
+            Create project
+          </PortalLink>
+        </Button>
+      </div>
     );
   }
 

@@ -65,6 +65,12 @@ type Story = StoryObj<typeof meta>;
 
 export const NoPlan: Story = {};
 
+export const NoProjects: Story = {
+  args: {
+    org: { ...org, projects: [] },
+  },
+};
+
 export const Premium: Story = {
   args: {
     org: { ...org, tier: "premium", hasBilling: true },

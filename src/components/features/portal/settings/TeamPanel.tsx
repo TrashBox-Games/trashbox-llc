@@ -12,6 +12,7 @@ import type {
 } from "@/lib/api";
 import { hasPermission, teamMemberDisplayName } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
+import { PortalLink } from "@/components/features/portal/PortalLink";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -502,11 +503,20 @@ export function TeamPanel({
               Invite Teammate
             </p>
             {atCap ? (
-              <p className="mt-4 text-sm text-on-surface-variant">
-                {tier === "basic"
-                  ? "Basic includes only the owner. Upgrade to Premium for up to 5 team seats."
-                  : `Team is at the ${memberLimit}-seat limit. Remove someone before inviting.`}
-              </p>
+              <div className="mt-4 space-y-4">
+                <p className="text-sm text-on-surface-variant">
+                  {tier === "basic"
+                    ? "Basic includes only the owner."
+                    : `Team is at the ${memberLimit}-seat limit. Remove someone before inviting.`}
+                </p>
+                {tier === "basic" ? (
+                  <Button asChild type="button" size="sm">
+                    <PortalLink href={settingsSectionPath("current-plan")}>
+                      View plans
+                    </PortalLink>
+                  </Button>
+                ) : null}
+              </div>
             ) : (
               <form
                 className="mt-6 max-w-md space-y-6"

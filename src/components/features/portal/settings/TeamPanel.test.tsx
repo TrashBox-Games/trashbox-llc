@@ -205,4 +205,40 @@ describe("TeamPanel", () => {
 
     expect(screen.getByText("Sarah Chen")).toBeInTheDocument();
   });
+
+  it("links to current plan when Basic is at the seat cap", () => {
+    render(
+      <TeamPanel
+        {...defaultProps}
+        tier="basic"
+        memberLimit={1}
+        memberCount={1}
+      />,
+    );
+
+    const plans = screen.getByRole("link", { name: /view plans/i });
+    expect(plans).toHaveAttribute("href", expect.stringContaining("current-plan"));
+    expect(
+      screen.queryByRole("button", { name: /send invite/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not show View plans when Premium is at the seat cap", () => {
+    render(
+      <TeamPanel
+        {...defaultProps}
+        tier="premium"
+        memberLimit={5}
+        memberCount={5}
+        members={[owner, member, adminMember]}
+      />,
+    );
+
+    expect(
+      screen.getByText(/at the 5-seat limit/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /view plans/i }),
+    ).not.toBeInTheDocument();
+  });
 });

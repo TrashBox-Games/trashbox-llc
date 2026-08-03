@@ -2,6 +2,7 @@
 
 import { BillingPlanSettings } from "@/components/features/portal/orgs/BillingPlanSettings";
 import { OrgGeneralSettings } from "@/components/features/portal/orgs/OrgGeneralSettings";
+import { PortalLink } from "@/components/features/portal/PortalLink";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { RolesPermissionsSettingsSection } from "@/components/features/portal/settings/RolesPermissionsSettingsSection";
 import { SettingsPlaceholder } from "@/components/features/portal/settings/SettingsPlaceholder";
@@ -9,9 +10,11 @@ import {
   TeamMembersSettings,
   type TeamMembersSettingsInitialState,
 } from "@/components/features/portal/settings/TeamMembersSettings";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import type { OrgSummary } from "@/lib/api";
 import { usePortal } from "@/lib/portal";
+import { portalWorkspacePath } from "@/lib/portal-routes";
 import {
   getSettingsSection,
   type SettingsSectionId,
@@ -56,10 +59,21 @@ export function OrgSettingsSectionContent({
   if (sectionId === "members") {
     if (org.projects.length === 0) {
       return (
-        <p className="text-on-surface-variant">
-          Create a project before inviting teammates. Team seats are billed on
-          the organization plan.
-        </p>
+        <div className="space-y-4">
+          <p className="text-on-surface-variant">
+            Create a project before inviting teammates.
+          </p>
+          <Button asChild type="button" size="sm">
+            <PortalLink
+              href={portalWorkspacePath({
+                orgSlug: org.orgSlug,
+                surface: "orgHome",
+              })}
+            >
+              Create project
+            </PortalLink>
+          </Button>
+        </div>
       );
     }
     return (
@@ -74,9 +88,21 @@ export function OrgSettingsSectionContent({
   if (sectionId === "roles-permissions") {
     if (org.projects.length === 0) {
       return (
-        <p className="text-on-surface-variant">
-          Create a project before managing roles and permissions.
-        </p>
+        <div className="space-y-4">
+          <p className="text-on-surface-variant">
+            Create a project before managing roles and permissions.
+          </p>
+          <Button asChild type="button" size="sm">
+            <PortalLink
+              href={portalWorkspacePath({
+                orgSlug: org.orgSlug,
+                surface: "orgHome",
+              })}
+            >
+              Create project
+            </PortalLink>
+          </Button>
+        </div>
       );
     }
     return <RolesPermissionsSettingsSection />;

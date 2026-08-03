@@ -381,9 +381,9 @@ export function AccountSettings({ initialState }: AccountSettingsProps) {
                     {org.isOwner ? (
                       <Button asChild size="sm" variant="outline">
                         <PortalLink
-                          href={orgSettingsSectionPath(org.orgSlug, "general")}
+                          href={orgSettingsSectionPath(org.orgSlug, "members")}
                         >
-                          Org settings
+                          Members
                         </PortalLink>
                       </Button>
                     ) : (

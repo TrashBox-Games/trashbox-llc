@@ -110,6 +110,15 @@ export const OwnerAtCapBasic: Story = {
   },
 };
 
+export const OwnerAtCapPremium: Story = {
+  args: {
+    tier: "premium",
+    memberLimit: 5,
+    memberCount: 5,
+    members: [owner, member],
+  },
+};
+
 export const MemberReadOnly: Story = {
   args: {
     role: "member",

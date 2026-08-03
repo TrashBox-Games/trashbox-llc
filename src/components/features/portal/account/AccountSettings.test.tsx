@@ -71,6 +71,28 @@ describe("AccountSettings", () => {
     });
   });
 
+  it("links owned organizations to Members settings", () => {
+    render(
+      <StubAuthProvider
+        value={{
+          status: "signedIn",
+          configured: true,
+          email: "owner@example.com",
+        }}
+      >
+        <StubPortalProvider value={{ ready: true, refreshWorkspace: vi.fn() }}>
+          <AccountSettings initialState={initialState} />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    const members = screen.getByRole("link", { name: /^members$/i });
+    expect(members).toHaveAttribute(
+      "href",
+      expect.stringMatching(/\/acme\/settings\/members\/?$/),
+    );
+  });
+
   it("lists owned organizations in the danger zone", () => {
     render(
       <StubAuthProvider

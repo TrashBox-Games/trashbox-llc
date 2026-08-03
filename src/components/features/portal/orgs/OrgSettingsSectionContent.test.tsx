@@ -62,6 +62,24 @@ describe("OrgSettingsSectionContent", () => {
     expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
   });
 
+  it("links members empty state to org home when there are no projects", () => {
+    render(
+      <StubAuthProvider
+        value={{ status: "signedIn", configured: true, email: "owner@example.com" }}
+      >
+        <StubPortalProvider value={{ ready: true }}>
+          <OrgSettingsSectionContent
+            org={{ ...org, projects: [] }}
+            sectionId="members"
+          />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    const cta = screen.getByRole("link", { name: /create project/i });
+    expect(cta).toHaveAttribute("href", "/portal/acme-co/");
+  });
+
   it("renders billing plan settings", () => {
     render(
       <StubAuthProvider
