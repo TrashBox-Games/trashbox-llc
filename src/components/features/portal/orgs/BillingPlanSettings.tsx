@@ -3,6 +3,7 @@
 import { EmailPlanTiers } from "@/components/features/email/EmailPlanTiers";
 import { PlanComparisonTable } from "@/components/features/email/PlanComparisonTable";
 import { PortalLink } from "@/components/features/portal/PortalLink";
+import { SubmissionUsageMeter } from "@/components/features/portal/orgs/SubmissionUsageMeter";
 import { Button } from "@/components/ui/button";
 import type { OrgSummary } from "@/lib/api";
 import {
@@ -86,14 +87,11 @@ export function BillingPlanSettings({
         </p>
         {typeof submissionsUsed === "number" &&
         typeof submissionLimit === "number" ? (
-          <p className="font-label text-outline mt-4 text-[10px] tracking-widest uppercase">
-            Usage:{" "}
-            <span className="text-white">
-              {submissionsUsed.toLocaleString()} /{" "}
-              {submissionLimit.toLocaleString()}
-            </span>{" "}
-            submissions this month
-          </p>
+          <SubmissionUsageMeter
+            className="mt-6"
+            used={submissionsUsed}
+            limit={submissionLimit}
+          />
         ) : null}
         {showActions ? (
           <div className="mt-6 flex flex-wrap gap-3">

@@ -2,6 +2,7 @@
 
 import { BillingPlanSettings } from "@/components/features/portal/orgs/BillingPlanSettings";
 import { OrgGeneralSettings } from "@/components/features/portal/orgs/OrgGeneralSettings";
+import { UsageSettings } from "@/components/features/portal/orgs/UsageSettings";
 import { PortalLink } from "@/components/features/portal/PortalLink";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
 import { RolesPermissionsSettingsSection } from "@/components/features/portal/settings/RolesPermissionsSettingsSection";
@@ -118,9 +119,7 @@ export function OrgSettingsSectionContent({
   }
 
   if (sectionId === "usage") {
-    return (
-      <BillingPlanSettings org={org} showActions={false} />
-    );
+    return <UsageSettings org={org} />;
   }
 
   return (

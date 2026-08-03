@@ -1,6 +1,14 @@
 "use client";
 
 import { FadeIn } from "@/components/atoms/FadeIn";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { FORM_PLANS } from "@/lib/form-plans";
 import { cn } from "@/lib/utils";
 
@@ -38,42 +46,35 @@ export function PlanComparisonTable({ className }: PlanComparisonTableProps) {
           Plan details
         </h2>
       </div>
-      <div className="border-outline-variant/20 overflow-x-auto border">
-        <table className="w-full min-w-[36rem] text-left text-sm">
-          <thead>
-            <tr className="border-outline-variant/20 border-b bg-surface-container-low">
-              <th className="font-label text-outline px-4 py-3 text-[10px] tracking-widest uppercase">
-                Feature
-              </th>
-              {FORM_PLANS.map((plan) => (
-                <th
-                  key={plan.id}
-                  className="font-headline px-4 py-3 text-base font-bold text-white"
-                >
-                  {plan.name}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ROWS.map((row) => (
-              <tr
-                key={row.label}
-                className="border-outline-variant/10 border-b last:border-0"
+      <Table className="min-w-[36rem]">
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead>Feature</TableHead>
+            {FORM_PLANS.map((plan) => (
+              <TableHead
+                key={plan.id}
+                className="font-headline text-base font-bold tracking-normal text-white normal-case"
               >
-                <th className="text-on-surface-variant px-4 py-3 font-normal">
-                  {row.label}
-                </th>
-                {FORM_PLANS.map((plan) => (
-                  <td key={plan.id} className="px-4 py-3 text-white">
-                    {row.value(plan)}
-                  </td>
-                ))}
-              </tr>
+                {plan.name}
+              </TableHead>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {ROWS.map((row) => (
+            <TableRow key={row.label}>
+              <TableCell className="text-on-surface-variant">
+                {row.label}
+              </TableCell>
+              {FORM_PLANS.map((plan) => (
+                <TableCell key={plan.id} className="text-white">
+                  {row.value(plan)}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </FadeIn>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { Fragment, type FormEvent, useState } from "react";
 import type {
   ClientRole,
   CreateTeamInviteInput,
@@ -13,6 +13,7 @@ import type {
 import { hasPermission, teamMemberDisplayName } from "@/lib/api";
 import { settingsSectionPath } from "@/lib/portal-settings";
 import { PortalLink } from "@/components/features/portal/PortalLink";
+import { PortalUserAvatar } from "@/components/features/portal/PortalUserMenu";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const DEFAULT_NONE = "__none__";
 
@@ -244,8 +253,8 @@ export function TeamPanel({
       )}
       {error && <p className="text-sm text-red-300">{error}</p>}
 
-      <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3 px-1">
           <p className="font-label text-[10px] uppercase tracking-widest text-outline">
             Members
           </p>
@@ -260,73 +269,62 @@ export function TeamPanel({
                   : ""}
           </p>
         </div>
-        <ul className="mt-6 space-y-6">
-          {members.map((member) => {
-            const isSelf = selfEmail === member.email.toLowerCase();
-            const editing = editingEmail === member.email;
-            const defaultName = defaultLabel(member);
-            const allowsAll = memberAllowsAllSenderNames(member, roles);
-            const memberRoleId = resolveMemberRoleId(member) ?? "";
-            return (
-              <li
-                key={member.email}
-                className="border-b border-outline-variant/10 pb-6"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-white">{teamMemberDisplayName(member)}</p>
-                    {teamMemberDisplayName(member) !== member.email && (
-                      <p className="mt-1 text-sm text-on-surface-variant">
-                        {member.email}
-                      </p>
-                    )}
-                    <p className="mt-1 font-label text-[10px] uppercase tracking-widest text-outline">
-                      {member.role === "owner" ? (
-                        <span className="text-primary">Owner</span>
-                      ) : (
-                        roleLabel(member, roles)
-                      )}
-                      {member.emailNotifications ? " · emails on" : " · emails off"}
-                      {defaultName ? ` · default: ${defaultName}` : ""}
-                      {allowsAll && member.role !== "owner"
-                        ? " · all sender names"
-                        : ""}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    {canToggleNotifications(member) && (
-                      <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                        <Checkbox
-                          id={`alerts-${member.email}`}
-                          checked={member.emailNotifications}
-                          disabled={busy}
-                          onCheckedChange={(checked) =>
-                            void onUpdateMember(member.email, {
-                              emailNotifications: checked === true,
-                            })
-                          }
-                        />
-                        <Label
-                          htmlFor={`alerts-${member.email}`}
-                          className="mb-0 text-xs font-body tracking-normal text-on-surface-variant normal-case"
-                        >
-                          Email alerts
-                        </Label>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Member</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Alerts</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {members.map((member) => {
+              const isSelf = selfEmail === member.email.toLowerCase();
+              const editing = editingEmail === member.email;
+              const displayName = teamMemberDisplayName(member);
+              const allowsAll = memberAllowsAllSenderNames(member, roles);
+              const memberRoleId = resolveMemberRoleId(member) ?? "";
+              const defaultName = defaultLabel(member);
+              return (
+                <Fragment key={member.email}>
+                  <TableRow>
+                    <TableCell>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <PortalUserAvatar label={displayName} size="sm" />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-white">
+                            {displayName}
+                            {isSelf ? (
+                              <span className="text-outline ml-2 text-xs font-normal">
+                                you
+                              </span>
+                            ) : null}
+                          </p>
+                          {displayName !== member.email ? (
+                            <p className="text-on-surface-variant truncate text-xs">
+                              {member.email}
+                            </p>
+                          ) : null}
+                          {defaultName ||
+                          (allowsAll && member.role !== "owner") ? (
+                            <p className="font-label text-outline mt-1 text-[10px] tracking-widest uppercase">
+                              {defaultName ? `default: ${defaultName}` : ""}
+                              {defaultName &&
+                              allowsAll &&
+                              member.role !== "owner"
+                                ? " · "
+                                : ""}
+                              {allowsAll && member.role !== "owner"
+                                ? "all sender names"
+                                : ""}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
-                    )}
-                    {canEditProfile(member) && !editing && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        disabled={busy}
-                        onClick={() => startEdit(member)}
-                      >
-                        Edit profile
-                      </Button>
-                    )}
-                    {canAssignRole(member) && assignableRoles.length > 0 && (
-                      <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                        <span className="sr-only">Role</span>
+                    </TableCell>
+                    <TableCell>
+                      {canAssignRole(member) && assignableRoles.length > 0 ? (
                         <Select
                           value={memberRoleId}
                           disabled={busy}
@@ -338,7 +336,7 @@ export function TeamPanel({
                         >
                           <SelectTrigger
                             size="sm"
-                            aria-label={`Role for ${teamMemberDisplayName(member)}`}
+                            aria-label={`Role for ${displayName}`}
                             className="w-auto min-w-[6rem]"
                           >
                             <SelectValue />
@@ -351,155 +349,216 @@ export function TeamPanel({
                             ))}
                           </SelectContent>
                         </Select>
+                      ) : member.role === "owner" ? (
+                        <span className="text-primary text-sm">Owner</span>
+                      ) : (
+                        <span className="text-sm">
+                          {roleLabel(member, roles)}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {canToggleNotifications(member) ? (
+                        <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+                          <Checkbox
+                            id={`alerts-${member.email}`}
+                            checked={member.emailNotifications}
+                            disabled={busy}
+                            onCheckedChange={(checked) =>
+                              void onUpdateMember(member.email, {
+                                emailNotifications: checked === true,
+                              })
+                            }
+                          />
+                          <Label
+                            htmlFor={`alerts-${member.email}`}
+                            className="mb-0 text-xs font-body tracking-normal text-on-surface-variant normal-case"
+                          >
+                            Email alerts
+                          </Label>
+                        </div>
+                      ) : (
+                        <span className="text-on-surface-variant text-xs">
+                          {member.emailNotifications ? "On" : "Off"}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex flex-wrap items-center justify-end gap-1">
+                        {canEditProfile(member) && !editing ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => startEdit(member)}
+                          >
+                            Edit
+                          </Button>
+                        ) : null}
+                        {canRemove(member) && !isSelf ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => void onRemoveMember(member.email)}
+                          >
+                            Remove
+                          </Button>
+                        ) : null}
                       </div>
-                    )}
-                    {canRemove(member) && !isSelf && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        disabled={busy}
-                        onClick={() => void onRemoveMember(member.email)}
-                      >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {editing && (
-                  <form
-                    className="mt-4 grid max-w-xl gap-4 md:grid-cols-2"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      void saveEdit(member);
-                    }}
-                  >
-                    <div>
-                      <Label htmlFor={`first-${member.email}`}>First Name</Label>
-                      <Input
-                        id={`first-${member.email}`}
-                        value={editFirst}
-                        onChange={(e) => setEditFirst(e.target.value)}
-                        disabled={busy}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`last-${member.email}`}>Last Name</Label>
-                      <Input
-                        id={`last-${member.email}`}
-                        value={editLast}
-                        onChange={(e) => setEditLast(e.target.value)}
-                        disabled={busy}
-                      />
-                    </div>
-                    {canAssignSenderNames(member) && (
-                      <div className="md:col-span-2 space-y-4">
-                        {allowsAll ? (
-                          <p className="text-sm text-on-surface-variant">
-                            This member&apos;s role allows all Sender Display
-                            Names. No allow-list is needed.
-                          </p>
-                        ) : (
-                          <>
-                            <div>
-                              <Label>Allowed Sender Display Names</Label>
-                              {senderDisplayNames.length === 0 ? (
-                                <p className="text-sm text-on-surface-variant">
-                                  Create names in{" "}
-                                  <a
-                                    href={settingsSectionPath("sending-preferences")}
-                                    className="text-white underline"
-                                  >
-                                    Sending Preferences
-                                  </a>{" "}
-                                  first.
+                    </TableCell>
+                  </TableRow>
+                  {editing ? (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={4} className="bg-surface-container-low/50 whitespace-normal">
+                        <form
+                          className="grid max-w-xl gap-4 md:grid-cols-2"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            void saveEdit(member);
+                          }}
+                        >
+                          <div>
+                            <Label htmlFor={`first-${member.email}`}>
+                              First Name
+                            </Label>
+                            <Input
+                              id={`first-${member.email}`}
+                              value={editFirst}
+                              onChange={(e) => setEditFirst(e.target.value)}
+                              disabled={busy}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`last-${member.email}`}>
+                              Last Name
+                            </Label>
+                            <Input
+                              id={`last-${member.email}`}
+                              value={editLast}
+                              onChange={(e) => setEditLast(e.target.value)}
+                              disabled={busy}
+                            />
+                          </div>
+                          {canAssignSenderNames(member) ? (
+                            <div className="space-y-4 md:col-span-2">
+                              {allowsAll ? (
+                                <p className="text-on-surface-variant text-sm">
+                                  This member&apos;s role allows all Sender
+                                  Display Names. No allow-list is needed.
                                 </p>
                               ) : (
-                                <ul className="mt-2 space-y-2">
-                                  {senderDisplayNames.map((identity) => (
-                                    <li key={identity.id}>
-                                      <div className="flex cursor-pointer items-center gap-3 text-sm text-white">
-                                        <Checkbox
-                                          id={`allowed-${member.email}-${identity.id}`}
-                                          checked={editAllowedIds.includes(
-                                            identity.id,
+                                <>
+                                  <div>
+                                    <Label>Allowed Sender Display Names</Label>
+                                    {senderDisplayNames.length === 0 ? (
+                                      <p className="text-on-surface-variant text-sm">
+                                        Create names in{" "}
+                                        <a
+                                          href={settingsSectionPath(
+                                            "sending-preferences",
                                           )}
-                                          disabled={busy}
-                                          onCheckedChange={() =>
-                                            toggleAllowed(identity.id)
-                                          }
-                                        />
-                                        <Label
-                                          htmlFor={`allowed-${member.email}-${identity.id}`}
-                                          className="mb-0 cursor-pointer text-sm font-body tracking-normal text-white normal-case"
+                                          className="text-white underline"
                                         >
-                                          {identity.name}
-                                        </Label>
-                                      </div>
-                                    </li>
-                                  ))}
-                                </ul>
+                                          Sending Preferences
+                                        </a>{" "}
+                                        first.
+                                      </p>
+                                    ) : (
+                                      <ul className="mt-2 space-y-2">
+                                        {senderDisplayNames.map((identity) => (
+                                          <li key={identity.id}>
+                                            <div className="flex cursor-pointer items-center gap-3 text-sm text-white">
+                                              <Checkbox
+                                                id={`allowed-${member.email}-${identity.id}`}
+                                                checked={editAllowedIds.includes(
+                                                  identity.id,
+                                                )}
+                                                disabled={busy}
+                                                onCheckedChange={() =>
+                                                  toggleAllowed(identity.id)
+                                                }
+                                              />
+                                              <Label
+                                                htmlFor={`allowed-${member.email}-${identity.id}`}
+                                                className="mb-0 cursor-pointer text-sm font-body tracking-normal text-white normal-case"
+                                              >
+                                                {identity.name}
+                                              </Label>
+                                            </div>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <Label htmlFor={`default-${member.email}`}>
+                                      Default Sender Display Name
+                                    </Label>
+                                    <Select
+                                      value={editDefaultId || DEFAULT_NONE}
+                                      disabled={
+                                        busy || editAllowedIds.length === 0
+                                      }
+                                      onValueChange={(value) =>
+                                        setEditDefaultId(
+                                          value === DEFAULT_NONE ? "" : value,
+                                        )
+                                      }
+                                    >
+                                      <SelectTrigger
+                                        id={`default-${member.email}`}
+                                      >
+                                        <SelectValue placeholder="None Assigned" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {editAllowedIds.length === 0 && (
+                                          <SelectItem value={DEFAULT_NONE}>
+                                            None Assigned
+                                          </SelectItem>
+                                        )}
+                                        {editAllowedIds.map((id) => {
+                                          const name =
+                                            senderDisplayNames.find(
+                                              (item) => item.id === id,
+                                            )?.name ?? id;
+                                          return (
+                                            <SelectItem key={id} value={id}>
+                                              {name}
+                                            </SelectItem>
+                                          );
+                                        })}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </>
                               )}
                             </div>
-                            <div>
-                              <Label htmlFor={`default-${member.email}`}>
-                                Default Sender Display Name
-                              </Label>
-                              <Select
-                                value={editDefaultId || DEFAULT_NONE}
-                                disabled={busy || editAllowedIds.length === 0}
-                                onValueChange={(value) =>
-                                  setEditDefaultId(
-                                    value === DEFAULT_NONE ? "" : value,
-                                  )
-                                }
-                              >
-                                <SelectTrigger id={`default-${member.email}`}>
-                                  <SelectValue placeholder="None Assigned" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {editAllowedIds.length === 0 && (
-                                    <SelectItem value={DEFAULT_NONE}>
-                                      None Assigned
-                                    </SelectItem>
-                                  )}
-                                  {editAllowedIds.map((id) => {
-                                    const name =
-                                      senderDisplayNames.find(
-                                        (item) => item.id === id,
-                                      )?.name ?? id;
-                                    return (
-                                      <SelectItem key={id} value={id}>
-                                        {name}
-                                      </SelectItem>
-                                    );
-                                  })}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                    <div className="flex gap-3 md:col-span-2">
-                      <Button type="submit" disabled={busy}>
-                        Save
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="link"
-                        disabled={busy}
-                        onClick={() => setEditingEmail(null)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </form>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                          ) : null}
+                          <div className="flex gap-3 md:col-span-2">
+                            <Button type="submit" disabled={busy}>
+                              Save
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="link"
+                              disabled={busy}
+                              onClick={() => setEditingEmail(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                </Fragment>
+              );
+            })}
+          </TableBody>
+        </Table>
       </section>
 
       {canManage && (
@@ -608,47 +667,69 @@ export function TeamPanel({
             )}
           </section>
 
-          <section className="border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
-            <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+          <section className="space-y-4">
+            <p className="font-label px-1 text-[10px] uppercase tracking-widest text-outline">
               Pending Invites
             </p>
             {invites.length === 0 ? (
-              <p className="mt-4 text-sm text-on-surface-variant">
+              <p className="text-on-surface-variant px-1 text-sm">
                 No pending invites.
               </p>
             ) : (
-              <ul className="mt-6 space-y-4">
-                {invites.map((invite) => (
-                  <li
-                    key={invite.email}
-                    className="flex flex-wrap items-center justify-between gap-3 border-b border-outline-variant/10 pb-4"
-                  >
-                    <div>
-                      <p className="text-white">{teamMemberDisplayName(invite)}</p>
-                      {teamMemberDisplayName(invite) !== invite.email && (
-                        <p className="mt-1 text-sm text-on-surface-variant">
-                          {invite.email}
-                        </p>
-                      )}
-                      <p className="mt-1 font-label text-[10px] uppercase tracking-widest text-outline">
-                        {invite.roleId
-                          ? roles.find((r) => r.id === invite.roleId)?.name ??
-                            invite.role
-                          : invite.role}{" "}
-                        · invited by {invite.invitedBy}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      disabled={busy}
-                      onClick={() => void onRevokeInvite(invite.email)}
-                    >
-                      Revoke
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Invite</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Invited by</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invites.map((invite) => {
+                    const displayName = teamMemberDisplayName(invite);
+                    return (
+                      <TableRow key={invite.email}>
+                        <TableCell>
+                          <div className="flex min-w-0 items-center gap-3">
+                            <PortalUserAvatar label={displayName} size="sm" />
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-white">
+                                {displayName}
+                              </p>
+                              {displayName !== invite.email ? (
+                                <p className="text-on-surface-variant truncate text-xs">
+                                  {invite.email}
+                                </p>
+                              ) : null}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {invite.roleId
+                            ? roles.find((r) => r.id === invite.roleId)?.name ??
+                              invite.role
+                            : invite.role}
+                        </TableCell>
+                        <TableCell className="text-on-surface-variant text-sm">
+                          {invite.invitedBy}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => void onRevokeInvite(invite.email)}
+                          >
+                            Revoke
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             )}
           </section>
         </>

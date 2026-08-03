@@ -63,7 +63,7 @@ const meta = {
   tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <div className="max-w-2xl bg-background p-8">
+      <div className="max-w-4xl bg-background p-8">
         <Story />
       </div>
     ),
@@ -100,17 +100,18 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const OwnerPremium: Story = {};
+export const Default: Story = {};
 
-export const OwnerAtCapBasic: Story = {
+export const OwnerAtCapSolo: Story = {
   args: {
-    tier: "free",
-    memberLimit: 2,
-    memberCount: 2,
+    tier: "solo",
+    memberLimit: 1,
+    memberCount: 1,
+    members: [owner],
   },
 };
 
-export const OwnerAtCapPremium: Story = {
+export const OwnerAtCapTeam: Story = {
   args: {
     tier: "team",
     memberLimit: 5,

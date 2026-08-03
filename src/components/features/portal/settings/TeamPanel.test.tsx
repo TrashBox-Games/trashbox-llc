@@ -136,7 +136,7 @@ describe("TeamPanel", () => {
       />,
     );
 
-    const editButtons = screen.getAllByRole("button", { name: /edit profile/i });
+    const editButtons = screen.getAllByRole("button", { name: /^edit$/i });
     await user.click(editButtons[1]!);
     await user.click(screen.getByRole("checkbox", { name: /Support/i }));
     selectOption(
@@ -165,7 +165,7 @@ describe("TeamPanel", () => {
       />,
     );
 
-    const editButtons = screen.getAllByRole("button", { name: /edit profile/i });
+    const editButtons = screen.getAllByRole("button", { name: /^edit$/i });
     await user.click(editButtons[1]!);
 
     expect(
@@ -204,6 +204,41 @@ describe("TeamPanel", () => {
     );
 
     expect(screen.getByText("Sarah Chen")).toBeInTheDocument();
+  });
+
+  it("renders members and pending invites as tables", () => {
+    render(
+      <TeamPanel
+        {...defaultProps}
+        members={[owner, member]}
+        memberCount={2}
+        invites={[
+          {
+            email: "new@example.com",
+            role: "member",
+            roleId: "member",
+            invitedBy: "owner@example.com",
+            createdAt: "2026-07-10T00:00:00.000Z",
+            expiresAt: "2026-07-24T00:00:00.000Z",
+            emailNotifications: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("columnheader", { name: /^member$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /^alerts$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /^invite$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /invited by/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^revoke$/i })).toBeInTheDocument();
   });
 
   it("links to current plan when Solo is at the seat cap", () => {
