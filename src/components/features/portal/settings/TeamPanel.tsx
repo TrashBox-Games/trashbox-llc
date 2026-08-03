@@ -49,7 +49,6 @@ export interface TeamPanelProps {
   tier?: "free" | "solo" | "team";
   busy?: boolean;
   error?: string | null;
-  notice?: string | null;
   onInvite: (input: CreateTeamInviteInput) => Promise<void>;
   onRevokeInvite: (email: string) => Promise<void>;
   onRemoveMember: (email: string) => Promise<void>;
@@ -105,7 +104,6 @@ export function TeamPanel({
   tier,
   busy = false,
   error,
-  notice,
   onInvite,
   onRevokeInvite,
   onRemoveMember,
@@ -255,11 +253,6 @@ export function TeamPanel({
 
   return (
     <div className="space-y-10">
-      {notice && (
-        <p className="border border-outline-variant/20 bg-surface-container-low p-4 text-sm text-on-surface-variant">
-          {notice}
-        </p>
-      )}
       {error && <p className="text-sm text-red-300">{error}</p>}
 
       <section className="space-y-4">

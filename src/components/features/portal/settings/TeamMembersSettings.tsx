@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { TeamPanel } from "@/components/features/portal/settings/TeamPanel";
 import { PortalSkeleton } from "@/components/features/portal/PortalSkeleton";
+import { toast } from "@/components/ui/sonner";
 import {
   ApiError,
   createTeamInvite,
@@ -73,7 +74,6 @@ export function TeamMembersSettings({
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(Boolean(initialState));
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const applyTeam = useCallback(
     (
@@ -112,7 +112,7 @@ export function TeamMembersSettings({
     const stored = sessionStorage.getItem("portalTeamNotice");
     if (stored) {
       sessionStorage.removeItem("portalTeamNotice");
-      setNotice(stored);
+      toast.success(stored);
     }
 
     let cancelled = false;
@@ -145,7 +145,7 @@ export function TeamMembersSettings({
     try {
       await createTeamInvite(input);
       await loadTeam();
-      setNotice(`Invite sent to ${input.email}.`);
+      toast.success(`Invite sent to ${input.email}.`);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Failed to send invite",
@@ -226,7 +226,6 @@ export function TeamMembersSettings({
       tier={planTier}
       busy={busy}
       error={error}
-      notice={notice}
       onInvite={onInvite}
       onRevokeInvite={onRevokeInvite}
       onRemoveMember={onRemoveMember}

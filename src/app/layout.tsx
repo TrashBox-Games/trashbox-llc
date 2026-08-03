@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Space_Grotesk } from "next/font/google";
 import { AuthProvider } from "@/lib/auth";
 import { MarketingLayout } from "@/components/features/marketing/MarketingLayout";
+import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -63,6 +64,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <MarketingLayout>{children}</MarketingLayout>
+          <Toaster />
         </AuthProvider>
       </body>
     </html>

@@ -1,5 +1,6 @@
 import type { Preview } from "@storybook/react";
 import { useLayoutEffect, type ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
 
 /**
@@ -48,6 +49,7 @@ const preview: Preview = {
       <DisableHardNavigation>
         <div className="bg-background text-on-background font-body antialiased">
           <Story />
+          <Toaster />
         </div>
       </DisableHardNavigation>
     ),
