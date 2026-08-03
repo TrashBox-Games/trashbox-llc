@@ -34,7 +34,7 @@ export type TeamMembersSettingsInitialState = {
 
 interface TeamMembersSettingsProps {
   currentUserEmail?: string;
-  tier?: "basic" | "premium";
+  tier?: "free" | "solo" | "team";
   /** When set, skip network load (Storybook/Chromatic demos). */
   initialState?: TeamMembersSettingsInitialState;
 }

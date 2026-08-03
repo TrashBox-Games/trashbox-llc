@@ -71,7 +71,7 @@ describe("PortalProvider session", () => {
       linked: true,
       email: "owner@example.com",
       clientName: "Acme",
-      tier: "basic",
+      tier: "free",
       active: true,
       hasBilling: false,
       hasApiKey: true,

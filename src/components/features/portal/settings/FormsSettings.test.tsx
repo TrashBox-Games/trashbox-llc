@@ -64,7 +64,7 @@ describe("FormsSettings", () => {
               orgName: "Acme",
               orgSlug: "acme",
               role: "owner",
-              tier: "basic",
+              tier: "free",
               active: true,
               hasBilling: false,
               projects: [

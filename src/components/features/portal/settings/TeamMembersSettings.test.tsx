@@ -73,7 +73,7 @@ describe("TeamMembersSettings", () => {
 
   it("fetches team on mount and shows members", async () => {
     render(
-      <TeamMembersSettings currentUserEmail="owner@example.com" tier="premium" />,
+      <TeamMembersSettings currentUserEmail="owner@example.com" tier="team" />,
     );
 
     expect(await screen.findByText(/owner@example.com/i)).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe("TeamMembersSettings", () => {
     render(
       <TeamMembersSettings
         currentUserEmail="owner@example.com"
-        tier="premium"
+        tier="team"
         initialState={{
           role: "owner",
           canManageTeamMembers: true,

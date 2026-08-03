@@ -18,11 +18,11 @@ const sections = [
   },
   {
     title: "Billing",
-    body: "Add Basic or Premium via Stripe Checkout. Manage or cancel anytime from the billing portal. Usage resets each UTC month.",
+    body: "Start on Free, then add Solo or Team via Stripe Checkout. Manage or cancel anytime from the billing portal. Submission usage resets each UTC month.",
   },
   {
     title: "Inbox",
-    body: "Submissions are always stored. When the monthly email quota is exhausted, messages still appear in the inbox even if outbound email is paused.",
+    body: "Submissions count toward your monthly plan limit. When that limit is reached, new form posts are rejected until you upgrade or the next month starts.",
   },
 ] as const;
 

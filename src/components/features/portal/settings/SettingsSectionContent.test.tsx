@@ -105,13 +105,13 @@ describe("SettingsSectionContent", () => {
       linked: true,
       email: "owner@example.com",
       clientName: "Acme",
-      tier: "premium",
+      tier: "team",
       active: true,
       hasBilling: true,
       hasApiKey: true,
       role: "owner",
-      emailsUsed: 25,
-      emailLimit: 1000,
+      submissionsUsed: 25,
+      submissionLimit: 5000,
     });
   });
 
@@ -125,7 +125,7 @@ describe("SettingsSectionContent", () => {
     expect(await screen.findByText(/^signed in$/i)).toBeInTheDocument();
     expect(screen.getByText("owner@example.com")).toBeInTheDocument();
     expect(screen.getByText(/Client: Acme/i)).toBeInTheDocument();
-    expect(screen.getByText("premium")).toBeInTheDocument();
+    expect(screen.getByText("team")).toBeInTheDocument();
   });
 
   it("renders api keys management in the api-keys section", async () => {

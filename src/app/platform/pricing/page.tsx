@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { EmailPlanTiers } from "@/components/features/email/EmailPlanTiers";
-import { PORTAL_PATHS } from "@/lib/sites";
+import { PlanComparisonTable } from "@/components/features/email/PlanComparisonTable";
 
 export const metadata: Metadata = {
   title: "Platform Pricing",
-  description: "Basic and Premium Form API plans for Trashbox Platform.",
+  description:
+    "Free, Solo, and Team Form API plans metered by monthly form submissions.",
 };
 
 export default function PortalPricingPage() {
@@ -19,21 +20,13 @@ export default function PortalPricingPage() {
           Simple plans. Free to start.
         </h1>
         <p className="mt-6 max-w-xl text-lg text-on-surface-variant">
-          Create a Form API account after you sign in, then add Basic or Premium when you need paid
-          email volume.
+          Plans are based on monthly form submissions. Start on Free, then add
+          Solo or Team when you need more volume or seats.
         </p>
       </FadeIn>
 
       <EmailPlanTiers className="mt-12" />
-
-      <div className="mt-14 text-center">
-        <a
-          href={PORTAL_PATHS.login}
-          className="inline-block bg-primary px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80"
-        >
-          Login to subscribe
-        </a>
-      </div>
+      <PlanComparisonTable className="mt-16" />
     </div>
   );
 }

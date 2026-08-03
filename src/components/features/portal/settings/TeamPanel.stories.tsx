@@ -89,7 +89,7 @@ const meta = {
     ],
     memberLimit: 5,
     memberCount: 2,
-    tier: "premium",
+    tier: "team",
     onInvite: fn().mockResolvedValue(undefined),
     onRevokeInvite: fn().mockResolvedValue(undefined),
     onRemoveMember: fn().mockResolvedValue(undefined),
@@ -104,7 +104,7 @@ export const OwnerPremium: Story = {};
 
 export const OwnerAtCapBasic: Story = {
   args: {
-    tier: "basic",
+    tier: "free",
     memberLimit: 2,
     memberCount: 2,
   },
@@ -112,7 +112,7 @@ export const OwnerAtCapBasic: Story = {
 
 export const OwnerAtCapPremium: Story = {
   args: {
-    tier: "premium",
+    tier: "team",
     memberLimit: 5,
     memberCount: 5,
     members: [owner, member],

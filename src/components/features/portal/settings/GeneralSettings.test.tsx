@@ -8,10 +8,10 @@ describe("GeneralSettings", () => {
       <GeneralSettings
         email="ezekielbleh@gmail.com"
         clientName="Trashbox LLC"
-        tier="basic"
+        tier="solo"
         active
-        emailsUsed={25}
-        emailLimit={1000}
+        submissionsUsed={25}
+        submissionLimit={500}
       />,
     );
 
@@ -19,9 +19,9 @@ describe("GeneralSettings", () => {
     expect(screen.getByText("ezekielbleh@gmail.com")).toBeInTheDocument();
     expect(screen.getByText(/Client: Trashbox LLC/i)).toBeInTheDocument();
     expect(screen.getByText(/Plan:/i)).toBeInTheDocument();
-    expect(screen.getByText("basic")).toBeInTheDocument();
+    expect(screen.getByText("solo")).toBeInTheDocument();
     expect(screen.getByText(/25/)).toBeInTheDocument();
-    expect(screen.getByText(/1,000/)).toBeInTheDocument();
+    expect(screen.getByText(/500/)).toBeInTheDocument();
   });
 
   it("marks inactive plans", () => {
@@ -29,10 +29,10 @@ describe("GeneralSettings", () => {
       <GeneralSettings
         email="user@example.com"
         clientName="Acme"
-        tier="premium"
+        tier="team"
         active={false}
-        emailsUsed={10}
-        emailLimit={100}
+        submissionsUsed={10}
+        submissionLimit={5000}
       />,
     );
 

@@ -189,7 +189,7 @@ export interface PortalContextValue {
   selectWorkspace: (orgId: string, projectId: string) => void;
   /** Reload account/orgs (e.g. after renaming an organization). */
   refreshWorkspace: () => void;
-  onUpgrade: (plan: "basic" | "premium") => Promise<void>;
+  onUpgrade: (plan: "solo" | "team") => Promise<void>;
   onManageBilling: () => Promise<void>;
 }
 
@@ -908,7 +908,7 @@ export function PortalProvider({
 
   const onProvisionAccount = onCreateOrganization;
 
-  const onUpgrade = useCallback(async (plan: "basic" | "premium") => {
+  const onUpgrade = useCallback(async (plan: "solo" | "team") => {
     setBillingBusy(true);
     setBillingError(null);
     try {

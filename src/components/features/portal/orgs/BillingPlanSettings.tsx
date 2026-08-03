@@ -1,8 +1,15 @@
 "use client";
 
+import { EmailPlanTiers } from "@/components/features/email/EmailPlanTiers";
+import { PlanComparisonTable } from "@/components/features/email/PlanComparisonTable";
 import { PortalLink } from "@/components/features/portal/PortalLink";
 import { Button } from "@/components/ui/button";
 import type { OrgSummary } from "@/lib/api";
+import {
+  normalizePlanTier,
+  planDisplayName,
+  type PlanTier,
+} from "@/lib/form-plans";
 import { usePortal } from "@/lib/portal";
 import { portalWorkspacePath } from "@/lib/portal-routes";
 
@@ -10,6 +17,12 @@ interface BillingPlanSettingsProps {
   org: OrgSummary;
   /** When true, show upgrade / manage actions. */
   showActions?: boolean;
+}
+
+function tierLabel(tier: PlanTier, hasBilling: boolean): string {
+  if (!hasBilling && tier === "free") return "Free";
+  if (!hasBilling && tier === "solo") return "Free";
+  return planDisplayName(tier);
 }
 
 /** Organization billing: current plan summary and Stripe checkout/portal actions. */
@@ -20,10 +33,12 @@ export function BillingPlanSettings({
   const portal = usePortal();
   const isOwner = org.role === "owner";
   const hasProjects = org.projects.length > 0;
-  const tier = portal.account?.tier ?? org.tier;
+  const tier = normalizePlanTier(portal.account?.tier ?? org.tier);
   const hasBilling = portal.account?.hasBilling ?? org.hasBilling;
-  const emailsUsed = portal.account?.emailsUsed;
-  const emailLimit = portal.account?.emailLimit;
+  const submissionsUsed = portal.account?.submissionsUsed;
+  const submissionLimit = portal.account?.submissionLimit;
+  const effectiveTier: PlanTier =
+    !hasBilling && (tier === "solo" || tier === "free") ? "free" : tier;
 
   if (!isOwner) {
     return (
@@ -54,78 +69,92 @@ export function BillingPlanSettings({
   }
 
   return (
-    <section className="border-outline-variant/10 bg-surface-container-low border p-6 md:p-8">
-      <p className="font-label text-outline text-[10px] tracking-widest uppercase">
-        Subscription
-      </p>
-      <h3 className="font-headline mt-3 text-2xl font-bold text-white md:text-3xl">
-        {hasBilling
-          ? tier === "premium"
-            ? "Premium"
-            : "Basic"
-          : "No paid plan yet"}
-      </h3>
-      <p className="text-on-surface-variant mt-3 max-w-2xl text-sm leading-relaxed">
-        {hasBilling
-          ? tier === "premium"
-            ? "Premium includes up to 5 team seats, email alerts to opted-in teammates, and confirmation emails to form submitters."
-            : "Basic includes 1 team seat (you) and email alerts to opted-in teammates. Upgrade to Premium for 5 seats and submitter confirmations."
-          : "Your organization is ready. Add a Stripe plan when you want paid Basic or Premium billing."}
-      </p>
-      {typeof emailsUsed === "number" && typeof emailLimit === "number" ? (
-        <p className="font-label text-outline mt-4 text-[10px] tracking-widest uppercase">
-          Usage:{" "}
-          <span className="text-white">
-            {emailsUsed.toLocaleString()} / {emailLimit.toLocaleString()}
-          </span>{" "}
-          emails this month
+    <div className="space-y-10">
+      <section className="border-outline-variant/10 bg-surface-container-low border p-6 md:p-8">
+        <p className="font-label text-outline text-[10px] tracking-widest uppercase">
+          Subscription
         </p>
-      ) : null}
-      {showActions ? (
-        <div className="mt-6 flex flex-wrap gap-3">
-          {!hasBilling && (
-            <>
+        <h3 className="font-headline mt-3 text-2xl font-bold text-white md:text-3xl">
+          {tierLabel(effectiveTier, hasBilling)}
+        </h3>
+        <p className="text-on-surface-variant mt-3 max-w-2xl text-sm leading-relaxed">
+          {effectiveTier === "team"
+            ? "Team includes up to 5 seats, 5,000 submissions / month, and submitter confirmations."
+            : effectiveTier === "solo" && hasBilling
+              ? "Solo includes 1 seat and 500 submissions / month. Upgrade to Team for more seats and confirmations."
+              : "Free includes 10 submissions / month and 1 seat. Add Solo or Team when you need more."}
+        </p>
+        {typeof submissionsUsed === "number" &&
+        typeof submissionLimit === "number" ? (
+          <p className="font-label text-outline mt-4 text-[10px] tracking-widest uppercase">
+            Usage:{" "}
+            <span className="text-white">
+              {submissionsUsed.toLocaleString()} /{" "}
+              {submissionLimit.toLocaleString()}
+            </span>{" "}
+            submissions this month
+          </p>
+        ) : null}
+        {showActions ? (
+          <div className="mt-6 flex flex-wrap gap-3">
+            {(!hasBilling || effectiveTier === "free") && (
+              <>
+                <Button
+                  type="button"
+                  disabled={portal.billingBusy}
+                  onClick={() => void portal.onUpgrade("team")}
+                >
+                  {portal.billingBusy ? "Redirecting…" : "Add Team plan"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={portal.billingBusy}
+                  onClick={() => void portal.onUpgrade("solo")}
+                >
+                  {portal.billingBusy ? "Redirecting…" : "Add Solo plan"}
+                </Button>
+              </>
+            )}
+            {hasBilling && effectiveTier === "solo" && (
               <Button
                 type="button"
                 disabled={portal.billingBusy}
-                onClick={() => void portal.onUpgrade("premium")}
+                onClick={() => void portal.onUpgrade("team")}
               >
-                {portal.billingBusy ? "Redirecting…" : "Add Premium plan"}
+                {portal.billingBusy ? "Redirecting…" : "Upgrade to Team"}
               </Button>
+            )}
+            {hasBilling && (
               <Button
                 type="button"
                 variant="outline"
                 disabled={portal.billingBusy}
-                onClick={() => void portal.onUpgrade("basic")}
+                onClick={() => void portal.onManageBilling()}
               >
-                {portal.billingBusy ? "Redirecting…" : "Add Basic plan"}
+                {portal.billingBusy ? "Redirecting…" : "Manage subscription"}
               </Button>
-            </>
-          )}
-          {hasBilling && tier !== "premium" && (
-            <Button
-              type="button"
-              disabled={portal.billingBusy}
-              onClick={() => void portal.onUpgrade("premium")}
-            >
-              {portal.billingBusy ? "Redirecting…" : "Upgrade to Premium"}
-            </Button>
-          )}
-          {hasBilling && (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={portal.billingBusy}
-              onClick={() => void portal.onManageBilling()}
-            >
-              {portal.billingBusy ? "Redirecting…" : "Manage subscription"}
-            </Button>
-          )}
-        </div>
-      ) : null}
-      {portal.billingError ? (
-        <p className="mt-4 text-sm text-red-300">{portal.billingError}</p>
-      ) : null}
-    </section>
+            )}
+          </div>
+        ) : null}
+        {portal.billingError ? (
+          <p className="mt-4 text-sm text-red-300">{portal.billingError}</p>
+        ) : null}
+      </section>
+
+      <EmailPlanTiers
+        currentPlan={effectiveTier}
+        className="mt-0"
+        busy={portal.billingBusy}
+        onSelectPlan={(plan) => {
+          if (plan === "free") {
+            if (hasBilling) void portal.onManageBilling();
+            return;
+          }
+          void portal.onUpgrade(plan);
+        }}
+      />
+      <PlanComparisonTable className="mt-0" />
+    </div>
   );
 }

@@ -1,0 +1,74 @@
+/** Marketing + portal plan catalog (submission-first). */
+export type PlanTier = "free" | "solo" | "team";
+export type PaidPlan = "solo" | "team";
+
+export function normalizePlanTier(raw: unknown): PlanTier {
+  if (raw === "free" || raw === "solo" || raw === "team") return raw;
+  if (raw === "basic") return "solo";
+  if (raw === "premium") return "team";
+  return "free";
+}
+
+export const FORM_PLANS = [
+  {
+    id: "free" as const,
+    name: "Free",
+    price: 0,
+    submissionsPerMonth: 10,
+    seats: 1,
+    formsPerProject: 1,
+    projects: "1",
+    submitterConfirmation: false,
+    blurb: "Try the Form API with a light monthly submission allowance.",
+    features: [
+      "10 form submissions / month",
+      "1 team seat",
+      "1 project",
+      "1 form",
+      "Inbox + API key",
+    ],
+  },
+  {
+    id: "solo" as const,
+    name: "Solo",
+    price: 10,
+    submissionsPerMonth: 500,
+    seats: 1,
+    formsPerProject: 10,
+    projects: "Unlimited",
+    submitterConfirmation: false,
+    blurb: "For one person shipping forms on a real site.",
+    features: [
+      "500 form submissions / month",
+      "1 team seat",
+      "10 forms per project",
+      "Unlimited projects",
+      "Inbox + API key",
+    ],
+  },
+  {
+    id: "team" as const,
+    name: "Team",
+    price: 20,
+    submissionsPerMonth: 5_000,
+    seats: 5,
+    formsPerProject: 100,
+    projects: "Unlimited",
+    submitterConfirmation: true,
+    featured: true,
+    blurb: "Share the inbox with your team and confirm submissions.",
+    features: [
+      "5,000 form submissions / month",
+      "Up to 5 team seats",
+      "100 forms per project",
+      "Unlimited projects",
+      "Submitter confirmation email",
+    ],
+  },
+] as const;
+
+export type FormPlan = (typeof FORM_PLANS)[number];
+
+export function planDisplayName(tier: PlanTier): string {
+  return FORM_PLANS.find((p) => p.id === tier)?.name ?? tier;
+}

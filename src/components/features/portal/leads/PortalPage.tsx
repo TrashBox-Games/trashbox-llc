@@ -163,17 +163,17 @@ export function PortalApp({ tab }: PortalAppProps) {
                 </p>
                 <h2 className="font-headline mt-3 text-2xl font-bold text-white md:text-3xl">
                   {portal.account.hasBilling
-                    ? portal.account.tier === "premium"
-                      ? "Premium"
-                      : "Basic"
-                    : "No paid plan yet"}
+                    ? portal.account.tier === "team"
+                      ? "Team"
+                      : "Solo"
+                    : "Free"}
                 </h2>
                 <p className="text-on-surface-variant mt-3 max-w-2xl text-sm leading-relaxed">
                   {portal.account.hasBilling
-                    ? portal.account.tier === "premium"
-                      ? "Premium includes up to 5 team seats, email alerts to opted-in teammates, and confirmation emails to form submitters."
-                      : "Basic includes 1 team seat (you) and email alerts to opted-in teammates. Upgrade to Premium for 5 seats and submitter confirmations."
-                    : "Your Form API account is ready. Add a Stripe plan when you want paid Basic or Premium billing."}
+                    ? portal.account.tier === "team"
+                      ? "Team includes up to 5 seats, 5,000 submissions / month, and submitter confirmations."
+                      : "Solo includes 1 seat and 500 submissions / month. Upgrade to Team for more seats and confirmations."
+                    : "Free includes 10 submissions / month. Add Solo or Team when you need more."}
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   {!portal.account.hasBilling && (
@@ -181,32 +181,32 @@ export function PortalApp({ tab }: PortalAppProps) {
                       <Button
                         type="button"
                         disabled={portal.billingBusy}
-                        onClick={() => void portal.onUpgrade("premium")}
+                        onClick={() => void portal.onUpgrade("team")}
                       >
                         {portal.billingBusy
                           ? "Redirecting…"
-                          : "Add Premium plan"}
+                          : "Add Team plan"}
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
                         disabled={portal.billingBusy}
-                        onClick={() => void portal.onUpgrade("basic")}
+                        onClick={() => void portal.onUpgrade("solo")}
                       >
-                        {portal.billingBusy ? "Redirecting…" : "Add Basic plan"}
+                        {portal.billingBusy ? "Redirecting…" : "Add Solo plan"}
                       </Button>
                     </>
                   )}
                   {portal.account.hasBilling &&
-                    portal.account.tier !== "premium" && (
+                    portal.account.tier !== "team" && (
                       <Button
                         type="button"
                         disabled={portal.billingBusy}
-                        onClick={() => void portal.onUpgrade("premium")}
+                        onClick={() => void portal.onUpgrade("team")}
                       >
                         {portal.billingBusy
                           ? "Redirecting…"
-                          : "Upgrade to Premium"}
+                          : "Upgrade to Team"}
                       </Button>
                     )}
                   {portal.account.hasBilling && (

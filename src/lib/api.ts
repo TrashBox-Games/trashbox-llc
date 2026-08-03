@@ -151,10 +151,12 @@ export interface AccountResponse {
   clientId?: string;
   clientName?: string;
   role?: TeamRole;
-  tier?: "basic" | "premium";
+  tier?: "free" | "solo" | "team";
   active?: boolean;
   hasBilling?: boolean;
   hasApiKey?: boolean;
+  submissionsUsed?: number;
+  submissionLimit?: number;
   emailsUsed?: number;
   emailLimit?: number;
   usageMonth?: string;
@@ -173,7 +175,7 @@ export interface OrgSummary {
   orgName: string;
   orgSlug: string;
   role: TeamRole;
-  tier: "basic" | "premium";
+  tier: "free" | "solo" | "team";
   active: boolean;
   hasBilling: boolean;
   projects: OrgProjectRef[];
@@ -727,7 +729,7 @@ export async function updateForm(
 }
 
 export async function startCheckout(
-  plan: "basic" | "premium" = "premium",
+  plan: "solo" | "team" = "team",
 ): Promise<string> {
   const data = (await authFetch("/billing/checkout", {
     method: "POST",

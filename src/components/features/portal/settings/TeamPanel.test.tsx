@@ -206,11 +206,11 @@ describe("TeamPanel", () => {
     expect(screen.getByText("Sarah Chen")).toBeInTheDocument();
   });
 
-  it("links to current plan when Basic is at the seat cap", () => {
+  it("links to current plan when Solo is at the seat cap", () => {
     render(
       <TeamPanel
         {...defaultProps}
-        tier="basic"
+        tier="solo"
         memberLimit={1}
         memberCount={1}
       />,
@@ -223,11 +223,11 @@ describe("TeamPanel", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("does not show View plans when Premium is at the seat cap", () => {
+  it("does not show View plans when Team is at the seat cap", () => {
     render(
       <TeamPanel
         {...defaultProps}
-        tier="premium"
+        tier="team"
         memberLimit={5}
         memberCount={5}
         members={[owner, member, adminMember]}

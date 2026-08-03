@@ -98,7 +98,7 @@ describe("api key management", () => {
           linked: true,
           email: "owner@example.com",
           hasApiKey: true,
-          tier: "basic",
+          tier: "free",
           active: true,
           role: "owner",
         }),

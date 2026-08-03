@@ -15,10 +15,10 @@ const meta = {
   args: {
     email: "ezekielbleh@gmail.com",
     clientName: "Trashbox LLC",
-    tier: "basic",
+    tier: "free",
     active: true,
-    emailsUsed: 25,
-    emailLimit: 1000,
+    submissionsUsed: 3,
+    submissionLimit: 10,
   },
 } satisfies Meta<typeof GeneralSettings>;
 
@@ -30,14 +30,16 @@ export const Default: Story = {};
 export const InactivePlan: Story = {
   args: {
     active: false,
-    tier: "premium",
+    tier: "team",
+    submissionsUsed: 120,
+    submissionLimit: 5000,
   },
 };
 
 export const WithoutPlan: Story = {
   args: {
     tier: null,
-    emailsUsed: null,
-    emailLimit: null,
+    submissionsUsed: null,
+    submissionLimit: null,
   },
 };

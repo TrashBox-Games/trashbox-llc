@@ -8,7 +8,7 @@ const org = {
   orgName: "Acme Co",
   orgSlug: "acme-co",
   role: "owner" as const,
-  tier: "basic" as const,
+  tier: "free" as const,
   active: true,
   hasBilling: false,
   projects: [
@@ -40,11 +40,11 @@ const meta = {
             account: {
               linked: true,
               email: "owner@example.com",
-              tier: "basic",
+              tier: "free",
               hasBilling: false,
               role: "owner",
-              emailsUsed: 12,
-              emailLimit: 1000,
+              submissionsUsed: 3,
+              submissionLimit: 10,
             },
             billingBusy: false,
             onUpgrade: async () => undefined,
@@ -63,7 +63,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const NoPlan: Story = {};
+export const FreePlan: Story = {};
 
 export const NoProjects: Story = {
   args: {
@@ -71,9 +71,9 @@ export const NoProjects: Story = {
   },
 };
 
-export const Premium: Story = {
+export const TeamPlan: Story = {
   args: {
-    org: { ...org, tier: "premium", hasBilling: true },
+    org: { ...org, tier: "team", hasBilling: true },
   },
   decorators: [
     (Story) => (
@@ -90,11 +90,11 @@ export const Premium: Story = {
             account: {
               linked: true,
               email: "owner@example.com",
-              tier: "premium",
+              tier: "team",
               hasBilling: true,
               role: "owner",
-              emailsUsed: 120,
-              emailLimit: 10000,
+              submissionsUsed: 120,
+              submissionLimit: 5000,
             },
             billingBusy: false,
             onUpgrade: async () => undefined,

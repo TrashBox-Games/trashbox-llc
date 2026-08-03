@@ -35,7 +35,7 @@ const org = {
   orgName: "Acme Co",
   orgSlug: "acme-co",
   role: "owner" as const,
-  tier: "basic" as const,
+  tier: "free" as const,
   active: true,
   hasBilling: false,
   projects: [
@@ -98,6 +98,12 @@ describe("OrgSettingsSectionContent", () => {
       </StubAuthProvider>,
     );
 
-    expect(screen.getByText(/no paid plan yet/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /subscription plans/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^Solo$/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^Team$/i })).toBeInTheDocument();
+    expect(screen.getByText(/\$10/)).toBeInTheDocument();
+    expect(screen.getByText(/\$20/)).toBeInTheDocument();
   });
 });

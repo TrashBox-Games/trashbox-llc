@@ -22,7 +22,7 @@ const org = {
   orgName: "Acme Co",
   orgSlug: "acme-co",
   role: "owner" as const,
-  tier: "basic" as const,
+  tier: "free" as const,
   active: true,
   hasBilling: false,
   projects: [],

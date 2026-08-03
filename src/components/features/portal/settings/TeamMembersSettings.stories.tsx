@@ -84,7 +84,7 @@ const meta = {
   ],
   args: {
     currentUserEmail: "owner@example.com",
-    tier: "premium",
+    tier: "team",
     initialState: demoTeamState,
   },
 } satisfies Meta<typeof TeamMembersSettings>;
@@ -94,10 +94,10 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const BasicTier: Story = {
-  name: "Basic tier",
+export const SoloTier: Story = {
+  name: "Solo tier",
   args: {
-    tier: "basic",
+    tier: "solo",
     initialState: {
       ...demoTeamState,
       memberLimit: 1,

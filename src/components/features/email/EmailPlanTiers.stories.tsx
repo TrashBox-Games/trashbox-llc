@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { fn } from "storybook/test";
 import { EmailPlanTiers } from "./EmailPlanTiers";
 
 const meta = {
@@ -14,6 +15,7 @@ export const Default: Story = {};
 
 export const WithCurrentPlan: Story = {
   args: {
-    currentPlan: "premium",
+    currentPlan: "team",
+    onSelectPlan: fn(),
   },
 };

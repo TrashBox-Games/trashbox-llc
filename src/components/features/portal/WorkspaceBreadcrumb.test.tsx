@@ -15,7 +15,7 @@ const orgs = [
     orgName: "Acme Co",
     orgSlug: "acme-co",
     role: "owner" as const,
-    tier: "basic" as const,
+    tier: "free" as const,
     active: true,
     hasBilling: false,
     projects: [
@@ -32,7 +32,7 @@ const orgs = [
     orgName: "Beta LLC",
     orgSlug: "beta-llc",
     role: "member" as const,
-    tier: "premium" as const,
+    tier: "team" as const,
     active: true,
     hasBilling: true,
     projects: [{ projectId: "p3", projectName: "Docs", projectSlug: "docs" }],

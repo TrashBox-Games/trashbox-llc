@@ -28,7 +28,7 @@ export const Default: Story = {
                   orgName: "Acme Co",
               orgSlug: "acme-co",
                   role: "owner",
-                  tier: "basic",
+                  tier: "free",
                   active: true,
                   hasBilling: false,
                   projects: [
@@ -41,7 +41,7 @@ export const Default: Story = {
                   orgName: "Beta LLC",
               orgSlug: "beta-llc",
                   role: "member",
-                  tier: "premium",
+                  tier: "team",
                   active: true,
                   hasBilling: true,
                   projects: [{ projectId: "p3", projectName: "Docs", projectSlug: "docs" }],

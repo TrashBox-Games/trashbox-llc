@@ -25,7 +25,7 @@ describe("PortalHome", () => {
                 orgName: "Acme Co",
               orgSlug: "acme-co",
                 role: "owner",
-                tier: "basic",
+                tier: "free",
                 active: true,
                 hasBilling: false,
                 projects: [
@@ -43,7 +43,7 @@ describe("PortalHome", () => {
               projectName: "Marketing site",
               clientId: "p1",
               clientName: "Marketing site",
-              tier: "basic",
+              tier: "free",
               active: true,
               hasApiKey: true,
               hasBilling: false,

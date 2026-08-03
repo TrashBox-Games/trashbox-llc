@@ -37,7 +37,7 @@ export interface TeamPanelProps {
   senderDisplayNames?: FromIdentity[];
   memberLimit: number;
   memberCount: number;
-  tier?: "basic" | "premium";
+  tier?: "free" | "solo" | "team";
   busy?: boolean;
   error?: string | null;
   notice?: string | null;
@@ -251,7 +251,13 @@ export function TeamPanel({
           </p>
           <p className="font-label text-[10px] uppercase tracking-widest text-outline">
             Seats {memberCount} / {memberLimit}
-            {tier === "basic" ? " · Basic" : tier === "premium" ? " · Premium" : ""}
+            {tier === "free"
+              ? " · Free"
+              : tier === "solo"
+                ? " · Solo"
+                : tier === "team"
+                  ? " · Team"
+                  : ""}
           </p>
         </div>
         <ul className="mt-6 space-y-6">
@@ -505,11 +511,11 @@ export function TeamPanel({
             {atCap ? (
               <div className="mt-4 space-y-4">
                 <p className="text-sm text-on-surface-variant">
-                  {tier === "basic"
-                    ? "Basic includes only the owner."
+                  {tier === "free" || tier === "solo"
+                    ? `${tier === "free" ? "Free" : "Solo"} includes only the owner.`
                     : `Team is at the ${memberLimit}-seat limit. Remove someone before inviting.`}
                 </p>
-                {tier === "basic" ? (
+                {tier === "free" || tier === "solo" ? (
                   <Button asChild type="button" size="sm">
                     <PortalLink href={settingsSectionPath("current-plan")}>
                       View plans

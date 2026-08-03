@@ -62,7 +62,7 @@ export function OrgPicker() {
                 "Organization",
               orgSlug: "",
               role: portal.account.role || "member",
-              tier: (portal.account.tier || "basic") as "basic" | "premium",
+              tier: (portal.account.tier || "free") as "free" | "solo" | "team",
               active: portal.account.active !== false,
               hasBilling: Boolean(portal.account.hasBilling),
               projects: [

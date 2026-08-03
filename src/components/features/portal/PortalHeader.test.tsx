@@ -59,7 +59,7 @@ describe("PortalHeader", () => {
           orgName: "Acme Co",
               orgSlug: "acme-co",
           role: "owner",
-          tier: "basic",
+          tier: "free",
           active: true,
           hasBilling: false,
           projects: [{ projectId: "p1", projectName: "Marketing site", projectSlug: "marketing-site" }],

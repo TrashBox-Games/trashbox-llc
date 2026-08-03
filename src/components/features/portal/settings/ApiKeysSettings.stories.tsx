@@ -6,7 +6,7 @@ const ownerAccount: AccountResponse = {
   linked: true,
   email: "owner@example.com",
   clientName: "Acme",
-  tier: "premium",
+  tier: "team",
   active: true,
   hasBilling: true,
   hasApiKey: false,

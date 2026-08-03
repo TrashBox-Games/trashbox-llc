@@ -23,11 +23,11 @@ const features = [
   },
   {
     title: "Built-in spam protection",
-    body: "Honeypot fields and origin checks keep junk out of your inbox and email quota.",
+    body: "Honeypot fields and origin checks keep junk out of your inbox.",
   },
   {
     title: "Submitter confirmations",
-    body: "Premium sends a confirmation email to the person who filled out the form.",
+    body: "Team sends a confirmation email to the person who filled out the form.",
   },
   {
     title: "Stripe billing portal",

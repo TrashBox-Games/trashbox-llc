@@ -41,7 +41,7 @@ describe("OrgPicker", () => {
                 orgName: "Acme Co",
                 orgSlug: "acme-co",
                 role: "owner",
-                tier: "basic",
+                tier: "free",
                 active: true,
                 hasBilling: false,
                 projects: [
@@ -92,7 +92,7 @@ describe("OrgPicker", () => {
                 orgName: "Acme Co",
                 orgSlug: "acme-co",
                 role: "owner",
-                tier: "basic",
+                tier: "free",
                 active: true,
                 hasBilling: false,
                 projects: [

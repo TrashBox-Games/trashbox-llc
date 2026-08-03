@@ -3,6 +3,8 @@ export interface GeneralSettingsProps {
   clientName?: string | null;
   tier?: string | null;
   active?: boolean;
+  submissionsUsed?: number | null;
+  submissionLimit?: number | null;
   emailsUsed?: number | null;
   emailLimit?: number | null;
 }
@@ -12,10 +14,14 @@ export function GeneralSettings({
   clientName,
   tier,
   active = true,
+  submissionsUsed,
+  submissionLimit,
   emailsUsed,
   emailLimit,
 }: GeneralSettingsProps) {
-  const showUsage =
+  const showSubmissions =
+    typeof submissionsUsed === "number" && typeof submissionLimit === "number";
+  const showEmails =
     typeof emailsUsed === "number" && typeof emailLimit === "number";
 
   return (
@@ -34,7 +40,18 @@ export function GeneralSettings({
           <p className="font-label text-outline mt-2 text-[10px] tracking-widest uppercase">
             Plan: <span className="text-white">{tier}</span>
             {!active ? " · inactive" : ""}
-            {showUsage && (
+            {showSubmissions && (
+              <>
+                {" "}
+                · Usage:{" "}
+                <span className="text-white">
+                  {submissionsUsed.toLocaleString()} /{" "}
+                  {submissionLimit.toLocaleString()}
+                </span>{" "}
+                submissions
+              </>
+            )}
+            {!showSubmissions && showEmails && (
               <>
                 {" "}
                 · Usage:{" "}

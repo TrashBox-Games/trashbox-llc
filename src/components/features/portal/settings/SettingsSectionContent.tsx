@@ -78,6 +78,8 @@ export function SettingsSectionContent({
         clientName={portal.clientName || portal.account.clientName}
         tier={portal.account.tier}
         active={portal.account.active}
+        submissionsUsed={portal.account.submissionsUsed}
+        submissionLimit={portal.account.submissionLimit}
         emailsUsed={portal.account.emailsUsed}
         emailLimit={portal.account.emailLimit}
       />

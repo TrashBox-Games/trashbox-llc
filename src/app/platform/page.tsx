@@ -21,7 +21,7 @@ const cards = [
   {
     href: PLATFORM_PATHS.pricing,
     label: "Pricing",
-    blurb: "Basic and Premium plans with monthly email quotas.",
+    blurb: "Free, Solo, and Team plans metered by monthly form submissions.",
   },
   {
     href: PLATFORM_PATHS.api,
