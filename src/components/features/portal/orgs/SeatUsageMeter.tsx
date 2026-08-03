@@ -5,24 +5,23 @@ import {
   type UsageMeterProps,
 } from "@/components/features/portal/orgs/UsageMeter";
 
-export type SubmissionUsageMeterProps = Pick<
+export type SeatUsageMeterProps = Pick<
   UsageMeterProps,
   "used" | "limit" | "className"
 >;
 
-/** Monthly form-submission usage as a labeled progress bar. */
-export function SubmissionUsageMeter({
+/** Team seat usage as a labeled progress bar. */
+export function SeatUsageMeter({
   used,
   limit,
   className,
-}: SubmissionUsageMeterProps) {
+}: SeatUsageMeterProps) {
   return (
     <UsageMeter
-      label="Submissions"
+      label="Seats"
       used={used}
       limit={limit}
-      hint="this month"
-      ariaLabel="Monthly form submissions"
+      ariaLabel="Team member seats"
       className={className}
     />
   );

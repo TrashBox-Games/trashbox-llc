@@ -2,16 +2,16 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { StubAuthProvider } from "@/lib/auth";
 import { StubPortalProvider } from "@/lib/portal";
-import { UsageSettings } from "./UsageSettings";
+import { BillingPlanSettings } from "./BillingPlanSettings";
 
 const org = {
   orgId: "o1",
   orgName: "Acme Co",
   orgSlug: "acme-co",
   role: "owner" as const,
-  tier: "free" as const,
+  tier: "team" as const,
   active: true,
-  hasBilling: false,
+  hasBilling: true,
   projects: [
     {
       projectId: "p1",
@@ -21,8 +21,8 @@ const org = {
   ],
 };
 
-describe("UsageSettings", () => {
-  it("shows a submission progress bar for the current plan", () => {
+describe("BillingPlanSettings", () => {
+  it("shows submission and seat progress bars", () => {
     render(
       <StubAuthProvider
         value={{
@@ -37,32 +37,33 @@ describe("UsageSettings", () => {
             account: {
               linked: true,
               email: "owner@example.com",
-              tier: "free",
-              hasBilling: false,
+              orgId: "o1",
+              tier: "team",
+              hasBilling: true,
               role: "owner",
-              submissionsUsed: 4,
-              submissionLimit: 10,
-              memberCount: 1,
-              memberLimit: 1,
+              submissionsUsed: 120,
+              submissionLimit: 5000,
+              memberCount: 2,
+              memberLimit: 5,
             },
+            billingBusy: false,
+            onUpgrade: async () => undefined,
+            onManageBilling: async () => undefined,
           }}
         >
-          <UsageSettings org={org} />
+          <BillingPlanSettings org={org} />
         </StubPortalProvider>
       </StubAuthProvider>,
     );
 
     expect(
-      screen.getByRole("heading", { name: /^Free$/i }),
-    ).toBeInTheDocument();
-    expect(
       screen.getByRole("progressbar", { name: /monthly form submissions/i }),
-    ).toHaveAttribute("aria-valuenow", "4");
+    ).toHaveAttribute("aria-valuenow", "120");
     expect(
       screen.getByRole("progressbar", { name: /team member seats/i }),
-    ).toHaveAttribute("aria-valuenow", "1");
+    ).toHaveAttribute("aria-valuenow", "2");
     expect(
-      screen.getByRole("link", { name: /view plans/i }),
-    ).toBeInTheDocument();
+      screen.getByRole("progressbar", { name: /team member seats/i }),
+    ).toHaveAttribute("aria-valuemax", "5");
   });
 });

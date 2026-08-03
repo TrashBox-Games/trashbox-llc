@@ -45,6 +45,8 @@ const meta = {
               role: "owner",
               submissionsUsed: 210,
               submissionLimit: 500,
+              memberCount: 1,
+              memberLimit: 1,
             },
           }}
         >

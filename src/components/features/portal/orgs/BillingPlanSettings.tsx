@@ -3,12 +3,14 @@
 import { EmailPlanTiers } from "@/components/features/email/EmailPlanTiers";
 import { PlanComparisonTable } from "@/components/features/email/PlanComparisonTable";
 import { PortalLink } from "@/components/features/portal/PortalLink";
+import { SeatUsageMeter } from "@/components/features/portal/orgs/SeatUsageMeter";
 import { SubmissionUsageMeter } from "@/components/features/portal/orgs/SubmissionUsageMeter";
 import { Button } from "@/components/ui/button";
 import type { OrgSummary } from "@/lib/api";
 import {
   normalizePlanTier,
   planDisplayName,
+  seatsForPlanTier,
   type PlanTier,
 } from "@/lib/form-plans";
 import { usePortal } from "@/lib/portal";
@@ -47,6 +49,11 @@ export function BillingPlanSettings({
   const submissionLimit = portal.account?.submissionLimit;
   const effectiveTier: PlanTier =
     !hasBilling && (tier === "solo" || tier === "free") ? "free" : tier;
+  const memberCount = portal.account?.memberCount ?? 1;
+  const memberLimit = Math.max(
+    portal.account?.memberLimit ?? 0,
+    seatsForPlanTier(effectiveTier),
+  );
 
   if (!isOwner) {
     return (
@@ -92,14 +99,16 @@ export function BillingPlanSettings({
               ? "Solo includes 1 seat and 500 submissions / month. Upgrade to Team for more seats and confirmations."
               : "Free includes 10 submissions / month and 1 seat. Add Solo or Team when you need more."}
         </p>
-        {typeof submissionsUsed === "number" &&
-        typeof submissionLimit === "number" ? (
-          <SubmissionUsageMeter
-            className="mt-6"
-            used={submissionsUsed}
-            limit={submissionLimit}
-          />
-        ) : null}
+        <div className="mt-6 space-y-6">
+          {typeof submissionsUsed === "number" &&
+          typeof submissionLimit === "number" ? (
+            <SubmissionUsageMeter
+              used={submissionsUsed}
+              limit={submissionLimit}
+            />
+          ) : null}
+          <SeatUsageMeter used={memberCount} limit={memberLimit} />
+        </div>
         {showActions ? (
           <div className="mt-6 flex flex-wrap gap-3">
             {(!hasBilling || effectiveTier === "free") && (

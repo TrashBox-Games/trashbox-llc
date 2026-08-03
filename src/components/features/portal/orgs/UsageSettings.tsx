@@ -1,12 +1,14 @@
 "use client";
 
 import { PortalLink } from "@/components/features/portal/PortalLink";
+import { SeatUsageMeter } from "@/components/features/portal/orgs/SeatUsageMeter";
 import { SubmissionUsageMeter } from "@/components/features/portal/orgs/SubmissionUsageMeter";
 import { Button } from "@/components/ui/button";
 import type { OrgSummary } from "@/lib/api";
 import {
   normalizePlanTier,
   planDisplayName,
+  seatsForPlanTier,
   type PlanTier,
 } from "@/lib/form-plans";
 import { usePortal } from "@/lib/portal";
@@ -31,7 +33,13 @@ export function UsageSettings({ org }: UsageSettingsProps) {
   );
   const submissionsUsed = portal.account?.submissionsUsed ?? 0;
   const submissionLimit = portal.account?.submissionLimit;
-  const hasLimit = typeof submissionLimit === "number" && submissionLimit > 0;
+  const hasSubmissionLimit =
+    typeof submissionLimit === "number" && submissionLimit > 0;
+  const memberCount = portal.account?.memberCount ?? 1;
+  const memberLimit = Math.max(
+    portal.account?.memberLimit ?? 0,
+    seatsForPlanTier(tier),
+  );
 
   if (!isOwner) {
     return (
@@ -52,13 +60,17 @@ export function UsageSettings({ org }: UsageSettingsProps) {
         </h3>
       </div>
 
-      {hasLimit ? (
-        <SubmissionUsageMeter used={submissionsUsed} limit={submissionLimit} />
-      ) : (
-        <p className="text-on-surface-variant text-sm">
-          Usage will appear once this organization has billing data loaded.
-        </p>
-      )}
+      <div className="space-y-6">
+        {hasSubmissionLimit ? (
+          <SubmissionUsageMeter used={submissionsUsed} limit={submissionLimit} />
+        ) : (
+          <p className="text-on-surface-variant text-sm">
+            Submission usage will appear once this organization has billing data
+            loaded.
+          </p>
+        )}
+        <SeatUsageMeter used={memberCount} limit={memberLimit} />
+      </div>
 
       <Button asChild type="button" size="sm" variant="outline">
         <PortalLink href={orgSettingsSectionPath(org.orgSlug, "current-plan")}>
