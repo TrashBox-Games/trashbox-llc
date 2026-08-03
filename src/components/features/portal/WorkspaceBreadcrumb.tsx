@@ -79,7 +79,7 @@ export function WorkspaceBreadcrumb() {
             />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-56 p-2">
+        <DropdownMenuContent align="start" className="min-w-56">
           {orgs.map((org) => (
             <DropdownMenuItem
               key={org.orgId}
