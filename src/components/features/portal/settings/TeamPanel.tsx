@@ -570,11 +570,11 @@ export function TeamPanel({
             {atCap ? (
               <div className="mt-4 space-y-4">
                 <p className="text-sm text-on-surface-variant">
-                  {tier === "free" || tier === "solo"
-                    ? `${tier === "free" ? "Free" : "Solo"} includes only the owner.`
+                  {memberLimit <= 1
+                    ? `${tier === "solo" ? "Solo" : "Free"} includes only the owner.`
                     : `Team is at the ${memberLimit}-seat limit. Remove someone before inviting.`}
                 </p>
-                {tier === "free" || tier === "solo" ? (
+                {memberLimit <= 1 ? (
                   <Button asChild type="button" size="sm">
                     <PortalLink href={settingsSectionPath("current-plan")}>
                       View plans

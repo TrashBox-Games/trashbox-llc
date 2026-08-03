@@ -34,8 +34,15 @@ export function BillingPlanSettings({
   const portal = usePortal();
   const isOwner = org.role === "owner";
   const hasProjects = org.projects.length > 0;
-  const tier = normalizePlanTier(portal.account?.tier ?? org.tier);
-  const hasBilling = portal.account?.hasBilling ?? org.hasBilling;
+  const tier = normalizePlanTier(
+    portal.account?.orgId === org.orgId
+      ? (portal.account.tier ?? org.tier)
+      : org.tier,
+  );
+  const hasBilling =
+    portal.account?.orgId === org.orgId
+      ? (portal.account.hasBilling ?? org.hasBilling)
+      : org.hasBilling;
   const submissionsUsed = portal.account?.submissionsUsed;
   const submissionLimit = portal.account?.submissionLimit;
   const effectiveTier: PlanTier =

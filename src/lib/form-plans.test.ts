@@ -3,6 +3,7 @@ import {
   FORM_PLANS,
   normalizePlanTier,
   planDisplayName,
+  seatsForPlanTier,
 } from "./form-plans";
 
 describe("form-plans", () => {
@@ -18,5 +19,11 @@ describe("form-plans", () => {
     expect(normalizePlanTier("basic")).toBe("solo");
     expect(normalizePlanTier("premium")).toBe("team");
     expect(planDisplayName("team")).toBe("Team");
+  });
+
+  it("maps seat limits by tier", () => {
+    expect(seatsForPlanTier("free")).toBe(1);
+    expect(seatsForPlanTier("solo")).toBe(1);
+    expect(seatsForPlanTier("team")).toBe(5);
   });
 });

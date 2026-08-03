@@ -20,6 +20,7 @@ import {
   type TeamRole,
   type UpdateTeamMemberInput,
 } from "@/lib/api";
+import { normalizePlanTier, seatsForPlanTier } from "@/lib/form-plans";
 
 export type TeamMembersSettingsInitialState = {
   members: TeamMember[];
@@ -29,11 +30,13 @@ export type TeamMembersSettingsInitialState = {
   canManageTeamMembers: boolean;
   memberLimit: number;
   memberCount: number;
+  tier?: "free" | "solo" | "team";
   senderDisplayNames?: FromIdentity[];
 };
 
 interface TeamMembersSettingsProps {
   currentUserEmail?: string;
+  /** Fallback when the team API omits tier (stories / older API). */
   tier?: "free" | "solo" | "team";
   /** When set, skip network load (Storybook/Chromatic demos). */
   initialState?: TeamMembersSettingsInitialState;
@@ -41,7 +44,7 @@ interface TeamMembersSettingsProps {
 
 export function TeamMembersSettings({
   currentUserEmail,
-  tier,
+  tier: tierProp,
   initialState,
 }: TeamMembersSettingsProps) {
   const [members, setMembers] = useState<TeamMember[]>(
@@ -58,8 +61,11 @@ export function TeamMembersSettings({
   const [canManageTeamMembers, setCanManageTeamMembers] = useState(
     initialState?.canManageTeamMembers ?? false,
   );
+  const [planTier, setPlanTier] = useState<"free" | "solo" | "team">(
+    normalizePlanTier(initialState?.tier ?? tierProp ?? "free"),
+  );
   const [memberLimit, setMemberLimit] = useState(
-    initialState?.memberLimit ?? 1,
+    initialState?.memberLimit ?? seatsForPlanTier(planTier),
   );
   const [memberCount, setMemberCount] = useState(
     initialState?.memberCount ?? 0,
@@ -69,20 +75,36 @@ export function TeamMembersSettings({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const applyTeam = useCallback(
+    (
+      team: Awaited<ReturnType<typeof getTeam>>,
+      mailbox: Awaited<ReturnType<typeof getMailbox>>,
+    ) => {
+      setMembers(team.members);
+      setInvites(team.invites);
+      setRoles(team.roles ?? []);
+      setRole(team.role);
+      setCanManageTeamMembers(
+        team.role === "owner" ||
+          hasPermission(team.permissions, "manage_team_members"),
+      );
+      const nextTier = normalizePlanTier(team.tier ?? tierProp ?? "free");
+      setPlanTier(nextTier);
+      // Prefer the higher of API limit and catalog seats for the resolved tier
+      // so a stale project context cannot pin Team orgs at 1 seat.
+      setMemberLimit(
+        Math.max(team.memberLimit ?? 0, seatsForPlanTier(nextTier)),
+      );
+      setMemberCount(team.memberCount);
+      setSenderDisplayNames(mailbox.fromIdentities ?? []);
+    },
+    [tierProp],
+  );
+
   const loadTeam = useCallback(async () => {
     const [team, mailbox] = await Promise.all([getTeam(), getMailbox()]);
-    setMembers(team.members);
-    setInvites(team.invites);
-    setRoles(team.roles ?? []);
-    setRole(team.role);
-    setCanManageTeamMembers(
-      team.role === "owner" ||
-        hasPermission(team.permissions, "manage_team_members"),
-    );
-    setMemberLimit(team.memberLimit);
-    setMemberCount(team.memberCount);
-    setSenderDisplayNames(mailbox.fromIdentities ?? []);
-  }, []);
+    applyTeam(team, mailbox);
+  }, [applyTeam]);
 
   useEffect(() => {
     if (initialState) return;
@@ -98,7 +120,9 @@ export function TeamMembersSettings({
       setReady(false);
       setError(null);
       try {
-        await loadTeam();
+        const [team, mailbox] = await Promise.all([getTeam(), getMailbox()]);
+        if (cancelled) return;
+        applyTeam(team, mailbox);
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -113,7 +137,7 @@ export function TeamMembersSettings({
     return () => {
       cancelled = true;
     };
-  }, [loadTeam, initialState]);
+  }, [applyTeam, initialState]);
 
   async function onInvite(input: CreateTeamInviteInput) {
     setBusy(true);
@@ -199,7 +223,7 @@ export function TeamMembersSettings({
       senderDisplayNames={senderDisplayNames}
       memberLimit={memberLimit}
       memberCount={memberCount}
-      tier={tier}
+      tier={planTier}
       busy={busy}
       error={error}
       notice={notice}

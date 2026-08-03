@@ -225,6 +225,8 @@ export interface TeamResponse {
   roles: ClientRole[];
   members: TeamMember[];
   invites: TeamInvite[];
+  /** Org billing tier when provided by the API. */
+  tier?: "free" | "solo" | "team";
   memberLimit: number;
   memberCount: number;
 }

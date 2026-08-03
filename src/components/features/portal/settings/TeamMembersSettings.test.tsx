@@ -20,12 +20,22 @@ vi.mock("@/lib/api", async (importOriginal) => {
 
 import { getTeam } from "@/lib/api";
 
-describe("TeamMembersSettings", () => {
-  beforeEach(() => {
-    vi.mocked(getTeam).mockResolvedValue({
-      clientId: "c1",
-      clientName: "Acme",
-      role: "owner",
+const teamOwnerResponse = {
+  clientId: "c1",
+  clientName: "Acme",
+  role: "owner" as const,
+  permissions: [
+    "manage_sender_display_names",
+    "allow_all_sender_display_names",
+    "manage_team_members",
+    "manage_roles_and_permissions",
+    "manage_api_keys",
+  ] as const,
+  roles: [
+    {
+      id: "admin",
+      name: "Admin",
+      system: true,
       permissions: [
         "manage_sender_display_names",
         "allow_all_sender_display_names",
@@ -33,42 +43,35 @@ describe("TeamMembersSettings", () => {
         "manage_roles_and_permissions",
         "manage_api_keys",
       ],
-      roles: [
-        {
-          id: "admin",
-          name: "Admin",
-          system: true,
-          permissions: [
-            "manage_sender_display_names",
-            "allow_all_sender_display_names",
-            "manage_team_members",
-            "manage_roles_and_permissions",
-            "manage_api_keys",
-          ],
-          createdAt: "2026-01-01T00:00:00.000Z",
-          updatedAt: "2026-01-01T00:00:00.000Z",
-        },
-        {
-          id: "member",
-          name: "Member",
-          system: true,
-          permissions: [],
-          createdAt: "2026-01-01T00:00:00.000Z",
-          updatedAt: "2026-01-01T00:00:00.000Z",
-        },
-      ],
-      members: [
-        {
-          email: "owner@example.com",
-          role: "owner",
-          joinedAt: "2026-01-01T00:00:00.000Z",
-          emailNotifications: true,
-        },
-      ],
-      invites: [],
-      memberLimit: 5,
-      memberCount: 1,
-    });
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    },
+    {
+      id: "member",
+      name: "Member",
+      system: true,
+      permissions: [],
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    },
+  ],
+  members: [
+    {
+      email: "owner@example.com",
+      role: "owner" as const,
+      joinedAt: "2026-01-01T00:00:00.000Z",
+      emailNotifications: true,
+    },
+  ],
+  invites: [],
+  tier: "team" as const,
+  memberLimit: 5,
+  memberCount: 1,
+};
+
+describe("TeamMembersSettings", () => {
+  beforeEach(() => {
+    vi.mocked(getTeam).mockResolvedValue({ ...teamOwnerResponse });
   });
 
   it("fetches team on mount and shows members", async () => {
@@ -80,6 +83,21 @@ describe("TeamMembersSettings", () => {
     await waitFor(() => {
       expect(getTeam).toHaveBeenCalledTimes(1);
     });
+    expect(await screen.findByText(/Seats 1 \/ 5/i)).toBeInTheDocument();
+  });
+
+  it("uses catalog Team seats when API returns a stale 1-seat limit", async () => {
+    vi.mocked(getTeam).mockResolvedValue({
+      ...teamOwnerResponse,
+      tier: "team",
+      memberLimit: 1,
+    });
+
+    render(
+      <TeamMembersSettings currentUserEmail="owner@example.com" tier="team" />,
+    );
+
+    expect(await screen.findByText(/Seats 1 \/ 5/i)).toBeInTheDocument();
   });
 
   it("renders from initialState without calling the API", () => {
@@ -102,6 +120,7 @@ describe("TeamMembersSettings", () => {
           ],
           invites: [],
           roles: [],
+          tier: "team",
           memberLimit: 5,
           memberCount: 1,
         }}

@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import type { OrgSummary } from "@/lib/api";
+import { normalizePlanTier } from "@/lib/form-plans";
 import { usePortal } from "@/lib/portal";
 import { portalWorkspacePath } from "@/lib/portal-routes";
 import {
@@ -80,7 +81,11 @@ export function OrgSettingsSectionContent({
     return (
       <TeamMembersSettings
         currentUserEmail={auth.email || portal.account?.email}
-        tier={portal.account?.tier ?? org.tier}
+        tier={normalizePlanTier(
+          portal.account?.orgId === org.orgId
+            ? (portal.account.tier ?? org.tier)
+            : org.tier,
+        )}
         initialState={teamMembersInitialState}
       />
     );

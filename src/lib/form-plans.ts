@@ -74,3 +74,8 @@ export type FormPlan = (typeof FORM_PLANS)[number];
 export function planDisplayName(tier: PlanTier): string {
   return FORM_PLANS.find((p) => p.id === tier)?.name ?? tier;
 }
+
+/** Seat allowance for a plan tier (members + pending invites). */
+export function seatsForPlanTier(tier: PlanTier): number {
+  return FORM_PLANS.find((p) => p.id === normalizePlanTier(tier))?.seats ?? 1;
+}
