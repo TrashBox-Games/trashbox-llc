@@ -130,7 +130,7 @@ export function BillingPlanSettings({
                 disabled={portal.billingBusy}
                 onClick={() => void portal.onManageBilling()}
               >
-                {portal.billingBusy ? "Redirecting…" : "Manage subscription"}
+                {portal.billingBusy ? "Redirecting…" : "Manage billing"}
               </Button>
             )}
           </div>

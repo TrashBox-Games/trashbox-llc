@@ -218,7 +218,7 @@ export function PortalApp({ tab }: PortalAppProps) {
                     >
                       {portal.billingBusy
                         ? "Redirecting…"
-                        : "Manage subscription"}
+                        : "Manage billing"}
                     </Button>
                   )}
                 </div>

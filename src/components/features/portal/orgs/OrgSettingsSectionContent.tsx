@@ -109,15 +109,8 @@ export function OrgSettingsSectionContent({
     return <RolesPermissionsSettingsSection />;
   }
 
-  if (sectionId === "current-plan" || sectionId === "upgrade-cancel") {
-    return (
-      <BillingPlanSettings
-        org={org}
-        showActions={
-          sectionId === "current-plan" || sectionId === "upgrade-cancel"
-        }
-      />
-    );
+  if (sectionId === "current-plan") {
+    return <BillingPlanSettings org={org} />;
   }
 
   if (sectionId === "usage") {

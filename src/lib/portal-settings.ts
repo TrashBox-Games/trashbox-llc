@@ -50,9 +50,6 @@ export type SettingsSectionId =
   | "api-documentation"
   | "current-plan"
   | "usage"
-  | "payment-methods"
-  | "invoices"
-  | "upgrade-cancel"
   | "password"
   | "two-factor"
   | "sessions"
@@ -111,13 +108,6 @@ export const PORTAL_ORG_SETTINGS_NAV: SettingsNavGroup[] = [
     items: [
       { id: "current-plan", label: "Current Plan", icon: "workspace_premium" },
       { id: "usage", label: "Usage", icon: "bar_chart" },
-      { id: "payment-methods", label: "Payment Methods", icon: "payments" },
-      { id: "invoices", label: "Invoices", icon: "receipt_long" },
-      {
-        id: "upgrade-cancel",
-        label: "Upgrade / Cancel",
-        icon: "trending_up",
-      },
     ],
   },
   {
@@ -222,6 +212,22 @@ function sectionMapFor(nav: SettingsNavGroup[]) {
 
 const ORG_SECTION_BY_ID = sectionMapFor(PORTAL_ORG_SETTINGS_NAV);
 const PROJECT_SECTION_BY_ID = sectionMapFor(PORTAL_PROJECT_SETTINGS_NAV);
+
+/** Old billing nav items that now live in Stripe Customer Portal / Current Plan. */
+const LEGACY_ORG_BILLING_SECTIONS: Record<string, SettingsSectionId> = {
+  "payment-methods": "current-plan",
+  invoices: "current-plan",
+  "upgrade-cancel": "current-plan",
+};
+
+/** Map removed org settings slugs to their replacement section. */
+export function resolveOrgSettingsSection(section: string): SettingsSectionId {
+  const legacy = LEGACY_ORG_BILLING_SECTIONS[section];
+  if (legacy) return legacy;
+  return isSettingsSectionId(section, "org")
+    ? section
+    : DEFAULT_SETTINGS_SECTION;
+}
 
 export function settingsNavForScope(scope: SettingsScope): SettingsNavGroup[] {
   return scope === "org" ? PORTAL_ORG_SETTINGS_NAV : PORTAL_PROJECT_SETTINGS_NAV;

@@ -25,6 +25,8 @@ import {
 import {
   DEFAULT_SETTINGS_SECTION,
   isSettingsSectionId,
+  orgSettingsSectionPath,
+  resolveOrgSettingsSection,
   type SettingsSectionId,
 } from "@/lib/portal-settings";
 import { PORTAL_PATHS } from "@/lib/sites";
@@ -41,6 +43,7 @@ function settingsSurface(
   }
   if (!rest) return DEFAULT_SETTINGS_SECTION;
   const section = rest.split("/")[0] || DEFAULT_SETTINGS_SECTION;
+  if (scope === "org") return resolveOrgSettingsSection(section);
   return isSettingsSectionId(section, scope) ? section : DEFAULT_SETTINGS_SECTION;
 }
 
@@ -155,7 +158,24 @@ export function PortalWorkspaceApp({ pathname }: PortalWorkspaceAppProps) {
   }
 
   if (parsed.surface === "orgSettings") {
+    const rawSection = (parsed.settingsRest || "")
+      .replace(/^\/+|\/+$/g, "")
+      .split("/")[0];
     const sectionId = settingsSurface(parsed.settingsRest, "org");
+    if (
+      rawSection &&
+      rawSection !== sectionId &&
+      typeof window !== "undefined"
+    ) {
+      const target = orgSettingsSectionPath(org.orgSlug, sectionId);
+      if (
+        window.location.pathname.replace(/\/$/, "") !==
+        target.replace(/\/$/, "")
+      ) {
+        portalNavigate(target, { replace: true });
+        return <PortalSkeleton />;
+      }
+    }
     return (
       <SettingsShell scope="org">
         <OrgSettingsSectionContent

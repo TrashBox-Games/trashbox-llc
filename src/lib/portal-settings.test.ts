@@ -7,6 +7,7 @@ import {
   getSettingsSection,
   isSettingsSectionId,
   orgSettingsSectionPath,
+  resolveOrgSettingsSection,
   settingsSectionPath,
 } from "./portal-settings";
 import { PORTAL_PATHS } from "./sites";
@@ -42,11 +43,22 @@ describe("portal-settings", () => {
     );
     expect(orgSections).toContain("members");
     expect(orgSections).toContain("current-plan");
+    expect(orgSections).toContain("usage");
+    expect(orgSections).not.toContain("payment-methods");
+    expect(orgSections).not.toContain("invoices");
+    expect(orgSections).not.toContain("upgrade-cancel");
     expect(projectSections).not.toContain("members");
     expect(projectSections).not.toContain("current-plan");
     expect(projectSections).not.toContain("forms");
     expect(projectSections).toContain("api-keys");
     expect(projectSections).toContain("email-accounts");
+  });
+
+  it("redirects retired billing sections to current plan", () => {
+    expect(resolveOrgSettingsSection("payment-methods")).toBe("current-plan");
+    expect(resolveOrgSettingsSection("invoices")).toBe("current-plan");
+    expect(resolveOrgSettingsSection("upgrade-cancel")).toBe("current-plan");
+    expect(resolveOrgSettingsSection("usage")).toBe("usage");
   });
 
   it("builds legacy flat section paths under /portal/settings", () => {
