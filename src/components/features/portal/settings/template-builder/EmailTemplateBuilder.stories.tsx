@@ -128,3 +128,10 @@ export const WithBlocks: Story = {
     initialDocument: seeded,
   },
 };
+
+export const ComposeMode: Story = {
+  args: {
+    mode: "compose",
+    initialDocument: seeded,
+  },
+};

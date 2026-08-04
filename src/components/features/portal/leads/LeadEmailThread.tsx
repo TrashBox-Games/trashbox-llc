@@ -17,7 +17,12 @@ import {
   type RichTextEditorHandle,
   type RichTextValue,
 } from "@/components/atoms/RichTextEditor";
+import { LeadComposeLayoutPreview } from "@/components/features/portal/leads/LeadComposeLayoutPreview";
 import { EmailTemplateGallery } from "@/components/features/portal/settings/EmailTemplateGallery";
+import {
+  EmailTemplateBuilder,
+  type EmailTemplateBuilderSavePayload,
+} from "@/components/features/portal/settings/template-builder/EmailTemplateBuilder";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,6 +45,9 @@ import type {
 } from "@/lib/api";
 import {
   composeReplyHtml,
+  extractReplyBody,
+  extractReplySignature,
+  htmlToPlainText,
   matchSnippetShortcut,
   renderContentForInsert,
   replaceReplyBody,
@@ -47,6 +55,7 @@ import {
   snippetTriggerAtEnd,
   type TemplateVariableContext,
 } from "@/lib/email-content";
+import { parseDocumentFromHtml } from "@/lib/email-template-document";
 import type { EmailTemplateStarter } from "@/lib/email-template-starters";
 import { settingsSectionPath } from "@/lib/portal-settings";
 import { cn } from "@/lib/utils";
@@ -447,9 +456,13 @@ export function LeadEmailThread({
   );
   const [editorKey, setEditorKey] = useState(0);
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
+  const [layoutActive, setLayoutActive] = useState(false);
+  const [layoutBuilderOpen, setLayoutBuilderOpen] = useState(false);
+  const [layoutBuilderKey, setLayoutBuilderKey] = useState(0);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const seededForSignature = useRef<string | null>(null);
   const draftRef = useRef<RichTextValue>({ html: "", text: "" });
+  const layoutActiveRef = useRef(false);
 
   const seedHtml = useMemo(
     () => buildSeedHtml(signatures, signatureId, context),
@@ -463,6 +476,35 @@ export function LeadEmailThread({
   /** HTML applied on mount / remount only — never mirror live draft here. */
   const [editorSeed, setEditorSeed] = useState(seedHtml);
   draftRef.current = draft;
+  layoutActiveRef.current = layoutActive;
+
+  function setDraftHtml(nextHtml: string) {
+    setDraft({
+      html: nextHtml,
+      text: htmlToPlainText(nextHtml),
+    });
+  }
+
+  function enterLayoutMode(bodyHtml: string) {
+    const next = replaceReplyBody(
+      draftRef.current.html || seedHtml,
+      bodyHtml,
+    );
+    setDraftHtml(next);
+    setLayoutActive(true);
+  }
+
+  function exitLayoutMode() {
+    const next = replaceReplyBody(
+      draftRef.current.html || seedHtml,
+      "<p><br></p>",
+    );
+    setDraftHtml(next);
+    setEditorSeed(next);
+    setEditorKey((key) => key + 1);
+    setLayoutActive(false);
+    setLayoutBuilderOpen(false);
+  }
 
   // Seed once when the default signature first becomes available.
   useEffect(() => {
@@ -482,7 +524,7 @@ export function LeadEmailThread({
 
   // Refresh merge fields inside the signature when the From identity changes.
   useEffect(() => {
-    if (!signatureId || !editorRef.current) return;
+    if (!signatureId) return;
     const signature = signatures.find((item) => item.id === signatureId);
     if (!signature) return;
     const current = draftRef.current.html;
@@ -491,6 +533,11 @@ export function LeadEmailThread({
       renderContentForInsert(signature, context).html,
     );
     if (nextHtml === current) return;
+    if (layoutActiveRef.current) {
+      setDraftHtml(nextHtml);
+      return;
+    }
+    if (!editorRef.current) return;
     editorRef.current.setHtml(nextHtml);
   }, [
     fromIdentityId,
@@ -502,57 +549,78 @@ export function LeadEmailThread({
   ]);
 
   const hasContent = bodyTextLength(draft.html) > 0;
+  const layoutBodyHtml = extractReplyBody(draft.html);
+  const layoutSignatureHtml = extractReplySignature(draft.html);
 
   async function submit() {
     if (!onSend || !hasContent || busy || !fromIdentityId) return;
     const html = draft.html.trim();
-    await onSend(draft.text, html ? html : undefined, {
+    const plain =
+      draft.text.trim() || htmlToPlainText(extractReplyBody(html));
+    await onSend(plain, html ? html : undefined, {
       fromIdentityId,
     });
     const htmlSeed = buildSeedHtml(signatures, signatureId, context);
     setDraft({ html: htmlSeed, text: "" });
     setEditorSeed(htmlSeed);
     setEditorKey((key) => key + 1);
+    setLayoutActive(false);
+    setLayoutBuilderOpen(false);
   }
 
   function applyTemplate(templateId: string) {
     const template = templates.find((item) => item.id === templateId);
-    if (!template || !editorRef.current) return;
+    if (!template) return;
     const rendered = renderContentForInsert(template, context);
-    const next = replaceReplyBody(
-      draftRef.current.html || seedHtml,
-      rendered.html,
-    );
-    editorRef.current.setHtml(next);
+    enterLayoutMode(rendered.html);
   }
 
   function applyStarter(starter: EmailTemplateStarter) {
-    if (!editorRef.current) return;
     const rendered = renderContentForInsert(starter, context);
-    const next = replaceReplyBody(
-      draftRef.current.html || seedHtml,
-      rendered.html,
-    );
-    editorRef.current.setHtml(next);
+    enterLayoutMode(rendered.html);
   }
 
   function applySignature(nextId: string) {
     setSignatureId(nextId);
     const signature = signatures.find((item) => item.id === nextId);
-    if (!editorRef.current) return;
     const signatureHtml = signature
       ? renderContentForInsert(signature, context).html
       : "";
-    editorRef.current.setHtml(
-      replaceReplySignature(draftRef.current.html || seedHtml, signatureHtml),
+    const next = replaceReplySignature(
+      draftRef.current.html || seedHtml,
+      signatureHtml,
     );
+    if (layoutActive) {
+      setDraftHtml(next);
+      return;
+    }
+    if (!editorRef.current) return;
+    editorRef.current.setHtml(next);
   }
 
   function applySnippet(snippetId: string) {
+    if (layoutActive) return;
     const snippet = snippets.find((item) => item.id === snippetId);
     if (!snippet || !editorRef.current) return;
     const rendered = renderContentForInsert(snippet, context);
     editorRef.current.insertHtml(rendered.html);
+  }
+
+  function openLayoutBuilder() {
+    setLayoutBuilderKey((key) => key + 1);
+    setLayoutBuilderOpen(true);
+  }
+
+  async function insertLayoutFromBuilder(
+    payload: EmailTemplateBuilderSavePayload,
+  ) {
+    const next = replaceReplyBody(
+      draftRef.current.html || seedHtml,
+      payload.bodyHtml,
+    );
+    setDraftHtml(next);
+    setLayoutActive(true);
+    setLayoutBuilderOpen(false);
   }
 
   function expandSnippetShortcut(event: KeyboardEvent<HTMLDivElement>) {
@@ -778,18 +846,13 @@ export function LeadEmailThread({
                 </div>
               </div>
 
-              <RichTextEditor
-                key={editorKey}
-                ref={editorRef}
-                ariaLabel="Reply"
-                placeholder="Type your reply here… Use /shortcut for snippets."
-                disabled={busy}
-                initialHtml={editorSeed}
-                onChange={setDraft}
-                onKeyDown={onEditorKeyDown}
-                className="rounded-none border-0 bg-transparent"
-                toolbarStart={
-                  <>
+              {layoutActive ? (
+                <>
+                  <div
+                    role="toolbar"
+                    aria-label="Formatting"
+                    className="border-outline-variant/15 bg-surface-container-high flex flex-wrap items-center gap-1 border-b px-3 py-2"
+                  >
                     <Button
                       type="button"
                       variant="ghost"
@@ -815,7 +878,7 @@ export function LeadEmailThread({
                           size="sm"
                           aria-label="Snippet"
                           title="Snippets"
-                          disabled={busy || snippets.length === 0}
+                          disabled
                           className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
                         >
                           <MaterialIcon
@@ -880,19 +943,132 @@ export function LeadEmailThread({
                         ))}
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </>
-                }
-                toolbarEnd={
-                  libraryEmpty ? (
-                    <a
-                      href={settingsSectionPath("templates")}
-                      className="font-label ml-1 text-[10px] tracking-widest text-white uppercase underline"
-                    >
-                      Manage in Settings
-                    </a>
-                  ) : null
-                }
-              />
+                  </div>
+                  <LeadComposeLayoutPreview
+                    html={layoutBodyHtml}
+                    signatureHtml={layoutSignatureHtml}
+                    disabled={busy}
+                    onEdit={openLayoutBuilder}
+                    onRemove={exitLayoutMode}
+                  />
+                </>
+              ) : (
+                <RichTextEditor
+                  key={editorKey}
+                  ref={editorRef}
+                  ariaLabel="Reply"
+                  placeholder="Type your reply here… Use /shortcut for snippets."
+                  disabled={busy}
+                  initialHtml={editorSeed}
+                  onChange={setDraft}
+                  onKeyDown={onEditorKeyDown}
+                  className="rounded-none border-0 bg-transparent"
+                  toolbarStart={
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Template"
+                        title="Templates"
+                        disabled={busy}
+                        onClick={() => setTemplateGalleryOpen(true)}
+                        className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                      >
+                        <MaterialIcon name="description" className="text-lg" />
+                        <MaterialIcon
+                          name="arrow_drop_down"
+                          className="text-base opacity-70"
+                        />
+                      </Button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Snippet"
+                            title="Snippets"
+                            disabled={busy || snippets.length === 0}
+                            className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                          >
+                            <MaterialIcon
+                              name="data_object"
+                              className="text-lg"
+                            />
+                            <MaterialIcon
+                              name="arrow_drop_down"
+                              className="text-base opacity-70"
+                            />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="start"
+                          className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
+                        >
+                          {snippets.map((snippet) => (
+                            <DropdownMenuItem
+                              key={snippet.id}
+                              onSelect={() => applySnippet(snippet.id)}
+                            >
+                              {snippet.shortcut
+                                ? `${snippet.name} (/${snippet.shortcut})`
+                                : snippet.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Signature"
+                            title="Signatures"
+                            disabled={busy || signatures.length === 0}
+                            className="font-body text-outline hover:bg-surface-variant h-8 gap-0.5 rounded px-1.5 text-xs font-normal tracking-normal normal-case hover:text-white"
+                          >
+                            <MaterialIcon name="draw" className="text-lg" />
+                            <MaterialIcon
+                              name="arrow_drop_down"
+                              className="text-base opacity-70"
+                            />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="start"
+                          className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] max-h-64"
+                        >
+                          {signatures.map((signature) => (
+                            <DropdownMenuItem
+                              key={signature.id}
+                              onSelect={() => applySignature(signature.id)}
+                            >
+                              {signature.isDefault
+                                ? `${signature.name} (Default)`
+                                : signature.name}
+                              {signature.id === signatureId ? " ✓" : ""}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </>
+                  }
+                  toolbarEnd={
+                    libraryEmpty ? (
+                      <a
+                        href={settingsSectionPath("templates")}
+                        className="font-label ml-1 text-[10px] tracking-widest text-white uppercase underline"
+                      >
+                        Manage in Settings
+                      </a>
+                    ) : null
+                  }
+                />
+              )}
 
               <div className="bg-surface-container/80 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                 <div className="flex items-center gap-3">
@@ -956,6 +1132,26 @@ export function LeadEmailThread({
             }}
             onClose={() => setTemplateGalleryOpen(false)}
           />
+        </div>
+      )}
+
+      {layoutBuilderOpen && (
+        <div
+          className="fixed inset-0 z-[120] flex items-stretch justify-center bg-black/70 p-2 sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Edit layout"
+        >
+          <div className="bg-background flex h-full max-h-[100dvh] w-full max-w-7xl flex-col overflow-hidden rounded-lg shadow-2xl">
+            <EmailTemplateBuilder
+              key={layoutBuilderKey}
+              mode="compose"
+              initialDocument={parseDocumentFromHtml(layoutBodyHtml)}
+              onSave={insertLayoutFromBuilder}
+              onCancel={() => setLayoutBuilderOpen(false)}
+              className="min-h-0"
+            />
+          </div>
         </div>
       )}
     </TooltipProvider>

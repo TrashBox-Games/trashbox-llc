@@ -587,24 +587,28 @@ describe("LeadEmailThread", () => {
     });
   });
 
-  it("applies a template with merge fields resolved", async () => {
+  it("applies a template into layout preview with merge fields resolved", async () => {
     const user = userEvent.setup();
     renderConnected();
 
     await pickTemplate(user, /intro reply/i);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("textbox", { name: /reply/i }).textContent,
-      ).toContain("Hi Ada, happy to help.");
+      expect(screen.getByTitle("Layout preview")).toBeInTheDocument();
     });
-    // Default signature stays attached after loading a template.
-    expect(
-      screen.getByRole("textbox", { name: /reply/i }).textContent,
-    ).toContain("Sales Team");
+    expect(screen.getByRole("button", { name: /edit layout/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /remove layout/i })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /reply/i })).not.toBeInTheDocument();
+    // Default signature stays attached under the layout.
+    expect(screen.getByLabelText(/reply signature/i).innerHTML).toContain(
+      "Sales Team",
+    );
+    expect(screen.getByTitle("Layout preview").getAttribute("srcdoc")).toContain(
+      "Hi Ada, happy to help.",
+    );
   });
 
-  it("applies a gallery starter into the reply body", async () => {
+  it("applies a gallery starter into layout preview", async () => {
     const user = userEvent.setup();
     renderConnected({
       library: { templates: [], signatures, snippets: [] },
@@ -613,28 +617,77 @@ describe("LeadEmailThread", () => {
     await pickTemplate(user, /follow-up check-in/i);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("textbox", { name: /reply/i }).textContent,
-      ).toContain("Just checking in on your recent inquiry");
+      expect(screen.getByTitle("Layout preview")).toBeInTheDocument();
     });
-    expect(
-      screen.getByRole("textbox", { name: /reply/i }).textContent,
-    ).toContain("Ada");
+    const srcDoc = screen.getByTitle("Layout preview").getAttribute("srcdoc") ?? "";
+    expect(srcDoc).toContain("Just checking in on your recent inquiry");
+    expect(srcDoc).toContain("Ada");
   });
 
-  it("switches the signature without wiping the body", async () => {
+  it("switches the signature without wiping the layout body", async () => {
     const user = userEvent.setup();
     renderConnected();
 
     await pickTemplate(user, /intro reply/i);
+    await waitFor(() => {
+      expect(screen.getByTitle("Layout preview")).toBeInTheDocument();
+    });
     await pickMenuItem(user, /^signature$/i, /^short$/i);
 
-    const editor = screen.getByRole("textbox", { name: /reply/i });
     await waitFor(() => {
-      expect(editor.textContent).toContain("— Support");
+      expect(screen.getByLabelText(/reply signature/i).innerHTML).toContain(
+        "— Support",
+      );
     });
-    expect(editor.textContent).toContain("Hi Ada, happy to help.");
-    expect(editor.textContent).not.toContain("Sales Team");
+    expect(screen.getByTitle("Layout preview").getAttribute("srcdoc")).toContain(
+      "Hi Ada, happy to help.",
+    );
+    expect(screen.getByLabelText(/reply signature/i).innerHTML).not.toContain(
+      "Sales Team",
+    );
+  });
+
+  it("opens the layout builder popup and inserts draft-only changes", async () => {
+    const user = userEvent.setup();
+    renderConnected();
+
+    await pickTemplate(user, /intro reply/i);
+    await waitFor(() => {
+      expect(screen.getByTitle("Layout preview")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /edit layout/i }));
+    const builder = await screen.findByRole("dialog", { name: /edit layout/i });
+    expect(
+      within(builder).getByRole("button", { name: /^insert$/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(builder).queryByPlaceholderText(/template name/i),
+    ).not.toBeInTheDocument();
+
+    await user.click(within(builder).getByRole("button", { name: /^insert$/i }));
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: /edit layout/i }),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.getByTitle("Layout preview")).toBeInTheDocument();
+  });
+
+  it("removes the layout and restores the plain reply editor", async () => {
+    const user = userEvent.setup();
+    renderConnected();
+
+    await pickTemplate(user, /intro reply/i);
+    await waitFor(() => {
+      expect(screen.getByTitle("Layout preview")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /remove layout/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("textbox", { name: /reply/i })).toBeInTheDocument();
+    });
+    expect(screen.queryByTitle("Layout preview")).not.toBeInTheDocument();
   });
 
   it("inserts a snippet from the picker", async () => {

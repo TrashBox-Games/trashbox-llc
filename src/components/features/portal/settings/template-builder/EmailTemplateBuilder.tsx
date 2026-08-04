@@ -58,6 +58,8 @@ export interface EmailTemplateBuilderSavePayload {
 }
 
 export interface EmailTemplateBuilderProps {
+  /** library = Settings save; compose = draft-only Insert (no name/subject). */
+  mode?: "library" | "compose";
   initialName?: string;
   initialSubject?: string;
   initialDocument?: EmailTemplateDocument;
@@ -71,6 +73,7 @@ export interface EmailTemplateBuilderProps {
 type BuilderViewMode = "edit" | "preview" | "code";
 
 export function EmailTemplateBuilder({
+  mode = "library",
   initialName = "",
   initialSubject = "",
   initialDocument,
@@ -80,6 +83,7 @@ export function EmailTemplateBuilder({
   onCancel,
   className,
 }: EmailTemplateBuilderProps): React.ReactElement {
+  const isCompose = mode === "compose";
   const [name, setName] = useState(initialName);
   const [subject, setSubject] = useState(initialSubject);
   const [doc, setDoc] = useState<EmailTemplateDocument>(
@@ -294,16 +298,18 @@ export function EmailTemplateBuilder({
     const bodyHtml = documentToEmailHtml(doc);
     const bodyText = documentToPlainText(doc) || name.trim() || " ";
     await onSave({
-      name: name.trim(),
-      subject: subject.trim(),
+      name: isCompose ? "" : name.trim(),
+      subject: isCompose ? "" : subject.trim(),
       bodyText,
       bodyHtml,
     });
   }
 
-  const canSave =
-    Boolean(name.trim()) &&
-    (doc.blocks.length > 0 || Boolean(doc.header) || Boolean(doc.footer));
+  const hasDocumentContent =
+    doc.blocks.length > 0 || Boolean(doc.header) || Boolean(doc.footer);
+  const canSave = isCompose
+    ? hasDocumentContent
+    : Boolean(name.trim()) && hasDocumentContent;
   const selectedBlock =
     doc.blocks.find((block) => block.id === selectedBlockId) ?? null;
   const selectedBand =
@@ -340,34 +346,38 @@ export function EmailTemplateBuilder({
       )}
     >
       <header className="flex flex-wrap items-center gap-3 border-b border-outline-variant/20 bg-surface-container-low px-4 py-3">
-        <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="builder-name" className="sr-only">
-              Template name
-            </Label>
-            <Input
-              id="builder-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              disabled={busy}
-              placeholder="Template name"
-              className="py-2"
-            />
+        {isCompose ? (
+          <div className="min-w-0 flex-1" />
+        ) : (
+          <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="builder-name" className="sr-only">
+                Template name
+              </Label>
+              <Input
+                id="builder-name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                disabled={busy}
+                placeholder="Template name"
+                className="py-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="builder-subject" className="sr-only">
+                Subject
+              </Label>
+              <Input
+                id="builder-subject"
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+                disabled={busy}
+                placeholder="Email subject"
+                className="py-2"
+              />
+            </div>
           </div>
-          <div>
-            <Label htmlFor="builder-subject" className="sr-only">
-              Subject
-            </Label>
-            <Input
-              id="builder-subject"
-              value={subject}
-              onChange={(event) => setSubject(event.target.value)}
-              disabled={busy}
-              placeholder="Email subject"
-              className="py-2"
-            />
-          </div>
-        </div>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
@@ -432,7 +442,7 @@ export function EmailTemplateBuilder({
             disabled={busy || !canSave}
             onClick={() => void save()}
           >
-            Save
+            {isCompose ? "Insert" : "Save"}
           </Button>
         </div>
       </header>

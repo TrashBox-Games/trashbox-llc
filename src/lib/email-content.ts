@@ -317,3 +317,41 @@ export function replaceReplyBody(fullHtml: string, bodyHtml: string): string {
   }
   return composeReplyHtml(bodyHtml);
 }
+
+function regionInnerHtml(fullHtml: string, attr: string): string | null {
+  if (typeof DOMParser !== "undefined") {
+    const doc = new DOMParser().parseFromString(fullHtml, "text/html");
+    const node = doc.querySelector(`[${attr}]`);
+    if (node) return node.innerHTML;
+  }
+  const match = fullHtml.match(
+    new RegExp(`<div\\s+${attr}\\b[^>]*>([\\s\\S]*?)<\\/div>`, "i"),
+  );
+  return match?.[1] ?? null;
+}
+
+/** Read the reply body region; falls back to the full HTML when unmarked. */
+export function extractReplyBody(fullHtml: string): string {
+  return regionInnerHtml(fullHtml, BODY_ATTR) ?? fullHtml;
+}
+
+/** Read the signature region; empty string when none is present. */
+export function extractReplySignature(fullHtml: string): string {
+  return regionInnerHtml(fullHtml, SIGNATURE_ATTR) ?? "";
+}
+
+/** Rough plain-text extraction for send payloads and length checks. */
+export function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}

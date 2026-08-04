@@ -1268,4 +1268,39 @@ describe("EmailTemplateBuilder", () => {
       within(inspector).getByText(/editing child inside image \+ text/i),
     ).toBeInTheDocument();
   });
+
+  it("compose mode hides name/subject and inserts without a name", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    let doc = emptyDocument();
+    doc = appendBlock(doc, "text");
+
+    render(
+      <EmailTemplateBuilder
+        mode="compose"
+        initialDocument={doc}
+        onSave={onSave}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByPlaceholderText(/template name/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/email subject/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^save$/i }),
+    ).not.toBeInTheDocument();
+
+    const insert = screen.getByRole("button", { name: /^insert$/i });
+    expect(insert).toBeEnabled();
+    await user.click(insert);
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const payload = onSave.mock.calls[0]?.[0];
+    expect(payload.bodyHtml).toContain('data-tb-doc="1"');
+    expect(payload.bodyText.length).toBeGreaterThan(0);
+  });
 });

@@ -5,6 +5,9 @@ import {
   composeReplyHtml,
   contentBodyToHtml,
   decorateMergeFieldsHtml,
+  extractReplyBody,
+  extractReplySignature,
+  htmlToPlainText,
   isMergeFieldVariant,
   matchSnippetShortcut,
   mergeFieldChipHtml,
@@ -271,5 +274,34 @@ describe("replaceReplyBody", () => {
     expect(replaceReplyBody(html, "<p>New</p>")).toBe(
       composeReplyHtml("<p>New</p>", "<p>Sig</p>"),
     );
+  });
+});
+
+describe("extractReplyBody", () => {
+  it("returns the body region inner HTML", () => {
+    const html = composeReplyHtml("<p>Hi <strong>Ada</strong></p>", "<p>Sig</p>");
+    expect(extractReplyBody(html)).toBe("<p>Hi <strong>Ada</strong></p>");
+  });
+
+  it("falls back to the full HTML when there is no body marker", () => {
+    expect(extractReplyBody("<p>Loose</p>")).toBe("<p>Loose</p>");
+  });
+});
+
+describe("extractReplySignature", () => {
+  it("returns the signature region inner HTML", () => {
+    const html = composeReplyHtml("<p>Hi</p>", "<p>Thanks</p>");
+    expect(extractReplySignature(html)).toBe("<p>Thanks</p>");
+  });
+
+  it("returns empty string when there is no signature", () => {
+    expect(extractReplySignature(composeReplyHtml("<p>Hi</p>"))).toBe("");
+  });
+});
+
+describe("htmlToPlainText", () => {
+  it("strips tags and preserves basic line breaks", () => {
+    expect(htmlToPlainText("<p>Hi Ada</p><p>Thanks</p>")).toContain("Hi Ada");
+    expect(htmlToPlainText("<p>Hi<br />Ada</p>")).toMatch(/Hi\s*Ada/);
   });
 });
