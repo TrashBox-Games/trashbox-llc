@@ -1,5 +1,5 @@
 import { createRef, useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -53,6 +53,29 @@ describe("RichTextEditor", () => {
       screen.queryByRole("toolbar", { name: /formatting/i }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /reply/i })).toBeInTheDocument();
+  });
+
+  it("renders the formatting toolbar as a floating overlay popup", () => {
+    render(
+      <RichTextEditor
+        ariaLabel="Reply"
+        onChange={vi.fn()}
+        toolbarOverlay
+      />,
+    );
+
+    const overlay = screen.getByTestId("rich-text-toolbar-overlay");
+    expect(overlay).toBeInTheDocument();
+    expect(overlay.style.position).toBe("fixed");
+    expect(
+      within(overlay).getByRole("toolbar", { name: /formatting/i }),
+    ).toBeInTheDocument();
+    // Overlay is portaled outside the editor root so it doesn’t take layout space.
+    expect(
+      screen.getByRole("textbox", { name: /reply/i }).parentElement,
+    ).not.toContainElement(
+      screen.getByRole("toolbar", { name: /formatting/i }),
+    );
   });
 
   it("exposes font, size, color, align, indent and emoji menus", () => {

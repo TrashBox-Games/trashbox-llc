@@ -51,8 +51,6 @@ import { cn } from "@/lib/utils";
 export interface BuilderBlockProps {
   block: EmailTemplateBlock;
   selected: boolean;
-  /** Host for the shared formatting toolbar at the top of the canvas. */
-  toolbarPortal?: HTMLElement | null;
   onSelect: () => void;
   onChange: (patch: Partial<EmailTemplateBlock>) => void;
   onDuplicate: () => void;
@@ -268,7 +266,6 @@ type ChromeProps = {
 function ColumnsBlockEditor({
   block,
   selected,
-  toolbarPortal,
   chrome,
   onChange,
   onDropInColumn,
@@ -279,7 +276,6 @@ function ColumnsBlockEditor({
 }: {
   block: EmailTemplateColumnsBlock;
   selected: boolean;
-  toolbarPortal: HTMLElement | null;
   chrome: ChromeProps;
   onChange: (patch: Partial<EmailTemplateBlock>) => void;
   onDropInColumn?: (
@@ -596,10 +592,8 @@ function ColumnsBlockEditor({
                                   updateItems(index, next);
                                 }}
                                 showToolbar={activeCol === index}
+                                toolbarOverlay={activeCol === index}
                                 acceptMergeFieldDrops
-                                toolbarPortal={
-                                  activeCol === index ? toolbarPortal : null
-                                }
                                 className="border-0 bg-transparent"
                                 editorClassName={builderEditorClass}
                               />
@@ -631,7 +625,6 @@ function ColumnsBlockEditor({
 function GridBlockEditor({
   block,
   selected,
-  toolbarPortal,
   chrome,
   onChange,
   onDropInGridCell,
@@ -642,7 +635,6 @@ function GridBlockEditor({
 }: {
   block: EmailTemplateGridBlock;
   selected: boolean;
-  toolbarPortal: HTMLElement | null;
   chrome: ChromeProps;
   onChange: (patch: Partial<EmailTemplateBlock>) => void;
   onDropInGridCell?: (
@@ -974,8 +966,8 @@ function GridBlockEditor({
                                     updateItems(rowIndex, columnIndex, next);
                                   }}
                                   showToolbar={active}
+                                  toolbarOverlay={active}
                                   acceptMergeFieldDrops
-                                  toolbarPortal={active ? toolbarPortal : null}
                                   className="border-0 bg-transparent"
                                   editorClassName={builderEditorClass}
                                 />
@@ -1347,7 +1339,6 @@ function BlockChrome({
 export function BuilderBlock({
   block,
   selected,
-  toolbarPortal = null,
   onSelect,
   onChange,
   onDuplicate,
@@ -1417,8 +1408,8 @@ export function BuilderBlock({
                   onChange({ html: value.html })
                 }
                 showToolbar
+                toolbarOverlay
                 acceptMergeFieldDrops
-                toolbarPortal={toolbarPortal}
                 className="border-0 bg-transparent"
                 editorClassName={builderEditorClass}
               />
@@ -1588,8 +1579,8 @@ export function BuilderBlock({
                       } as Partial<EmailTemplateBlock>)
                     }
                     showToolbar
+                    toolbarOverlay
                     acceptMergeFieldDrops
-                    toolbarPortal={toolbarPortal}
                     className="border-0 bg-transparent"
                     editorClassName={builderEditorClass}
                   />
@@ -1646,7 +1637,6 @@ export function BuilderBlock({
         <ColumnsBlockEditor
           block={block}
           selected={selected}
-          toolbarPortal={toolbarPortal}
           chrome={chrome}
           onChange={onChange}
           onDropInColumn={onDropInColumn}
@@ -1661,7 +1651,6 @@ export function BuilderBlock({
         <GridBlockEditor
           block={block}
           selected={selected}
-          toolbarPortal={toolbarPortal}
           chrome={chrome}
           onChange={onChange}
           onDropInGridCell={onDropInGridCell}

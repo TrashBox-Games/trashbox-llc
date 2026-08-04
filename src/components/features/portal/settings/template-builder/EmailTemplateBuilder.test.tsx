@@ -274,9 +274,16 @@ describe("EmailTemplateBuilder", () => {
     expect(editor).toHaveTextContent(/this is a text block/i);
     expect(editor.innerHTML).toMatch(/text-align:\s*center/i);
     expect(screen.queryByText(/type your text here/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("rich-text-toolbar-overlay")).toBeInTheDocument();
     expect(
-      screen.getByRole("toolbar", { name: /formatting/i }),
+      within(screen.getByTestId("rich-text-toolbar-overlay")).getByRole(
+        "toolbar",
+        { name: /formatting/i },
+      ),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/select a text block to format/i),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /duplicate block/i }),
     ).toBeInTheDocument();

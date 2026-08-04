@@ -4,6 +4,7 @@ import {
   forwardRef,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -73,6 +74,11 @@ interface RichTextEditorProps {
    * rendering above the editor (e.g. builder chrome at the top of the canvas).
    */
   toolbarPortal?: HTMLElement | null;
+  /**
+   * Float the toolbar as a fixed overlay popup above the editor (does not take
+   * layout space). Takes precedence over `toolbarPortal`.
+   */
+  toolbarOverlay?: boolean;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
   /**
    * Content to seed the editor with on mount. The editor stays uncontrolled
@@ -828,6 +834,7 @@ export const RichTextEditor = forwardRef<
     editorClassName,
     showToolbar = true,
     toolbarPortal = null,
+    toolbarOverlay = false,
     onKeyDown,
     initialHtml,
     toolbarStart,
@@ -836,7 +843,45 @@ export const RichTextEditor = forwardRef<
   },
   ref,
 ) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const [overlayStyle, setOverlayStyle] = useState<CSSProperties>({
+    position: "fixed",
+    top: 0,
+    left: 0,
+    transform: "translateY(-100%)",
+    zIndex: 60,
+    visibility: "hidden",
+  });
+
+  useLayoutEffect(() => {
+    if (!toolbarOverlay || !showToolbar) return;
+    const anchor = rootRef.current;
+    if (!anchor) return;
+
+    function updatePosition() {
+      const rect = anchor!.getBoundingClientRect();
+      const maxLeft = Math.max(8, window.innerWidth - 24);
+      setOverlayStyle({
+        position: "fixed",
+        top: Math.max(8, rect.top - 8),
+        left: Math.min(Math.max(8, rect.left), maxLeft),
+        transform: "translateY(-100%)",
+        zIndex: 60,
+        visibility: "visible",
+        maxWidth: `min(560px, calc(100vw - 16px))`,
+      });
+    }
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    // Capture scroll from nested canvas containers.
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [toolbarOverlay, showToolbar]);
   const savedRangeRef = useRef<Range | null>(null);
   const [isEmpty, setIsEmpty] = useState(true);
   const [font, setFont] = useState<(typeof FONT_OPTIONS)[number]>("Arial");
@@ -1064,9 +1109,11 @@ export const RichTextEditor = forwardRef<
 
   return (
     <div
+      ref={rootRef}
       className={cn(
         "border-outline-variant/20 bg-surface-container-low overflow-hidden rounded border",
-        !showToolbar && "border-0 bg-transparent",
+        (!showToolbar || toolbarOverlay) && "border-0 bg-transparent",
+        toolbarOverlay && "overflow-visible",
         className,
       )}
     >
@@ -1076,7 +1123,9 @@ export const RichTextEditor = forwardRef<
       <div
         className={cn(
           "border-outline-variant/15 bg-surface-container-high flex flex-wrap items-center gap-1 px-3 py-2",
-          !toolbarPortal && "border-b",
+          toolbarOverlay &&
+            "rounded-md border border-zinc-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]",
+          !toolbarPortal && !toolbarOverlay && "border-b",
         )}
         role="toolbar"
         aria-label="Formatting"
@@ -1331,6 +1380,17 @@ export const RichTextEditor = forwardRef<
         {toolbarEnd}
       </div>
             );
+            if (toolbarOverlay && typeof document !== "undefined") {
+              return createPortal(
+                <div
+                  data-testid="rich-text-toolbar-overlay"
+                  style={overlayStyle}
+                >
+                  {toolbar}
+                </div>,
+                document.body,
+              );
+            }
             return toolbarPortal
               ? createPortal(toolbar, toolbarPortal)
               : toolbar;

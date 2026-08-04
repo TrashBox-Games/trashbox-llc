@@ -165,14 +165,12 @@ function PageBandEditor({
   role,
   band,
   selected,
-  toolbarPortal,
   onSelect,
   onChange,
 }: {
   role: "header" | "footer";
   band: EmailTemplatePageBand;
   selected: boolean;
-  toolbarPortal: HTMLElement | null;
   onSelect: () => void;
   onChange: (patch: Partial<EmailTemplatePageBand>) => void;
 }): React.ReactElement {
@@ -258,8 +256,8 @@ function PageBandEditor({
             initialHtml={band.html}
             onChange={(value: RichTextValue) => onChange({ html: value.html })}
             showToolbar
+            toolbarOverlay
             acceptMergeFieldDrops
-            toolbarPortal={toolbarPortal}
             className="border-0 bg-transparent"
             editorClassName="min-h-[2.5rem] select-text px-0 py-0 text-[15px] leading-relaxed text-[#18181b]"
           />
@@ -298,7 +296,6 @@ export function BuilderCanvas({
   onChangeDocument,
   className,
 }: BuilderCanvasProps): React.ReactElement {
-  const [toolbarHost, setToolbarHost] = useState<HTMLDivElement | null>(null);
   const [dropPlacement, setDropPlacement] = useState<InsertPlacement | null>(
     null,
   );
@@ -439,16 +436,6 @@ export function BuilderCanvas({
             className="ml-2 h-7 w-8 cursor-pointer border border-outline-variant/30 bg-transparent"
           />
         </label>
-        <div
-          ref={setToolbarHost}
-          className="min-h-10 min-w-0 flex-1 [&_[role=toolbar]]:border-0 [&_[role=toolbar]]:bg-transparent [&_[role=toolbar]]:px-0 [&_[role=toolbar]]:py-0"
-        >
-          {!selectedBlockId && !selectedPageBand && (
-            <p className="px-1 py-2 text-xs text-on-surface-variant">
-              Select a text block to format it
-            </p>
-          )}
-        </div>
       </div>
 
       <div
@@ -495,9 +482,6 @@ export function BuilderCanvas({
                   role="header"
                   band={doc.header}
                   selected={selectedPageBand === "header"}
-                  toolbarPortal={
-                    selectedPageBand === "header" ? toolbarHost : null
-                  }
                   onSelect={() => {
                     onSelectBlock(null);
                     onSelectPageBand?.("header");
@@ -541,9 +525,6 @@ export function BuilderCanvas({
                       <BuilderBlock
                         block={block}
                         selected={selectedBlockId === block.id}
-                        toolbarPortal={
-                          selectedBlockId === block.id ? toolbarHost : null
-                        }
                         onSelect={() => {
                           onSelectPageBand?.(null);
                           onSelectBlock(block.id);
@@ -644,9 +625,6 @@ export function BuilderCanvas({
                   role="footer"
                   band={doc.footer}
                   selected={selectedPageBand === "footer"}
-                  toolbarPortal={
-                    selectedPageBand === "footer" ? toolbarHost : null
-                  }
                   onSelect={() => {
                     onSelectBlock(null);
                     onSelectPageBand?.("footer");
