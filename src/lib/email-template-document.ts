@@ -2228,10 +2228,11 @@ export function removeBlock(
   doc: EmailTemplateDocument,
   blockId: string,
 ): EmailTemplateDocument {
-  return {
-    ...doc,
-    blocks: doc.blocks.filter((block) => block.id !== blockId),
-  };
+  const blocks = doc.blocks.filter((block) => block.id !== blockId);
+  if (blocks.length === 0) {
+    return withDefaultSection({ ...doc, blocks: [] });
+  }
+  return { ...doc, blocks };
 }
 
 export function duplicateBlock(
@@ -3772,6 +3773,26 @@ function createColumnsBlockFromWidths(
   };
 }
 
+/** One empty 100% column section — the default page content. */
+export function createDefaultSectionBlock(): EmailTemplateColumnsBlock {
+  return createColumnsBlockFromWidths([100]);
+}
+
+/** Ensure a document always has at least one section to edit. */
+export function withDefaultSection(
+  doc: EmailTemplateDocument,
+): EmailTemplateDocument {
+  if (doc.blocks.length > 0) return doc;
+  return { ...doc, blocks: [createDefaultSectionBlock()] };
+}
+
+/** Builder-ready empty page: flat white canvas with one column section. */
+export function defaultDocument(
+  backgroundColor = DEFAULT_DOCUMENT_BACKGROUND,
+): EmailTemplateDocument {
+  return withDefaultSection(emptyDocument(backgroundColor));
+}
+
 /** One or more blocks for a palette variant (multi-section layouts return several). */
 export function createBlocksFromVariant(
   variantId: string,
@@ -4027,7 +4048,7 @@ export function documentFromStarter(input: {
     input.id === "basic-blank" ||
     (!input.bodyHtml.trim() && !input.bodyText.trim())
   ) {
-    return emptyDocument();
+    return defaultDocument();
   }
 
   if (

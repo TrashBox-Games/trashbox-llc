@@ -396,7 +396,6 @@ export function BuilderCanvas({
   };
 
   const margins = documentContentPaddingStyle(doc);
-  const showEmpty = doc.blocks.length === 0 && !doc.header && !doc.footer;
   const flatPage = isFlatPageDocument(doc);
   /** Editor-only backdrop so the white content page reads clearly (not emailed). */
   const EDITOR_SURFACE_CHROME = "#e8e8ec";
@@ -463,7 +462,7 @@ export function BuilderCanvas({
         <div className="relative mx-auto w-full max-w-[600px]">
           <div
             className={cn(
-              "relative box-border min-h-[640px] w-full overflow-visible text-[#18181b]",
+              "relative box-border w-full overflow-visible text-[#18181b]",
               "shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/5",
               dropIndex != null && "ring-2 ring-sky-500",
             )}
@@ -491,133 +490,117 @@ export function BuilderCanvas({
               </div>
             ) : null}
 
-            {showEmpty ? (
-              <div
-                className={cn(
-                  "mx-auto flex min-h-[520px] max-w-[600px] flex-col items-center justify-center rounded-md border-2 border-dashed px-6 py-24 text-center transition-colors",
-                  dropIndex != null
-                    ? "border-sky-500 bg-sky-50"
-                    : "border-zinc-200",
-                )}
-              >
-                <p className="pointer-events-none text-sm text-zinc-400">
-                  Drag components anywhere on this page, or click one in the
-                  left panel.
-                </p>
+            <div ref={listRef} className="space-y-0">
+              <div className="relative h-0">
+                {dropPlacement && dropPlacement.index === 0 ? (
+                  <InsertIndicator
+                    index={0}
+                    label={insertSlotLabel(dropPlacement, doc.blocks)}
+                  />
+                ) : null}
               </div>
-            ) : (
-              <div ref={listRef} className="space-y-0">
-                <div className="relative h-0">
-                  {dropPlacement && dropPlacement.index === 0 ? (
-                    <InsertIndicator
-                      index={0}
-                      label={insertSlotLabel(dropPlacement, doc.blocks)}
+              {doc.blocks.map((block, index) => (
+                <div key={block.id}>
+                  <div
+                    data-builder-block-index={index}
+                    data-testid={`builder-block-wrap-${index}`}
+                    className="mx-auto w-full max-w-[600px]"
+                  >
+                    <BuilderBlock
+                      block={block}
+                      selected={selectedBlockId === block.id}
+                      onSelect={() => {
+                        onSelectPageBand?.(null);
+                        onSelectBlock(block.id);
+                      }}
+                      onChange={(patch) => onChangeBlock(block.id, patch)}
+                      onDuplicate={() => onDuplicateBlock(block.id)}
+                      onDelete={() => onDeleteBlock(block.id)}
+                      onMoveUp={() => onMoveBlock(block.id, "up")}
+                      onMoveDown={() => onMoveBlock(block.id, "down")}
+                      canMoveUp={index > 0}
+                      canMoveDown={index < doc.blocks.length - 1}
+                      onDropInColumn={
+                        onDropInColumn
+                          ? (columnIndex, payload) =>
+                              onDropInColumn(block.id, columnIndex, payload)
+                          : undefined
+                      }
+                      onDropInGridCell={
+                        onDropInGridCell
+                          ? (rowIndex, columnIndex, payload) =>
+                              onDropInGridCell(
+                                block.id,
+                                rowIndex,
+                                columnIndex,
+                                payload,
+                              )
+                          : undefined
+                      }
+                      selectedColumnItem={
+                        selectedBlockId === block.id
+                          ? selectedColumnItem
+                          : null
+                      }
+                      onSelectColumnItem={(selection) => {
+                        onSelectPageBand?.(null);
+                        onSelectColumnItem?.(block.id, selection);
+                      }}
+                      selectedColumnIndex={
+                        selectedBlockId === block.id
+                          ? selectedColumnIndex
+                          : null
+                      }
+                      onSelectColumn={(columnIndex) => {
+                        onSelectPageBand?.(null);
+                        onSelectColumn?.(block.id, columnIndex);
+                      }}
+                      selectedGridCell={
+                        selectedBlockId === block.id
+                          ? selectedGridCell
+                          : null
+                      }
+                      onSelectGridCell={(rowIndex, columnIndex) => {
+                        onSelectPageBand?.(null);
+                        onSelectGridCell?.(block.id, rowIndex, columnIndex);
+                      }}
+                      selectedImageTextChild={
+                        selectedBlockId === block.id
+                          ? selectedImageTextChild
+                          : null
+                      }
+                      onSelectImageTextChild={(child) => {
+                        onSelectPageBand?.(null);
+                        onSelectImageTextChild?.(block.id, child);
+                      }}
                     />
-                  ) : null}
-                </div>
-                {doc.blocks.map((block, index) => (
-                  <div key={block.id}>
-                    <div
-                      data-builder-block-index={index}
-                      data-testid={`builder-block-wrap-${index}`}
-                      className="mx-auto w-full max-w-[600px]"
-                    >
-                      <BuilderBlock
-                        block={block}
-                        selected={selectedBlockId === block.id}
-                        onSelect={() => {
-                          onSelectPageBand?.(null);
-                          onSelectBlock(block.id);
-                        }}
-                        onChange={(patch) => onChangeBlock(block.id, patch)}
-                        onDuplicate={() => onDuplicateBlock(block.id)}
-                        onDelete={() => onDeleteBlock(block.id)}
-                        onMoveUp={() => onMoveBlock(block.id, "up")}
-                        onMoveDown={() => onMoveBlock(block.id, "down")}
-                        canMoveUp={index > 0}
-                        canMoveDown={index < doc.blocks.length - 1}
-                        onDropInColumn={
-                          onDropInColumn
-                            ? (columnIndex, payload) =>
-                                onDropInColumn(block.id, columnIndex, payload)
-                            : undefined
-                        }
-                        onDropInGridCell={
-                          onDropInGridCell
-                            ? (rowIndex, columnIndex, payload) =>
-                                onDropInGridCell(
-                                  block.id,
-                                  rowIndex,
-                                  columnIndex,
-                                  payload,
-                                )
-                            : undefined
-                        }
-                        selectedColumnItem={
-                          selectedBlockId === block.id
-                            ? selectedColumnItem
-                            : null
-                        }
-                        onSelectColumnItem={(selection) => {
-                          onSelectPageBand?.(null);
-                          onSelectColumnItem?.(block.id, selection);
-                        }}
-                        selectedColumnIndex={
-                          selectedBlockId === block.id
-                            ? selectedColumnIndex
-                            : null
-                        }
-                        onSelectColumn={(columnIndex) => {
-                          onSelectPageBand?.(null);
-                          onSelectColumn?.(block.id, columnIndex);
-                        }}
-                        selectedGridCell={
-                          selectedBlockId === block.id
-                            ? selectedGridCell
-                            : null
-                        }
-                        onSelectGridCell={(rowIndex, columnIndex) => {
-                          onSelectPageBand?.(null);
-                          onSelectGridCell?.(block.id, rowIndex, columnIndex);
-                        }}
-                        selectedImageTextChild={
-                          selectedBlockId === block.id
-                            ? selectedImageTextChild
-                            : null
-                        }
-                        onSelectImageTextChild={(child) => {
-                          onSelectPageBand?.(null);
-                          onSelectImageTextChild?.(block.id, child);
-                        }}
-                      />
-                    </div>
-                    {index < doc.blocks.length - 1 ? (
-                      <BlockGap>
-                        {dropPlacement &&
-                        dropPlacement.index === index + 1 ? (
-                          <InsertIndicator
-                            index={index + 1}
-                            label={insertSlotLabel(
-                              dropPlacement,
-                              doc.blocks,
-                            )}
-                          />
-                        ) : null}
-                      </BlockGap>
-                    ) : null}
                   </div>
-                ))}
-                <div className="relative h-0">
-                  {dropPlacement &&
-                  dropPlacement.index === doc.blocks.length ? (
-                    <InsertIndicator
-                      index={doc.blocks.length}
-                      label={insertSlotLabel(dropPlacement, doc.blocks)}
-                    />
+                  {index < doc.blocks.length - 1 ? (
+                    <BlockGap>
+                      {dropPlacement &&
+                      dropPlacement.index === index + 1 ? (
+                        <InsertIndicator
+                          index={index + 1}
+                          label={insertSlotLabel(
+                            dropPlacement,
+                            doc.blocks,
+                          )}
+                        />
+                      ) : null}
+                    </BlockGap>
                   ) : null}
                 </div>
+              ))}
+              <div className="relative h-0">
+                {dropPlacement &&
+                dropPlacement.index === doc.blocks.length ? (
+                  <InsertIndicator
+                    index={doc.blocks.length}
+                    label={insertSlotLabel(dropPlacement, doc.blocks)}
+                  />
+                ) : null}
               </div>
-            )}
+            </div>
 
             {doc.footer ? (
               <div className="mx-auto w-full max-w-[600px]">

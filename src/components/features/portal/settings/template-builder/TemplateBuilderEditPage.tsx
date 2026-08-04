@@ -9,8 +9,9 @@ import {
 } from "@/components/features/portal/settings/template-builder/EmailTemplateBuilder";
 import { ApiError, listEmailTemplates, updateEmailTemplate } from "@/lib/api";
 import {
-  emptyDocument,
+  defaultDocument,
   parseDocumentFromHtml,
+  withDefaultSection,
   type EmailTemplateDocument,
 } from "@/lib/email-template-document";
 import { portalNavigate } from "@/lib/portal-routes";
@@ -25,7 +26,7 @@ function TemplateBuilderEditInner(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
-  const [document, setDocument] = useState<EmailTemplateDocument>(emptyDocument);
+  const [document, setDocument] = useState<EmailTemplateDocument>(defaultDocument);
 
   function goList() {
     portalNavigate(settingsSectionPath("templates"));
@@ -53,7 +54,9 @@ function TemplateBuilderEditInner(): React.ReactElement {
         setName(item.name);
         setSubject(item.subject);
         setDocument(
-          parseDocumentFromHtml(item.bodyHtml?.trim() || item.bodyText || ""),
+          withDefaultSection(
+            parseDocumentFromHtml(item.bodyHtml?.trim() || item.bodyText || ""),
+          ),
         );
         setLoading(false);
       } catch (err) {

@@ -16,6 +16,7 @@ import {
   duplicateBlock,
   emptyDocument,
   gridCellIndex,
+  withDefaultSection,
   insertVariantAt,
   insertVariantIntoColumn,
   insertVariantIntoGridCell,
@@ -86,8 +87,8 @@ export function EmailTemplateBuilder({
   const isCompose = mode === "compose";
   const [name, setName] = useState(initialName);
   const [subject, setSubject] = useState(initialSubject);
-  const [doc, setDoc] = useState<EmailTemplateDocument>(
-    () => initialDocument ?? emptyDocument(),
+  const [doc, setDoc] = useState<EmailTemplateDocument>(() =>
+    withDefaultSection(initialDocument ?? emptyDocument()),
   );
   const [selection, setSelection] = useState<BuilderSelection>({
     kind: "none",

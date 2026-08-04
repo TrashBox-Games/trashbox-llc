@@ -38,6 +38,11 @@ describe("EmailTemplateBuilder", () => {
     expect(paper).toHaveStyle({ backgroundColor: "#ffffff" });
     expect(paper).toHaveAttribute("data-tb-flat-page", "true");
     expect(paper.className).toMatch(/shadow-/);
+    expect(paper.className).not.toMatch(/min-h-/);
+    expect(screen.getByTestId("builder-block-wrap-0")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/drag components anywhere on this page/i),
+    ).not.toBeInTheDocument();
 
     const pageBg = within(
       screen.getByRole("complementary", { name: /component properties/i }),
@@ -120,13 +125,14 @@ describe("EmailTemplateBuilder", () => {
       within(palette).getByRole("button", { name: /^50% \/ 50%$/i }),
     );
 
-    expect(screen.getByTestId("builder-block-wrap-0").className).toMatch(
-      /max-w-\[600px]/,
-    );
-    const frame = screen.getByTestId("builder-block-frame");
+    const addedWrap = screen.getByTestId("builder-block-wrap-1");
+    expect(addedWrap.className).toMatch(/max-w-\[600px]/);
+    const frame = within(addedWrap).getByTestId("builder-block-frame");
     expect(frame.className).toMatch(/-mx-10/);
     expect(frame.className).toMatch(/px-10/);
-    expect(screen.getByTestId("builder-columns-chrome")).toBeInTheDocument();
+    expect(
+      within(addedWrap).getByTestId("builder-columns-chrome"),
+    ).toBeInTheDocument();
 
     const inspector = screen.getByRole("complementary", {
       name: /component properties/i,
@@ -455,10 +461,15 @@ describe("EmailTemplateBuilder", () => {
         name: /^33\.33% \/ 33\.33% \/ 33\.33%$/i,
       }),
     );
-    expect(screen.getByTestId("builder-column-drop-0")).toBeInTheDocument();
-    expect(screen.getByTestId("builder-column-drop-2")).toBeInTheDocument();
+    const addedWrap = screen.getByTestId("builder-block-wrap-1");
     expect(
-      screen.queryByRole("textbox", { name: /column \d/i }),
+      within(addedWrap).getByTestId("builder-column-drop-0"),
+    ).toBeInTheDocument();
+    expect(
+      within(addedWrap).getByTestId("builder-column-drop-2"),
+    ).toBeInTheDocument();
+    expect(
+      within(addedWrap).queryByRole("textbox", { name: /column \d/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/left column/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/details go here/i)).not.toBeInTheDocument();
@@ -503,6 +514,29 @@ describe("EmailTemplateBuilder", () => {
     expect(screen.getByTestId("builder-columns-chrome")).toHaveStyle({
       backgroundColor: "#ffeedd",
     });
+  });
+
+  it("replaces a deleted last section with a single column section", async () => {
+    const user = userEvent.setup();
+    let doc = emptyDocument();
+    doc = appendVariant(doc, "columns-2-50-50");
+    render(
+      <EmailTemplateBuilder
+        initialDocument={doc}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    // Removing every column deletes the section; the doc seeds a fresh 1-col section.
+    await user.click(screen.getByTestId("builder-column-delete-0"));
+    await user.click(screen.getByTestId("builder-column-delete-0"));
+
+    expect(screen.getByTestId("builder-block-wrap-0")).toBeInTheDocument();
+    expect(screen.queryByTestId("builder-block-wrap-1")).not.toBeInTheDocument();
+    expect(screen.getByTestId("builder-columns-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("builder-column-drop-0")).toBeInTheDocument();
+    expect(screen.queryByTestId("builder-column-drop-1")).not.toBeInTheDocument();
   });
 
   it("accepts a palette variant dropped onto the empty page", async () => {

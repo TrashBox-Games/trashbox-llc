@@ -6,6 +6,7 @@ import {
   createBlockFromVariant,
   createBlocksFromVariant,
   createDefaultBlock,
+  defaultDocument,
   DEFAULT_BOX_CHROME,
   DEFAULT_BUTTON_STYLE,
   DEFAULT_CONTENT_BACKGROUND,
@@ -28,6 +29,7 @@ import {
   parseDocumentFromHtml,
   removeBlock,
   removeColumn,
+  withDefaultSection,
   renderColumnItemInner,
   resolveColumnWidths,
   resizeTable,
@@ -64,6 +66,33 @@ describe("email-template-document", () => {
     expect(html).toMatch(/background-color:#ffffff/);
     expect(html).toMatch(/padding:0/);
     expect(html).not.toMatch(/padding:24px/);
+  });
+
+  it("seeds builder-ready documents with a single empty column section", () => {
+    const doc = defaultDocument();
+    expect(doc.blocks).toHaveLength(1);
+    expect(doc.blocks[0]?.type).toBe("columns");
+    if (doc.blocks[0]?.type !== "columns") return;
+    expect(doc.blocks[0].columns).toHaveLength(1);
+    expect(doc.blocks[0].paddingY).toBe(20);
+  });
+
+  it("replaces a fully deleted document with a single column section", () => {
+    let doc = emptyDocument();
+    doc = appendBlock(doc, "text");
+    doc = appendBlock(doc, "button");
+    expect(doc.blocks).toHaveLength(2);
+
+    doc = removeBlock(doc, doc.blocks[0]!.id);
+    expect(doc.blocks).toHaveLength(1);
+    expect(doc.blocks[0]?.type).toBe("button");
+
+    doc = removeBlock(doc, doc.blocks[0]!.id);
+    expect(doc.blocks).toHaveLength(1);
+    expect(doc.blocks[0]?.type).toBe("columns");
+    if (doc.blocks[0]?.type === "columns") {
+      expect(doc.blocks[0].columns).toHaveLength(1);
+    }
   });
 
   it("keeps layout sections inside the 600px content column", () => {
@@ -501,7 +530,8 @@ describe("email-template-document", () => {
       bodyHtml: "<p><br /></p>",
       bodyText: "",
     });
-    expect(blank.blocks).toHaveLength(0);
+    expect(blank.blocks).toHaveLength(1);
+    expect(blank.blocks[0]?.type).toBe("columns");
 
     const columns = documentFromStarter({
       id: "basic-two-column",
@@ -613,13 +643,17 @@ describe("email-template-document", () => {
     expect(html).toMatch(/align="center"/);
   });
 
-  it("deletes the section when the last column is removed", () => {
+  it("replaces the last removed section with a single column section", () => {
     let doc = emptyDocument();
     doc = appendVariant(doc, "columns-2-50-50");
     const columnsId = doc.blocks[0]!.id;
     doc = removeColumn(doc, columnsId, 0);
     doc = removeColumn(doc, columnsId, 0);
-    expect(doc.blocks).toHaveLength(0);
+    expect(doc.blocks).toHaveLength(1);
+    expect(doc.blocks[0]?.type).toBe("columns");
+    if (doc.blocks[0]?.type === "columns") {
+      expect(doc.blocks[0].columns).toHaveLength(1);
+    }
   });
 
   it("resizes columns and table grids", () => {

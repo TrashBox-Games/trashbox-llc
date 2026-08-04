@@ -9,8 +9,8 @@ import {
 } from "@/components/features/portal/settings/template-builder/EmailTemplateBuilder";
 import { ApiError, createEmailTemplate } from "@/lib/api";
 import {
+  defaultDocument,
   documentFromStarter,
-  emptyDocument,
   type EmailTemplateDocument,
 } from "@/lib/email-template-document";
 import { getStarterById } from "@/lib/email-template-starters";
@@ -58,7 +58,7 @@ function resolveInitial(starterId: string, useDraft: boolean): {
       };
     }
   }
-  return { name: "", subject: "", document: emptyDocument() };
+  return { name: "", subject: "", document: defaultDocument() };
 }
 
 function TemplateBuilderCreateInner(): React.ReactElement {
