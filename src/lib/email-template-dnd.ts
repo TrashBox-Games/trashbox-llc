@@ -133,21 +133,66 @@ export function isMergeFieldDrag(dataTransfer: DataTransfer): boolean {
   }
 }
 
+export type InsertPlacement = {
+  /** Document insert index (0…blockCount). */
+  index: number;
+  /** Badge names this neighbor with before/after. */
+  relation: "before" | "after";
+  /** Block index of the named neighbor. */
+  anchorIndex: number;
+};
+
 /**
- * Pick the insert index for a pointer Y against block rects.
- * Uses each block’s vertical midpoint: above midpoint → insert before that block.
+ * Pick insert index + which neighbor to name on the badge.
+ * Inside a block: top half → before that block; bottom half → after it.
+ * In the gap between blocks: flips at the gap midpoint.
  */
+export function resolveInsertPlacement(
+  clientY: number,
+  blockRects: ReadonlyArray<{ top: number; height: number }>,
+): InsertPlacement {
+  if (!Number.isFinite(clientY) || blockRects.length === 0) {
+    return { index: 0, relation: "before", anchorIndex: 0 };
+  }
+
+  for (let i = 0; i < blockRects.length; i++) {
+    const rect = blockRects[i]!;
+    const top = rect.top;
+    const bottom = rect.top + rect.height;
+    const mid = top + rect.height / 2;
+
+    if (clientY < top) {
+      if (i === 0) {
+        return { index: 0, relation: "before", anchorIndex: 0 };
+      }
+      const prev = blockRects[i - 1]!;
+      const gapMid = (prev.top + prev.height + top) / 2;
+      if (clientY < gapMid) {
+        return { index: i, relation: "after", anchorIndex: i - 1 };
+      }
+      return { index: i, relation: "before", anchorIndex: i };
+    }
+
+    if (clientY < bottom) {
+      if (clientY < mid) {
+        return { index: i, relation: "before", anchorIndex: i };
+      }
+      return { index: i + 1, relation: "after", anchorIndex: i };
+    }
+  }
+
+  const last = blockRects.length - 1;
+  return {
+    index: blockRects.length,
+    relation: "after",
+    anchorIndex: last,
+  };
+}
+
+/** Insert index only (see `resolveInsertPlacement` for badge wording). */
 export function resolveInsertIndex(
   clientY: number,
   blockRects: ReadonlyArray<{ top: number; height: number }>,
 ): number {
-  if (!Number.isFinite(clientY) || blockRects.length === 0) {
-    return blockRects.length;
-  }
-  for (let i = 0; i < blockRects.length; i++) {
-    const rect = blockRects[i]!;
-    const mid = rect.top + rect.height / 2;
-    if (clientY < mid) return i;
-  }
-  return blockRects.length;
+  return resolveInsertPlacement(clientY, blockRects).index;
 }

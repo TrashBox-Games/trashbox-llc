@@ -23,7 +23,26 @@ export type EmailTemplateBlockType =
   | "table"
   | "html";
 
-export interface EmailTemplateTextBlock {
+/** Outer box chrome shared by content blocks (background, border, padding). */
+export type BoxChromeFields = {
+  backgroundColor: string;
+  borderWidth: number;
+  borderColor: string;
+  borderRadius: number;
+  paddingX: number;
+  paddingY: number;
+};
+
+export const DEFAULT_BOX_CHROME: BoxChromeFields = {
+  backgroundColor: "transparent",
+  borderWidth: 0,
+  borderColor: "#d4d4d8",
+  borderRadius: 0,
+  paddingX: 0,
+  paddingY: 0,
+};
+
+export interface EmailTemplateTextBlock extends BoxChromeFields {
   id: string;
   type: "text";
   html: string;
@@ -301,7 +320,7 @@ function parseImageFieldsFromEl(el: Element): {
   };
 }
 
-export interface EmailTemplateSpacerBlock {
+export interface EmailTemplateSpacerBlock extends BoxChromeFields {
   id: string;
   type: "spacer";
   height: number;
@@ -337,16 +356,23 @@ export function defaultImageTextImage(
   };
 }
 
+/** Starter copy for new text blocks (real content, not a grey placeholder). */
+export const DEFAULT_TEXT_BLOCK_HTML =
+  '<p style="text-align:center;">This is a text block. Click here to edit it…</p>';
+
+export const DEFAULT_HEADING_BLOCK_HTML =
+  '<h2 style="text-align:center;">This is a heading. Click here to edit it…</h2>';
+
 export function defaultImageTextText(
   overrides: Partial<ImageTextTextChild> = {},
 ): ImageTextTextChild {
   return {
-    html: "<p><br /></p>",
+    html: DEFAULT_TEXT_BLOCK_HTML,
     ...overrides,
   };
 }
 
-export interface EmailTemplateImageTextBlock {
+export interface EmailTemplateImageTextBlock extends BoxChromeFields {
   id: string;
   type: "imageText";
   imagePosition: "left" | "right";
@@ -413,12 +439,7 @@ export const COLUMN_LIMITS = {
 } as const;
 
 export const DEFAULT_LAYOUT_CHROME = {
-  backgroundColor: "transparent",
-  borderWidth: 0,
-  borderColor: "#d4d4d8",
-  borderRadius: 0,
-  paddingX: 0,
-  paddingY: 0,
+  ...DEFAULT_BOX_CHROME,
   align: "left" as LayoutAlign,
   cellPadding: 0,
   cellVerticalAlign: "top" as CellVerticalAlign,
@@ -484,13 +505,27 @@ export function equalColumnWidths(count: number): number[] {
   return widths;
 }
 
-/** Resolve effective widths (auto → equal). */
+function clampColumnWidthValue(value: number): number {
+  return Number.isFinite(value)
+    ? Math.max(1, Math.min(100, Math.round(value)))
+    : 1;
+}
+
+/** Resolve effective widths (auto → equal). Preserves sums under 100 for centered leftovers. */
 export function resolveColumnWidths(
   columnWidths: number[] | null | undefined,
   count: number,
 ): number[] {
   if (columnWidths == null) return equalColumnWidths(count);
-  return normalizeColumnWidths(columnWidths, count);
+  const n = clampColumnCount(count);
+  if (columnWidths.length !== n) {
+    return normalizeColumnWidths(columnWidths, n);
+  }
+  const clamped = columnWidths.map(clampColumnWidthValue);
+  const sum = clamped.reduce((total, value) => total + value, 0);
+  if (sum <= 0) return equalColumnWidths(n);
+  if (sum > 100) return normalizeColumnWidths(clamped, n);
+  return clamped;
 }
 
 /** Clamp/scale widths so they match `count` and sum to 100. */
@@ -510,9 +545,7 @@ export function normalizeColumnWidths(
 
   if (widths.length < n) return source;
 
-  const clamped = source.map((value) =>
-    Number.isFinite(value) ? Math.max(1, Math.min(99, Math.round(value))) : 1,
-  );
+  const clamped = source.map(clampColumnWidthValue);
 
   const sum = clamped.reduce((total, value) => total + value, 0);
   if (sum === 100) return clamped;
@@ -534,7 +567,7 @@ function parseColumnWidthsAttr(el: Element, count: number): number[] | null {
     .map((part) => Number(part.trim()))
     .filter((value) => Number.isFinite(value));
   if (parsed.length === 0) return null;
-  return normalizeColumnWidths(parsed, count);
+  return resolveColumnWidths(parsed, count);
 }
 
 export const GRID_LIMITS = {
@@ -699,18 +732,21 @@ export interface EmailTemplateTableBlock {
   headerTextColor: string;
   cellBackgroundColor: string;
   cellTextColor: string;
+  /** Cell grid stroke color (not the outer box). */
   borderColor: string;
   fontFamily: string;
   fontSize: number;
   fontWeight: "400" | "500" | "600" | "700";
   headerFontWeight: "400" | "500" | "600" | "700";
   cellPadding: number;
+  /** Outer block chrome (background / padding / frame). */
+  boxChrome: BoxChromeFields;
   width: number | null;
   height: number | null;
 }
 
 /** Legacy freeform HTML when a template has no block markers. */
-export interface EmailTemplateHtmlBlock {
+export interface EmailTemplateHtmlBlock extends BoxChromeFields {
   id: string;
   type: "html";
   html: string;
@@ -770,7 +806,7 @@ export interface EmailTemplatePageBand {
 /** Flat white page by default (digest-style); customize for a colored canvas. */
 export const DEFAULT_DOCUMENT_BACKGROUND = "#ffffff";
 export const DEFAULT_CONTENT_BACKGROUND = "#ffffff";
-export const DEFAULT_PAGE_MARGIN = 24;
+export const DEFAULT_PAGE_MARGIN = 0;
 
 /** True when page and content backgrounds match (no floating card canvas). */
 export function isFlatPageDocument(doc: {
@@ -1039,13 +1075,17 @@ function parseDocumentChrome(
           DEFAULT_PAGE_MARGIN,
         ];
 
-  const canvas = el.querySelector(":scope > div");
+  const canvas =
+    el.querySelector(":scope > [data-tb-canvas]") ??
+    el.querySelector(":scope > div");
   const headerEl =
-    canvas?.querySelector(":scope > [data-tb-header]") ??
-    el.querySelector(":scope > [data-tb-header]");
+    canvas?.querySelector(
+      ":scope > [data-tb-header], :scope > [data-tb-content-col] > [data-tb-header]",
+    ) ?? el.querySelector(":scope > [data-tb-header]");
   const footerEl =
-    canvas?.querySelector(":scope > [data-tb-footer]") ??
-    el.querySelector(":scope > [data-tb-footer]");
+    canvas?.querySelector(
+      ":scope > [data-tb-footer], :scope > [data-tb-content-col] > [data-tb-footer]",
+    ) ?? el.querySelector(":scope > [data-tb-footer]");
 
   return {
     backgroundColor: attr(el, "data-tb-bg") || fallbackBackground,
@@ -1104,7 +1144,8 @@ export function createDefaultBlock(
       return {
         id,
         type: "text",
-        html: "<p><br /></p>",
+        html: DEFAULT_TEXT_BLOCK_HTML,
+        ...DEFAULT_BOX_CHROME,
         ...AUTO_SIZE,
       };
     case "image":
@@ -1117,7 +1158,13 @@ export function createDefaultBlock(
         ...AUTO_SIZE,
       };
     case "spacer":
-      return { id, type: "spacer", height: 24, width: null };
+      return {
+        id,
+        type: "spacer",
+        height: 24,
+        width: null,
+        ...DEFAULT_BOX_CHROME,
+      };
     case "imageText":
       return {
         id,
@@ -1125,6 +1172,7 @@ export function createDefaultBlock(
         imagePosition: "left",
         image: defaultImageTextImage(),
         text: defaultImageTextText(),
+        ...DEFAULT_BOX_CHROME,
         ...AUTO_SIZE,
       };
     case "button":
@@ -1169,6 +1217,7 @@ export function createDefaultBlock(
           ["Cell", "Cell"],
         ],
         ...DEFAULT_TABLE_STYLE,
+        boxChrome: { ...DEFAULT_BOX_CHROME },
         ...AUTO_SIZE,
       };
   }
@@ -1227,17 +1276,107 @@ function sizeAttrsFromBlock(block: {
   return { attrs: parts.join(""), style: styles.join("") };
 }
 
-type LayoutChromeFields = {
-  backgroundColor: string;
-  borderWidth: number;
-  borderColor: string;
-  borderRadius: number;
-  paddingX: number;
-  paddingY: number;
+type LayoutChromeFields = BoxChromeFields & {
   align: LayoutAlign;
   cellPadding: number;
   cellVerticalAlign: CellVerticalAlign;
 };
+
+export function boxChromeStyleParts(chrome: BoxChromeFields): string[] {
+  const bg = toEmailCssColor(chrome.backgroundColor);
+  const stroke = toEmailCssColor(chrome.borderColor);
+  const borderWidth = Math.max(0, Math.round(chrome.borderWidth));
+  const radius = Math.max(0, Math.round(chrome.borderRadius));
+  const padX = Math.max(0, Math.round(chrome.paddingX));
+  const padY = Math.max(0, Math.round(chrome.paddingY));
+  return [
+    `background:${escapeAttr(bg)}`,
+    borderWidth > 0
+      ? `border:${borderWidth}px solid ${escapeAttr(stroke)}`
+      : "border:0",
+    radius > 0 ? `border-radius:${radius}px` : null,
+    `padding:${padY}px ${padX}px`,
+    "box-sizing:border-box",
+  ].filter(Boolean) as string[];
+}
+
+/** CSS style object for canvas / preview rendering. */
+export function boxChromeCssStyle(
+  chrome: BoxChromeFields,
+): Record<string, string | number> {
+  const borderWidth = Math.max(0, Math.round(chrome.borderWidth));
+  const radius = Math.max(0, Math.round(chrome.borderRadius));
+  const padX = Math.max(0, Math.round(chrome.paddingX));
+  const padY = Math.max(0, Math.round(chrome.paddingY));
+  return {
+    backgroundColor: chrome.backgroundColor || "transparent",
+    border:
+      borderWidth > 0
+        ? `${borderWidth}px solid ${chrome.borderColor || DEFAULT_BOX_CHROME.borderColor}`
+        : "0",
+    borderRadius: radius,
+    padding: `${padY}px ${padX}px`,
+    boxSizing: "border-box",
+  };
+}
+
+function boxChromeAttrs(chrome: BoxChromeFields): string {
+  return ` data-tb-box-bg="${escapeAttr(chrome.backgroundColor)}" data-tb-box-border-width="${Math.max(0, Math.round(chrome.borderWidth))}" data-tb-box-border-color="${escapeAttr(chrome.borderColor)}" data-tb-box-radius="${Math.max(0, Math.round(chrome.borderRadius))}" data-tb-box-pad-x="${Math.max(0, Math.round(chrome.paddingX))}" data-tb-box-pad-y="${Math.max(0, Math.round(chrome.paddingY))}"`;
+}
+
+export function parseBoxChromeFromEl(el: Element): BoxChromeFields {
+  return {
+    backgroundColor:
+      attr(el, "data-tb-box-bg") || DEFAULT_BOX_CHROME.backgroundColor,
+    borderWidth: parseNumberAttr(el, "data-tb-box-border-width", 0, 0, 12),
+    borderColor:
+      attr(el, "data-tb-box-border-color") || DEFAULT_BOX_CHROME.borderColor,
+    borderRadius: parseNumberAttr(el, "data-tb-box-radius", 0, 0, 64),
+    paddingX: parseNumberAttr(el, "data-tb-box-pad-x", 0, 0, 80),
+    paddingY: parseNumberAttr(el, "data-tb-box-pad-y", 0, 0, 80),
+  };
+}
+
+export function blockHasBoxChrome(
+  block: EmailTemplateBlock,
+): boolean {
+  return (
+    block.type === "text" ||
+    block.type === "html" ||
+    block.type === "spacer" ||
+    block.type === "imageText" ||
+    block.type === "table"
+  );
+}
+
+/** Resolve outer box chrome for blocks that support it. */
+export function getBlockBoxChrome(
+  block: EmailTemplateBlock,
+): BoxChromeFields | null {
+  if (block.type === "table") {
+    return block.boxChrome ?? { ...DEFAULT_BOX_CHROME };
+  }
+  if (
+    block.type === "text" ||
+    block.type === "html" ||
+    block.type === "spacer" ||
+    block.type === "imageText"
+  ) {
+    return {
+      backgroundColor: block.backgroundColor ?? DEFAULT_BOX_CHROME.backgroundColor,
+      borderWidth: block.borderWidth ?? 0,
+      borderColor: block.borderColor ?? DEFAULT_BOX_CHROME.borderColor,
+      borderRadius: block.borderRadius ?? 0,
+      paddingX: block.paddingX ?? 0,
+      paddingY: block.paddingY ?? 0,
+    };
+  }
+  return null;
+}
+
+function layoutChromeStyleParts(chrome: LayoutChromeFields): string[] {
+  return boxChromeStyleParts(chrome);
+}
 
 function layoutChromeAttrs(chrome: LayoutChromeFields): string {
   return ` data-tb-bg="${escapeAttr(chrome.backgroundColor)}" data-tb-border-width="${Math.max(0, Math.round(chrome.borderWidth))}" data-tb-border-color="${escapeAttr(chrome.borderColor)}" data-tb-radius="${Math.max(0, Math.round(chrome.borderRadius))}" data-tb-pad-x="${Math.max(0, Math.round(chrome.paddingX))}" data-tb-pad-y="${Math.max(0, Math.round(chrome.paddingY))}" data-tb-align="${chrome.align}" data-tb-cell-pad="${Math.max(0, Math.round(chrome.cellPadding))}" data-tb-cell-valign="${chrome.cellVerticalAlign}"`;
@@ -1263,22 +1402,13 @@ function wrapLayoutChrome(
   chrome: LayoutChromeFields,
   tableHtml: string,
 ): string {
-  const bg = toEmailCssColor(chrome.backgroundColor);
-  const stroke = toEmailCssColor(chrome.borderColor);
-  const borderWidth = Math.max(0, Math.round(chrome.borderWidth));
-  const radius = Math.max(0, Math.round(chrome.borderRadius));
-  const padX = Math.max(0, Math.round(chrome.paddingX));
-  const padY = Math.max(0, Math.round(chrome.paddingY));
-  const parts = [
-    `background:${escapeAttr(bg)}`,
-    borderWidth > 0
-      ? `border:${borderWidth}px solid ${escapeAttr(stroke)}`
-      : "border:0",
-    radius > 0 ? `border-radius:${radius}px` : null,
-    `padding:${padY}px ${padX}px`,
-    "box-sizing:border-box",
-  ].filter(Boolean);
+  const parts = layoutChromeStyleParts(chrome);
   return `<div data-tb-layout-chrome="1" style="${parts.join(";")}">${tableHtml}</div>`;
+}
+
+function wrapContentColumn(inner: string, paddingCss = ""): string {
+  const pad = paddingCss ? `${paddingCss};` : "";
+  return `<div data-tb-content-col="1" style="max-width:600px;margin:0 auto;box-sizing:border-box;${pad}">${inner}</div>`;
 }
 
 function blockOuter(
@@ -1299,7 +1429,14 @@ function blockOuter(
               : "margin:0 0 16px;",
         }
       : sizeAttrsFromBlock(block);
-  return `<div data-tb-block="${block.type}" data-tb-id="${escapeAttr(block.id)}"${sized.attrs}${extraAttrs} style="${sized.style}">${inner}</div>`;
+  const chrome = getBlockBoxChrome(block);
+  const box = chrome
+    ? {
+        attrs: boxChromeAttrs(chrome),
+        style: `${boxChromeStyleParts(chrome).join(";")};`,
+      }
+    : { attrs: "", style: "" };
+  return `<div data-tb-block="${block.type}" data-tb-id="${escapeAttr(block.id)}"${sized.attrs}${box.attrs}${extraAttrs} style="${sized.style}${box.style}">${inner}</div>`;
 }
 
 function serializeBlock(block: EmailTemplateBlock): string {
@@ -1411,6 +1548,7 @@ function serializeBlock(block: EmailTemplateBlock): string {
     case "columns": {
       const count = clampColumnCount(block.columns.length);
       const widths = resolveColumnWidths(block.columnWidths, count);
+      const widthSum = widths.reduce((total, value) => total + value, 0);
       const gap = Math.max(0, Math.round(block.columnGap ?? 24));
       const cellPad = Math.max(0, Math.round(block.cellPadding ?? 0));
       const valign = block.cellVerticalAlign ?? "top";
@@ -1428,9 +1566,18 @@ function serializeBlock(block: EmailTemplateBlock): string {
           parseColumnItems(block.columns[index] || EMPTY_COLUMN_HTML),
           block.itemGap ?? 12,
         );
-        return `<td width="${widths[index]}%" valign="${valign}" data-tb-col="${index}" style="${style}">${cellHtml}</td>`;
+        const cellWidth =
+          widthSum < 100 && widthSum > 0
+            ? Math.max(1, Math.round((widths[index]! / widthSum) * 100))
+            : widths[index]!;
+        return `<td width="${cellWidth}%" valign="${valign}" data-tb-col="${index}" style="${style}">${cellHtml}</td>`;
       }).join("");
-      const table = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>${cells}</tr></table>`;
+      const innerWidth = widthSum < 100 ? Math.max(1, Math.min(100, widthSum)) : 100;
+      const columnsTable = `<table role="presentation" width="${innerWidth}%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>${cells}</tr></table>`;
+      const table =
+        widthSum < 100
+          ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr><td align="center">${columnsTable}</td></tr></table>`
+          : columnsTable;
       const inner = wrapLayoutChrome(block, table);
       const widthsAttr =
         block.columnWidths == null
@@ -1522,14 +1669,35 @@ function serializeBlock(block: EmailTemplateBlock): string {
 
 /** Email-safe HTML for sending / preview, with round-trip markers. */
 export function documentToEmailHtml(doc: EmailTemplateDocument): string {
-  const headerHtml = doc.header ? serializePageBand(doc.header, "header") : "";
-  const footerHtml = doc.footer ? serializePageBand(doc.footer, "footer") : "";
-  const blocks = doc.blocks.map(serializeBlock).join("");
   const contentBg = toEmailCssColor(
     doc.contentBackgroundColor || DEFAULT_CONTENT_BACKGROUND,
   );
-  const pad = documentContentPaddingCss(doc);
-  return `<div data-tb-doc="1"${documentChromeAttrs(doc)} style="${documentPageBackgroundCss(doc)};padding:24px;"><div style="max-width:600px;margin:0 auto;background:${escapeAttr(contentBg)};${pad};box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;color:#18181b;">${headerHtml}${blocks}${footerHtml}</div></div>`;
+  const margins = resolvePageMargins(doc);
+  const horizontalPad =
+    margins.left > 0 || margins.right > 0
+      ? `padding-left:${margins.left}px;padding-right:${margins.right}px`
+      : "";
+  const verticalPad =
+    margins.top > 0 || margins.bottom > 0
+      ? `padding-top:${margins.top}px;padding-bottom:${margins.bottom}px;`
+      : "";
+
+  const parts: string[] = [];
+  if (doc.header) {
+    parts.push(
+      wrapContentColumn(serializePageBand(doc.header, "header"), horizontalPad),
+    );
+  }
+  for (const block of doc.blocks) {
+    parts.push(wrapContentColumn(serializeBlock(block), horizontalPad));
+  }
+  if (doc.footer) {
+    parts.push(
+      wrapContentColumn(serializePageBand(doc.footer, "footer"), horizontalPad),
+    );
+  }
+
+  return `<div data-tb-doc="1"${documentChromeAttrs(doc)} style="${documentPageBackgroundCss(doc)};padding:0;"><div data-tb-canvas="1" style="background:${escapeAttr(contentBg)};${verticalPad}box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;color:#18181b;">${parts.join("")}</div></div>`;
 }
 
 export function documentToPlainText(doc: EmailTemplateDocument): string {
@@ -1766,6 +1934,7 @@ function parseTableBlock(el: Element, id: string): EmailTemplateTableBlock {
       0,
       40,
     ),
+    boxChrome: parseBoxChromeFromEl(el),
     ...parseSize(el),
   };
 }
@@ -1781,6 +1950,7 @@ function parseBlockElement(el: Element): EmailTemplateBlock | null {
         id,
         type: "text",
         html: decorateMergeFieldsHtml(el.innerHTML),
+        ...parseBoxChromeFromEl(el),
         ...parseSize(el),
       };
     case "image":
@@ -1799,6 +1969,7 @@ function parseBlockElement(el: Element): EmailTemplateBlock | null {
         type: "spacer",
         height: Number.isFinite(height) && height > 0 ? height : 24,
         width: parseOptionalPx(el, "data-tb-width"),
+        ...parseBoxChromeFromEl(el),
       };
     }
     case "imageText": {
@@ -1818,6 +1989,7 @@ function parseBlockElement(el: Element): EmailTemplateBlock | null {
         text: defaultImageTextText({
           html: decorateMergeFieldsHtml(textCell?.innerHTML ?? "<p><br /></p>"),
         }),
+        ...parseBoxChromeFromEl(el),
         ...parseSize(el),
       };
     }
@@ -1920,7 +2092,13 @@ function parseBlockElement(el: Element): EmailTemplateBlock | null {
     case "table":
       return parseTableBlock(el, id);
     case "html":
-      return { id, type: "html", html: el.innerHTML, ...parseSize(el) };
+      return {
+        id,
+        type: "html",
+        html: el.innerHTML,
+        ...parseBoxChromeFromEl(el),
+        ...parseSize(el),
+      };
     default:
       return null;
   }
@@ -1941,7 +2119,13 @@ export function parseDocumentFromHtml(
     return {
       ...defaultDocumentChrome(fallbackBackground),
       blocks: [
-        { id: createBlockId(), type: "html", html: trimmed, ...AUTO_SIZE },
+        {
+          id: createBlockId(),
+          type: "html",
+          html: trimmed,
+          ...DEFAULT_BOX_CHROME,
+          ...AUTO_SIZE,
+        },
       ],
     };
   }
@@ -1958,14 +2142,20 @@ export function parseDocumentFromHtml(
 
   const blockEls = Array.from(
     (docEl ?? root).querySelectorAll(
-      ":scope > [data-tb-block], [data-tb-doc] > div > [data-tb-block]",
+      ":scope > [data-tb-block], [data-tb-doc] > div > [data-tb-block], [data-tb-content-col] > [data-tb-block]",
     ),
   );
 
-  // Prefer blocks nested inside the white canvas wrapper.
-  const canvas = docEl?.querySelector(":scope > div");
+  // Prefer blocks nested inside the canvas wrapper (incl. content columns).
+  const canvas =
+    docEl?.querySelector(":scope > [data-tb-canvas]") ??
+    docEl?.querySelector(":scope > div");
   const nested = canvas
-    ? Array.from(canvas.querySelectorAll(":scope > [data-tb-block]"))
+    ? Array.from(
+        canvas.querySelectorAll(
+          ":scope > [data-tb-block], :scope > [data-tb-content-col] > [data-tb-block]",
+        ),
+      )
     : [];
   const candidates = nested.length > 0 ? nested : blockEls;
 
@@ -1978,7 +2168,13 @@ export function parseDocumentFromHtml(
       return {
         ...chrome,
         blocks: [
-          { id: createBlockId(), type: "html", html: trimmed, ...AUTO_SIZE },
+          {
+            id: createBlockId(),
+            type: "html",
+            html: trimmed,
+            ...DEFAULT_BOX_CHROME,
+            ...AUTO_SIZE,
+          },
         ],
       };
     }
@@ -1996,7 +2192,13 @@ export function parseDocumentFromHtml(
     return {
       ...chrome,
       blocks: [
-        { id: createBlockId(), type: "html", html: trimmed, ...AUTO_SIZE },
+        {
+          id: createBlockId(),
+          type: "html",
+          html: trimmed,
+          ...DEFAULT_BOX_CHROME,
+          ...AUTO_SIZE,
+        },
       ],
     };
   }
@@ -2105,6 +2307,21 @@ export function insertBlockAt(
   return { ...doc, blocks };
 }
 
+export function insertBlocksAt(
+  doc: EmailTemplateDocument,
+  index: number,
+  incoming: EmailTemplateBlock[],
+): EmailTemplateDocument {
+  if (incoming.length === 0) return doc;
+  if (incoming.length === 1) {
+    return insertBlockAt(doc, index, incoming[0]!);
+  }
+  const blocks = [...doc.blocks];
+  const clamped = Math.max(0, Math.min(blocks.length, index));
+  blocks.splice(clamped, 0, ...incoming);
+  return { ...doc, blocks };
+}
+
 export function insertBlockAfter(
   doc: EmailTemplateDocument,
   afterBlockId: string,
@@ -2125,7 +2342,7 @@ export function insertVariantAt(
   if (isPageBandVariant(variantId)) {
     return applyPageBandVariant(doc, variantId);
   }
-  return insertBlockAt(doc, index, createBlockFromVariant(variantId));
+  return insertBlocksAt(doc, index, createBlocksFromVariant(variantId));
 }
 
 export function appendVariant(
@@ -2749,6 +2966,46 @@ export function setColumnCount(
   };
 }
 
+/**
+ * Remove one column from a section. Remaining columns keep their width
+ * percentages (and center when they no longer fill 100%). Removing the last
+ * column deletes the whole section.
+ */
+export function removeColumn(
+  doc: EmailTemplateDocument,
+  blockId: string,
+  columnIndex: number,
+): EmailTemplateDocument {
+  const block = doc.blocks.find((entry) => entry.id === blockId);
+  if (!block || block.type !== "columns") return doc;
+  if (columnIndex < 0 || columnIndex >= block.columns.length) return doc;
+
+  if (block.columns.length <= 1) {
+    return removeBlock(doc, blockId);
+  }
+
+  const widths = resolveColumnWidths(
+    block.columnWidths,
+    block.columns.length,
+  );
+  const nextColumns = block.columns.filter((_, index) => index !== columnIndex);
+  const nextWidths = widths.filter((_, index) => index !== columnIndex);
+  const widthSum = nextWidths.reduce((total, value) => total + value, 0);
+
+  return {
+    ...doc,
+    blocks: doc.blocks.map((entry) => {
+      if (entry.id !== blockId || entry.type !== "columns") return entry;
+      return {
+        ...entry,
+        columns: nextColumns,
+        columnWidths: nextWidths,
+        align: widthSum < 100 ? "center" : entry.align,
+      };
+    }),
+  };
+}
+
 /** Set percentage widths for each column, or `null` for equal/auto. */
 export function setColumnWidths(
   doc: EmailTemplateDocument,
@@ -3241,7 +3498,22 @@ export interface BuilderComponentVariant {
     | "table3"
     | "header"
     | "footer"
-    | "merge";
+    | "merge"
+    | "layout";
+  /** Single-row column width percentages for layout preview tiles. */
+  layoutWidths?: readonly number[];
+  /** Display labels for each column (defaults to `${width}%`). */
+  layoutLabels?: readonly string[];
+  /** Multi-row layout preview (Multiple Sections). */
+  layoutRows?: readonly (readonly number[])[];
+  /** Display labels per row for multi-section previews. */
+  layoutRowLabels?: readonly (readonly string[])[];
+}
+
+export interface BuilderComponentGroup {
+  id: string;
+  label: string;
+  variants: readonly BuilderComponentVariant[];
 }
 
 export interface BuilderComponentFolder {
@@ -3250,6 +3522,8 @@ export interface BuilderComponentFolder {
   icon: string;
   note?: string;
   variants: readonly BuilderComponentVariant[];
+  /** Nested accordion groups (used by Layout). */
+  groups?: readonly BuilderComponentGroup[];
 }
 
 export const BUILDER_COMPONENT_FOLDERS: readonly BuilderComponentFolder[] = [
@@ -3294,14 +3568,126 @@ export const BUILDER_COMPONENT_FOLDERS: readonly BuilderComponentFolder[] = [
     id: "layout",
     label: "Layout",
     icon: "view_column",
-    note: "Drop Text, Image, Button, and other components into columns or grid cells.",
-    variants: [
-      { id: "columns-1", label: "1 Column", preview: "columns2" },
-      { id: "columns-2", label: "2 Columns", preview: "columns2" },
-      { id: "columns-3", label: "3 Columns", preview: "columns3" },
-      { id: "grid-2x2", label: "2 × 2 Grid", preview: "grid2" },
-      { id: "grid-2x3", label: "2 × 3 Grid", preview: "grid3" },
-      { id: "grid-3x3", label: "3 × 3 Grid", preview: "grid3" },
+    variants: [],
+    groups: [
+      {
+        id: "layout-1",
+        label: "1 column",
+        variants: [
+          {
+            id: "columns-1-100",
+            label: "100%",
+            preview: "layout",
+            layoutWidths: [100],
+            layoutLabels: ["100%"],
+          },
+        ],
+      },
+      {
+        id: "layout-2",
+        label: "2 column",
+        variants: [
+          {
+            id: "columns-2-50-50",
+            label: "50% / 50%",
+            preview: "layout",
+            layoutWidths: [50, 50],
+          },
+          {
+            id: "columns-2-33-67",
+            label: "33% / 67%",
+            preview: "layout",
+            layoutWidths: [33, 67],
+          },
+          {
+            id: "columns-2-67-33",
+            label: "67% / 33%",
+            preview: "layout",
+            layoutWidths: [67, 33],
+          },
+          {
+            id: "columns-2-25-75",
+            label: "25% / 75%",
+            preview: "layout",
+            layoutWidths: [25, 75],
+          },
+          {
+            id: "columns-2-75-25",
+            label: "75% / 25%",
+            preview: "layout",
+            layoutWidths: [75, 25],
+          },
+        ],
+      },
+      {
+        id: "layout-3",
+        label: "3 column",
+        variants: [
+          {
+            id: "columns-3-33-33-33",
+            label: "33.33% / 33.33% / 33.33%",
+            preview: "layout",
+            layoutWidths: [33, 33, 34],
+            layoutLabels: ["33.33%", "33.33%", "33.33%"],
+          },
+          {
+            id: "columns-3-25-50-25",
+            label: "25% / 50% / 25%",
+            preview: "layout",
+            layoutWidths: [25, 50, 25],
+          },
+          {
+            id: "columns-3-25-25-50",
+            label: "25% / 25% / 50%",
+            preview: "layout",
+            layoutWidths: [25, 25, 50],
+          },
+          {
+            id: "columns-3-50-25-25",
+            label: "50% / 25% / 25%",
+            preview: "layout",
+            layoutWidths: [50, 25, 25],
+          },
+        ],
+      },
+      {
+        id: "layout-4",
+        label: "4 column",
+        variants: [
+          {
+            id: "columns-4-25-25-25-25",
+            label: "25% / 25% / 25% / 25%",
+            preview: "layout",
+            layoutWidths: [25, 25, 25, 25],
+          },
+        ],
+      },
+      {
+        id: "layout-multi",
+        label: "Multiple Sections",
+        variants: [
+          {
+            id: "sections-100-50-50",
+            label: "100% then 50% / 50%",
+            preview: "layout",
+            layoutRows: [[100], [50, 50]],
+            layoutRowLabels: [["100%"], ["50%", "50%"]],
+          },
+          {
+            id: "sections-50-50-50-50",
+            label: "50% / 50% then 50% / 50%",
+            preview: "layout",
+            layoutRows: [
+              [50, 50],
+              [50, 50],
+            ],
+            layoutRowLabels: [
+              ["50%", "50%"],
+              ["50%", "50%"],
+            ],
+          },
+        ],
+      },
     ],
   },
   {
@@ -3359,6 +3745,47 @@ export const BUILDER_COMPONENT_TYPES: readonly {
   { type: "table", label: "Table", icon: "table" },
 ];
 
+function emptyColumnCells(count: number): string[] {
+  return Array.from({ length: Math.max(1, count) }, () => EMPTY_COLUMN_HTML);
+}
+
+function createColumnsBlockFromWidths(
+  widths: readonly number[],
+): EmailTemplateColumnsBlock {
+  const normalized = normalizeColumnWidths([...widths], widths.length);
+  const autoEqual = equalColumnWidths(normalized.length);
+  const isAutoEqual =
+    normalized.length === autoEqual.length &&
+    normalized.every((width, index) => width === autoEqual[index]);
+  return {
+    id: createBlockId(),
+    type: "columns",
+    columns: emptyColumnCells(normalized.length),
+    columnWidths: isAutoEqual ? null : normalized,
+    columnGap: 24,
+    itemGap: 12,
+    ...DEFAULT_LAYOUT_CHROME,
+    ...AUTO_SIZE,
+  };
+}
+
+/** One or more blocks for a palette variant (multi-section layouts return several). */
+export function createBlocksFromVariant(
+  variantId: string,
+): EmailTemplateBlock[] {
+  switch (variantId) {
+    case "sections-100-50-50":
+      return [createColumnsBlockFromWidths([100]), createColumnsBlockFromWidths([50, 50])];
+    case "sections-50-50-50-50":
+      return [
+        createColumnsBlockFromWidths([50, 50]),
+        createColumnsBlockFromWidths([50, 50]),
+      ];
+    default:
+      return [createBlockFromVariant(variantId)];
+  }
+}
+
 export function createBlockFromVariant(variantId: string): EmailTemplateBlock {
   const id = createBlockId();
   if (isMergeFieldVariant(variantId)) {
@@ -3367,17 +3794,25 @@ export function createBlockFromVariant(variantId: string): EmailTemplateBlock {
       id,
       type: "text",
       html: `<p>${chip}</p>`,
+      ...DEFAULT_BOX_CHROME,
       ...AUTO_SIZE,
     };
   }
   switch (variantId) {
     case "text-paragraph":
-      return { id, type: "text", html: "<p><br /></p>", ...AUTO_SIZE };
+      return {
+        id,
+        type: "text",
+        html: DEFAULT_TEXT_BLOCK_HTML,
+        ...DEFAULT_BOX_CHROME,
+        ...AUTO_SIZE,
+      };
     case "text-heading":
       return {
         id,
         type: "text",
-        html: "<h2><br /></h2>",
+        html: DEFAULT_HEADING_BLOCK_HTML,
+        ...DEFAULT_BOX_CHROME,
         ...AUTO_SIZE,
       };
     case "image-single":
@@ -3404,11 +3839,29 @@ export function createBlockFromVariant(variantId: string): EmailTemplateBlock {
         ...AUTO_SIZE,
       };
     case "spacer-sm":
-      return { id, type: "spacer", height: 16, width: null };
+      return {
+        id,
+        type: "spacer",
+        height: 16,
+        width: null,
+        ...DEFAULT_BOX_CHROME,
+      };
     case "spacer-md":
-      return { id, type: "spacer", height: 32, width: null };
+      return {
+        id,
+        type: "spacer",
+        height: 32,
+        width: null,
+        ...DEFAULT_BOX_CHROME,
+      };
     case "spacer-lg":
-      return { id, type: "spacer", height: 64, width: null };
+      return {
+        id,
+        type: "spacer",
+        height: 64,
+        width: null,
+        ...DEFAULT_BOX_CHROME,
+      };
     case "imageText-left":
       return {
         id,
@@ -3416,6 +3869,7 @@ export function createBlockFromVariant(variantId: string): EmailTemplateBlock {
         imagePosition: "left",
         image: defaultImageTextImage(),
         text: defaultImageTextText(),
+        ...DEFAULT_BOX_CHROME,
         ...AUTO_SIZE,
       };
     case "imageText-right":
@@ -3425,6 +3879,7 @@ export function createBlockFromVariant(variantId: string): EmailTemplateBlock {
         imagePosition: "right",
         image: defaultImageTextImage(),
         text: defaultImageTextText(),
+        ...DEFAULT_BOX_CHROME,
         ...AUTO_SIZE,
       };
     case "imageText-triple":
@@ -3463,38 +3918,35 @@ export function createBlockFromVariant(variantId: string): EmailTemplateBlock {
         ...AUTO_SIZE,
       };
     case "columns-1":
-      return {
-        id,
-        type: "columns",
-        columns: ["<p><br /></p>"],
-        columnWidths: null,
-        columnGap: 24,
-        itemGap: 12,
-        ...DEFAULT_LAYOUT_CHROME,
-        ...AUTO_SIZE,
-      };
+    case "columns-1-100":
+      return createColumnsBlockFromWidths([100]);
     case "columns-2":
-      return {
-        id,
-        type: "columns",
-        columns: ["<p><br /></p>", "<p><br /></p>"],
-        columnWidths: null,
-        columnGap: 24,
-        itemGap: 12,
-        ...DEFAULT_LAYOUT_CHROME,
-        ...AUTO_SIZE,
-      };
+    case "columns-2-50-50":
+      return createColumnsBlockFromWidths([50, 50]);
+    case "columns-2-33-67":
+      return createColumnsBlockFromWidths([33, 67]);
+    case "columns-2-67-33":
+      return createColumnsBlockFromWidths([67, 33]);
+    case "columns-2-25-75":
+      return createColumnsBlockFromWidths([25, 75]);
+    case "columns-2-75-25":
+      return createColumnsBlockFromWidths([75, 25]);
     case "columns-3":
-      return {
-        id,
-        type: "columns",
-        columns: ["<p><br /></p>", "<p><br /></p>", "<p><br /></p>"],
-        columnWidths: null,
-        columnGap: 24,
-        itemGap: 12,
-        ...DEFAULT_LAYOUT_CHROME,
-        ...AUTO_SIZE,
-      };
+    case "columns-3-33-33-33":
+      return createColumnsBlockFromWidths([33, 33, 34]);
+    case "columns-3-25-50-25":
+      return createColumnsBlockFromWidths([25, 50, 25]);
+    case "columns-3-25-25-50":
+      return createColumnsBlockFromWidths([25, 25, 50]);
+    case "columns-3-50-25-25":
+      return createColumnsBlockFromWidths([50, 25, 25]);
+    case "columns-4":
+    case "columns-4-25-25-25-25":
+      return createColumnsBlockFromWidths([25, 25, 25, 25]);
+    case "sections-100-50-50":
+      return createColumnsBlockFromWidths([100]);
+    case "sections-50-50-50-50":
+      return createColumnsBlockFromWidths([50, 50]);
     case "grid-2x2":
       return {
         id,
@@ -3540,6 +3992,7 @@ export function createBlockFromVariant(variantId: string): EmailTemplateBlock {
           ["Cell", "Cell"],
         ],
         ...DEFAULT_TABLE_STYLE,
+        boxChrome: { ...DEFAULT_BOX_CHROME },
         ...AUTO_SIZE,
       };
     case "table-3x3":
@@ -3552,6 +4005,7 @@ export function createBlockFromVariant(variantId: string): EmailTemplateBlock {
           ["Cell", "Cell", "Cell"],
         ],
         ...DEFAULT_TABLE_STYLE,
+        boxChrome: { ...DEFAULT_BOX_CHROME },
         ...AUTO_SIZE,
       };
     default:
@@ -3614,6 +4068,7 @@ export function documentFromStarter(input: {
         html:
           input.bodyHtml.trim() ||
           `<p>${input.bodyText.replace(/\n/g, "<br />")}</p>`,
+        ...DEFAULT_BOX_CHROME,
         ...AUTO_SIZE,
       },
     ],

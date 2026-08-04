@@ -6,6 +6,7 @@ import {
   BLOCK_TYPE_LABELS,
   BUTTON_FONT_FAMILIES,
   COLUMN_LIMITS,
+  DEFAULT_BOX_CHROME,
   DEFAULT_IMAGE_STYLE,
   DEFAULT_LAYOUT_CHROME,
   equalColumnWidths,
@@ -22,6 +23,7 @@ import {
   serializeColumnItems,
   type BackgroundPosition,
   type BackgroundSize,
+  type BoxChromeFields,
   type CellVerticalAlign,
   type ColumnItem,
   type EmailTemplateBlock,
@@ -660,6 +662,77 @@ function SizeFields({
   );
 }
 
+function BoxChromeFields({
+  idPrefix,
+  value,
+  onChange,
+}: {
+  idPrefix: string;
+  value: BoxChromeFields;
+  onChange: (patch: Partial<BoxChromeFields>) => void;
+}): React.ReactElement {
+  return (
+    <Section title="Chrome">
+      <ColorField
+        id={`${idPrefix}-bg`}
+        label="Background"
+        value={value.backgroundColor || DEFAULT_BOX_CHROME.backgroundColor}
+        onChange={(backgroundColor) => onChange({ backgroundColor })}
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id={`${idPrefix}-border-w`}
+          label="Border"
+          badge="B"
+          value={value.borderWidth}
+          min={0}
+          max={12}
+          suffix="px"
+          onChange={(borderWidth) => onChange({ borderWidth })}
+        />
+        <NumberField
+          id={`${idPrefix}-radius`}
+          label="Radius"
+          badge="R"
+          value={value.borderRadius}
+          min={0}
+          max={64}
+          suffix="px"
+          onChange={(borderRadius) => onChange({ borderRadius })}
+        />
+      </div>
+      <ColorField
+        id={`${idPrefix}-border-color`}
+        label="Border color"
+        value={value.borderColor || DEFAULT_BOX_CHROME.borderColor}
+        onChange={(borderColor) => onChange({ borderColor })}
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          id={`${idPrefix}-pad-x`}
+          label="Pad width"
+          badge="W"
+          value={value.paddingX}
+          min={0}
+          max={80}
+          suffix="px"
+          onChange={(paddingX) => onChange({ paddingX })}
+        />
+        <NumberField
+          id={`${idPrefix}-pad-y`}
+          label="Pad height"
+          badge="H"
+          value={value.paddingY}
+          min={0}
+          max={80}
+          suffix="px"
+          onChange={(paddingY) => onChange({ paddingY })}
+        />
+      </div>
+    </Section>
+  );
+}
+
 function LayoutChromeFields({
   idPrefix,
   value,
@@ -693,64 +766,18 @@ function LayoutChromeFields({
 }): React.ReactElement {
   return (
     <>
-      <Section title="Chrome">
-        <ColorField
-          id={`${idPrefix}-bg`}
-          label="Background"
-          value={value.backgroundColor || DEFAULT_LAYOUT_CHROME.backgroundColor}
-          onChange={(backgroundColor) => onChange({ backgroundColor })}
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <NumberField
-            id={`${idPrefix}-border-w`}
-            label="Border"
-            badge="B"
-            value={value.borderWidth}
-            min={0}
-            max={12}
-            suffix="px"
-            onChange={(borderWidth) => onChange({ borderWidth })}
-          />
-          <NumberField
-            id={`${idPrefix}-radius`}
-            label="Radius"
-            badge="R"
-            value={value.borderRadius}
-            min={0}
-            max={64}
-            suffix="px"
-            onChange={(borderRadius) => onChange({ borderRadius })}
-          />
-        </div>
-        <ColorField
-          id={`${idPrefix}-border-color`}
-          label="Border color"
-          value={value.borderColor || DEFAULT_LAYOUT_CHROME.borderColor}
-          onChange={(borderColor) => onChange({ borderColor })}
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <NumberField
-            id={`${idPrefix}-pad-x`}
-            label="Pad width"
-            badge="W"
-            value={value.paddingX}
-            min={0}
-            max={80}
-            suffix="px"
-            onChange={(paddingX) => onChange({ paddingX })}
-          />
-          <NumberField
-            id={`${idPrefix}-pad-y`}
-            label="Pad height"
-            badge="H"
-            value={value.paddingY}
-            min={0}
-            max={80}
-            suffix="px"
-            onChange={(paddingY) => onChange({ paddingY })}
-          />
-        </div>
-      </Section>
+      <BoxChromeFields
+        idPrefix={idPrefix}
+        value={{
+          backgroundColor: value.backgroundColor,
+          borderWidth: value.borderWidth,
+          borderColor: value.borderColor,
+          borderRadius: value.borderRadius,
+          paddingX: value.paddingX,
+          paddingY: value.paddingY,
+        }}
+        onChange={onChange}
+      />
       <Section title="Alignment">
         <SelectField
           id={`${idPrefix}-align`}
@@ -1374,6 +1401,18 @@ function TableInspector({
 
   return (
     <>
+      <BoxChromeFields
+        idPrefix={`inspect-table-chrome-${block.id}`}
+        value={block.boxChrome ?? { ...DEFAULT_BOX_CHROME }}
+        onChange={(patch) =>
+          onChange({
+            boxChrome: {
+              ...(block.boxChrome ?? { ...DEFAULT_BOX_CHROME }),
+              ...patch,
+            },
+          })
+        }
+      />
       <Section title="Grid">
         <div className="grid grid-cols-2 gap-2">
           <NumberField
@@ -1821,7 +1860,7 @@ function DocumentDesignInspector({
             id="inspect-doc-margin-top"
             label="Top"
             badge="T"
-            value={doc.pageMarginTop ?? 24}
+            value={doc.pageMarginTop ?? 0}
             min={0}
             max={120}
             suffix="px"
@@ -1835,7 +1874,7 @@ function DocumentDesignInspector({
             id="inspect-doc-margin-right"
             label="Right"
             badge="R"
-            value={doc.pageMarginRight ?? 24}
+            value={doc.pageMarginRight ?? 0}
             min={0}
             max={120}
             suffix="px"
@@ -1852,7 +1891,7 @@ function DocumentDesignInspector({
             id="inspect-doc-margin-bottom"
             label="Bottom"
             badge="B"
-            value={doc.pageMarginBottom ?? 24}
+            value={doc.pageMarginBottom ?? 0}
             min={0}
             max={120}
             suffix="px"
@@ -1869,7 +1908,7 @@ function DocumentDesignInspector({
             id="inspect-doc-margin-left"
             label="Left"
             badge="L"
-            value={doc.pageMarginLeft ?? 24}
+            value={doc.pageMarginLeft ?? 0}
             min={0}
             max={120}
             suffix="px"
@@ -1883,10 +1922,6 @@ function DocumentDesignInspector({
             }
           />
         </div>
-        <p className="text-[10px] leading-relaxed text-[#8c8c8c]">
-          Margins inset header, body, and footer inside the white content card —
-          the same padding used in Preview.
-        </p>
       </Section>
     </>
   );
@@ -2181,21 +2216,51 @@ export function BuilderInspector({
             </Section>
           </>
         ) : block.type === "spacer" ? (
-          <Section title="Layout">
-            <SizeFields
-              idPrefix={`inspect-spacer-size-${block.id}`}
-              width={block.width}
-              height={block.height}
-              onChange={(patch) => {
-                if (patch.width !== undefined) onChange({ width: patch.width });
-                if (patch.height != null && patch.height > 0) {
-                  onChange({ height: patch.height });
-                }
+          <>
+            <BoxChromeFields
+              idPrefix={`inspect-spacer-chrome-${block.id}`}
+              value={{
+                backgroundColor:
+                  block.backgroundColor ?? DEFAULT_BOX_CHROME.backgroundColor,
+                borderWidth: block.borderWidth ?? 0,
+                borderColor:
+                  block.borderColor ?? DEFAULT_BOX_CHROME.borderColor,
+                borderRadius: block.borderRadius ?? 0,
+                paddingX: block.paddingX ?? 0,
+                paddingY: block.paddingY ?? 0,
               }}
+              onChange={onChange}
             />
-          </Section>
+            <Section title="Layout">
+              <SizeFields
+                idPrefix={`inspect-spacer-size-${block.id}`}
+                width={block.width}
+                height={block.height}
+                onChange={(patch) => {
+                  if (patch.width !== undefined) onChange({ width: patch.width });
+                  if (patch.height != null && patch.height > 0) {
+                    onChange({ height: patch.height });
+                  }
+                }}
+              />
+            </Section>
+          </>
         ) : block.type === "imageText" ? (
           <>
+            <BoxChromeFields
+              idPrefix={`inspect-it-chrome-${block.id}`}
+              value={{
+                backgroundColor:
+                  block.backgroundColor ?? DEFAULT_BOX_CHROME.backgroundColor,
+                borderWidth: block.borderWidth ?? 0,
+                borderColor:
+                  block.borderColor ?? DEFAULT_BOX_CHROME.borderColor,
+                borderRadius: block.borderRadius ?? 0,
+                paddingX: block.paddingX ?? 0,
+                paddingY: block.paddingY ?? 0,
+              }}
+              onChange={onChange}
+            />
             <Section title="Image + Text">
               <SelectField
                 id={`inspect-it-pos-${block.id}`}
@@ -2211,10 +2276,6 @@ export function BuilderInspector({
                 <option value="left">Image left</option>
                 <option value="right">Image right</option>
               </SelectField>
-              <p className="text-[10px] leading-relaxed text-[#8c8c8c]">
-                Select the Image or Text child in Hierarchy (or on the canvas)
-                to edit its settings.
-              </p>
             </Section>
             <Section title="Layout">
               <SizeFields
@@ -2226,17 +2287,30 @@ export function BuilderInspector({
             </Section>
           </>
         ) : block.type === "text" || block.type === "html" ? (
-          <Section title="Layout">
-            <SizeFields
-              idPrefix={`inspect-${block.type}-size-${block.id}`}
-              width={block.width}
-              height={block.height}
+          <>
+            <BoxChromeFields
+              idPrefix={`inspect-${block.type}-chrome-${block.id}`}
+              value={{
+                backgroundColor:
+                  block.backgroundColor ?? DEFAULT_BOX_CHROME.backgroundColor,
+                borderWidth: block.borderWidth ?? 0,
+                borderColor:
+                  block.borderColor ?? DEFAULT_BOX_CHROME.borderColor,
+                borderRadius: block.borderRadius ?? 0,
+                paddingX: block.paddingX ?? 0,
+                paddingY: block.paddingY ?? 0,
+              }}
               onChange={onChange}
             />
-            <p className="text-[10px] leading-relaxed text-[#8c8c8c]">
-              Edit content on the canvas. Use 0 for auto width/height.
-            </p>
-          </Section>
+            <Section title="Layout">
+              <SizeFields
+                idPrefix={`inspect-${block.type}-size-${block.id}`}
+                width={block.width}
+                height={block.height}
+                onChange={onChange}
+              />
+            </Section>
+          </>
         ) : (
           <p className="px-3 py-4 text-[11px] leading-relaxed text-[#8c8c8c]">
             Edit this block directly on the canvas.

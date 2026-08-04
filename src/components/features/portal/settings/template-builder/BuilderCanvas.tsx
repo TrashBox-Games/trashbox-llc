@@ -21,7 +21,8 @@ import {
   isBuilderDrag,
   isMergeFieldDrag,
   readBuilderDragData,
-  resolveInsertIndex,
+  resolveInsertPlacement,
+  type InsertPlacement,
 } from "@/lib/email-template-dnd";
 import { cn } from "@/lib/utils";
 
@@ -76,21 +77,88 @@ export interface BuilderCanvasProps {
   className?: string;
 }
 
-function InsertIndicator({ index }: { index: number }): React.ReactElement {
+function blockTypeLabel(type: EmailTemplateBlock["type"]): string {
+  switch (type) {
+    case "columns":
+      return "Section";
+    case "grid":
+      return "Grid";
+    case "text":
+      return "Text";
+    case "button":
+      return "Button";
+    case "image":
+      return "Image";
+    case "imageText":
+      return "Image text";
+    case "spacer":
+      return "Spacer";
+    case "divider":
+      return "Divider";
+    case "table":
+      return "Table";
+    case "html":
+      return "HTML";
+    default:
+      return "Block";
+  }
+}
+
+function insertSlotLabel(
+  placement: InsertPlacement,
+  blocks: ReadonlyArray<EmailTemplateBlock>,
+): string {
+  if (blocks.length === 0) return "Insert here";
+  const anchor = blocks[placement.anchorIndex] ?? blocks[0]!;
+  const name = blockTypeLabel(anchor.type);
+  return placement.relation === "before"
+    ? `Insert before ${name}`
+    : `Insert after ${name}`;
+}
+
+/**
+ * Absolutely positioned overlay badge. Parent must be `relative`; this takes
+ * no layout height so neighbors never shift while dragging.
+ */
+function InsertIndicator({
+  index,
+  label,
+}: {
+  index: number;
+  label: string;
+}): React.ReactElement {
   return (
     <div
       data-testid={`builder-drop-slot-${index}`}
-      aria-label={`Insert at position ${index + 1}`}
-      className="relative my-1 flex h-14 items-center px-1"
+      aria-label={label}
+      className="pointer-events-none absolute inset-x-1 top-1/2 z-20 flex -translate-y-1/2 items-center justify-center"
     >
-      <div className="h-2 w-full rounded-full bg-sky-500 shadow-[0_0_0_6px_rgba(14,165,233,0.22)]" />
+      <div className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-sky-500" />
+      <span className="relative z-10 rounded-none bg-sky-500 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-white shadow-sm">
+        {label}
+      </span>
     </div>
   );
 }
 
-/** Quiet spacer between blocks when not dragging; keeps vertical rhythm. */
-function BlockGap(): React.ReactElement {
-  return <div className="h-6" aria-hidden />;
+/**
+ * Zero-height insert slot between flush block outlines. The drag badge overlays
+ * this without pushing neighbors apart.
+ */
+function BlockGap({
+  children,
+}: {
+  children?: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <div
+      data-testid="builder-block-gap"
+      className="relative h-0"
+      aria-hidden={children == null}
+    >
+      {children}
+    </div>
+  );
 }
 
 function PageBandEditor({
@@ -123,6 +191,10 @@ function PageBandEditor({
           borderTopColor: band.borderColor,
         };
 
+  const [hovered, setHovered] = useState(false);
+  const showChrome = selected || hovered;
+  const label = role === "header" ? "Header" : "Footer";
+
   return (
     <div
       data-testid={`builder-page-${role}`}
@@ -130,6 +202,8 @@ function PageBandEditor({
       tabIndex={0}
       aria-label={role === "header" ? "Email header" : "Email footer"}
       aria-pressed={selected}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onClick={(event) => {
         event.stopPropagation();
         onSelect();
@@ -142,11 +216,13 @@ function PageBandEditor({
         }
       }}
       className={cn(
-        "relative text-[#18181b] transition-colors",
+        "relative rounded-none text-[#18181b] transition-colors",
         role === "footer" && "mt-0",
         selected
-          ? "ring-2 ring-sky-500 ring-offset-0"
-          : "hover:ring-1 hover:ring-sky-300",
+          ? "outline-2 outline-sky-500 -outline-offset-1"
+          : hovered
+            ? "outline-1 outline-sky-500/40 -outline-offset-1"
+            : "outline-none",
       )}
       style={{
         backgroundColor:
@@ -158,6 +234,18 @@ function PageBandEditor({
         ...borderStyle,
       }}
     >
+      {showChrome ? (
+        <div
+          data-testid={`builder-page-${role}-tag`}
+          data-tb-tag-state={selected ? "selected" : "hover"}
+          className={cn(
+            "absolute top-0 left-0 z-30 flex h-5 -translate-y-full items-center rounded-none px-1.5 text-[11px] leading-none font-medium whitespace-nowrap text-white",
+            selected ? "bg-sky-500" : "bg-sky-500/55",
+          )}
+        >
+          {label}
+        </div>
+      ) : null}
       {selected ? (
         <div
           onMouseDown={(event) => event.stopPropagation()}
@@ -211,18 +299,21 @@ export function BuilderCanvas({
   className,
 }: BuilderCanvasProps): React.ReactElement {
   const [toolbarHost, setToolbarHost] = useState<HTMLDivElement | null>(null);
-  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [dropPlacement, setDropPlacement] = useState<InsertPlacement | null>(
+    null,
+  );
   const dropIndexRef = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const dropIndex = dropPlacement?.index ?? null;
 
   function clearDropVisual() {
-    setDropIndex(null);
+    setDropPlacement(null);
   }
 
   function clearDropState() {
     dropIndexRef.current = null;
-    setDropIndex(null);
+    setDropPlacement(null);
   }
 
   // Nested column/grid drops stopPropagation, so the page drop handler never
@@ -268,9 +359,9 @@ export function BuilderCanvas({
     event.preventDefault();
     event.dataTransfer.dropEffect =
       event.dataTransfer.effectAllowed === "move" ? "move" : "copy";
-    const next = resolveInsertIndex(event.clientY, collectBlockRects());
-    dropIndexRef.current = next;
-    setDropIndex(next);
+    const next = resolveInsertPlacement(event.clientY, collectBlockRects());
+    dropIndexRef.current = next.index;
+    setDropPlacement(next);
   }
 
   function handleDragOverCapture(event: React.DragEvent) {
@@ -310,6 +401,8 @@ export function BuilderCanvas({
   const margins = documentContentPaddingStyle(doc);
   const showEmpty = doc.blocks.length === 0 && !doc.header && !doc.footer;
   const flatPage = isFlatPageDocument(doc);
+  /** Editor-only backdrop so the white content page reads clearly (not emailed). */
+  const EDITOR_SURFACE_CHROME = "#e8e8ec";
 
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col bg-zinc-100", className)}>
@@ -361,11 +454,18 @@ export function BuilderCanvas({
       <div
         ref={surfaceRef}
         className="min-h-0 flex-1 overflow-y-auto"
-        style={{
-          ...documentPageBackgroundStyle(doc),
-          // Match preview/email outer chrome around the content card.
-          padding: 24,
-        }}
+        style={
+          flatPage
+            ? {
+                backgroundColor: EDITOR_SURFACE_CHROME,
+                // Extra horizontal room so section outlines can bleed past 600px.
+                padding: "24px 48px 48px",
+              }
+            : {
+                ...documentPageBackgroundStyle(doc),
+                padding: 0,
+              }
+        }
         onClick={() => {
           onSelectBlock(null);
           onSelectPageBand?.(null);
@@ -377,9 +477,7 @@ export function BuilderCanvas({
           <div
             className={cn(
               "relative box-border min-h-[640px] w-full overflow-visible text-[#18181b]",
-              flatPage
-                ? "ring-1 ring-zinc-200/80"
-                : "shadow-[0_8px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/5",
+              "shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/5",
               dropIndex != null && "ring-2 ring-sky-500",
             )}
             style={{
@@ -392,25 +490,27 @@ export function BuilderCanvas({
             data-tb-flat-page={flatPage ? "true" : "false"}
           >
             {doc.header ? (
-              <PageBandEditor
-                role="header"
-                band={doc.header}
-                selected={selectedPageBand === "header"}
-                toolbarPortal={
-                  selectedPageBand === "header" ? toolbarHost : null
-                }
-                onSelect={() => {
-                  onSelectBlock(null);
-                  onSelectPageBand?.("header");
-                }}
-                onChange={(patch) => onChangePageBand?.("header", patch)}
-              />
+              <div className="mx-auto w-full max-w-[600px]">
+                <PageBandEditor
+                  role="header"
+                  band={doc.header}
+                  selected={selectedPageBand === "header"}
+                  toolbarPortal={
+                    selectedPageBand === "header" ? toolbarHost : null
+                  }
+                  onSelect={() => {
+                    onSelectBlock(null);
+                    onSelectPageBand?.("header");
+                  }}
+                  onChange={(patch) => onChangePageBand?.("header", patch)}
+                />
+              </div>
             ) : null}
 
             {showEmpty ? (
               <div
                 className={cn(
-                  "flex min-h-[520px] flex-col items-center justify-center rounded-md border-2 border-dashed px-6 py-24 text-center transition-colors",
+                  "mx-auto flex min-h-[520px] max-w-[600px] flex-col items-center justify-center rounded-md border-2 border-dashed px-6 py-24 text-center transition-colors",
                   dropIndex != null
                     ? "border-sky-500 bg-sky-50"
                     : "border-zinc-200",
@@ -423,12 +523,20 @@ export function BuilderCanvas({
               </div>
             ) : (
               <div ref={listRef} className="space-y-0">
-                {dropIndex === 0 ? <InsertIndicator index={0} /> : null}
+                <div className="relative h-0">
+                  {dropPlacement && dropPlacement.index === 0 ? (
+                    <InsertIndicator
+                      index={0}
+                      label={insertSlotLabel(dropPlacement, doc.blocks)}
+                    />
+                  ) : null}
+                </div>
                 {doc.blocks.map((block, index) => (
                   <div key={block.id}>
                     <div
                       data-builder-block-index={index}
                       data-testid={`builder-block-wrap-${index}`}
+                      className="mx-auto w-full max-w-[600px]"
                     >
                       <BuilderBlock
                         block={block}
@@ -503,34 +611,49 @@ export function BuilderCanvas({
                       />
                     </div>
                     {index < doc.blocks.length - 1 ? (
-                      dropIndex === index + 1 ? (
-                        <InsertIndicator index={index + 1} />
-                      ) : (
-                        <BlockGap />
-                      )
+                      <BlockGap>
+                        {dropPlacement &&
+                        dropPlacement.index === index + 1 ? (
+                          <InsertIndicator
+                            index={index + 1}
+                            label={insertSlotLabel(
+                              dropPlacement,
+                              doc.blocks,
+                            )}
+                          />
+                        ) : null}
+                      </BlockGap>
                     ) : null}
                   </div>
                 ))}
-                {dropIndex === doc.blocks.length ? (
-                  <InsertIndicator index={doc.blocks.length} />
-                ) : null}
+                <div className="relative h-0">
+                  {dropPlacement &&
+                  dropPlacement.index === doc.blocks.length ? (
+                    <InsertIndicator
+                      index={doc.blocks.length}
+                      label={insertSlotLabel(dropPlacement, doc.blocks)}
+                    />
+                  ) : null}
+                </div>
               </div>
             )}
 
             {doc.footer ? (
-              <PageBandEditor
-                role="footer"
-                band={doc.footer}
-                selected={selectedPageBand === "footer"}
-                toolbarPortal={
-                  selectedPageBand === "footer" ? toolbarHost : null
-                }
-                onSelect={() => {
-                  onSelectBlock(null);
-                  onSelectPageBand?.("footer");
-                }}
-                onChange={(patch) => onChangePageBand?.("footer", patch)}
-              />
+              <div className="mx-auto w-full max-w-[600px]">
+                <PageBandEditor
+                  role="footer"
+                  band={doc.footer}
+                  selected={selectedPageBand === "footer"}
+                  toolbarPortal={
+                    selectedPageBand === "footer" ? toolbarHost : null
+                  }
+                  onSelect={() => {
+                    onSelectBlock(null);
+                    onSelectPageBand?.("footer");
+                  }}
+                  onChange={(patch) => onChangePageBand?.("footer", patch)}
+                />
+              </div>
             ) : null}
           </div>
         </div>

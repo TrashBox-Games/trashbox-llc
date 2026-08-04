@@ -341,11 +341,11 @@ export function EmailTemplateBuilder({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-1 flex-col bg-background",
+        "bg-background flex h-full min-h-0 flex-1 flex-col",
         className,
       )}
     >
-      <header className="flex flex-wrap items-center gap-3 border-b border-outline-variant/20 bg-surface-container-low px-4 py-3">
+      <header className="border-outline-variant/20 bg-surface-container-low flex flex-wrap items-center gap-3 border-b px-4 py-3">
         {isCompose ? (
           <div className="min-w-0 flex-1" />
         ) : (
@@ -448,7 +448,7 @@ export function EmailTemplateBuilder({
       </header>
 
       {error && (
-        <p className="border-b border-error/40 bg-error/10 px-4 py-3 text-sm text-error">
+        <p className="border-error/40 bg-error/10 text-error border-b px-4 py-3 text-sm">
           {error}
         </p>
       )}
@@ -486,9 +486,7 @@ export function EmailTemplateBuilder({
             onDeleteBlock={(id) => {
               setDoc((current) => removeBlock(current, id));
               setSelection((current) =>
-                selectionBlockId(current) === id
-                  ? { kind: "none" }
-                  : current,
+                selectionBlockId(current) === id ? { kind: "none" } : current,
               );
             }}
             onMoveBlock={(id, direction) =>

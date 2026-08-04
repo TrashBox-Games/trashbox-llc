@@ -1,12 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
+import {
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from "react";
 import {
   RichTextEditor,
   type RichTextValue,
 } from "@/components/atoms/RichTextEditor";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type {
   ColumnItem,
@@ -17,7 +22,9 @@ import type {
   EmailTemplateTableBlock,
 } from "@/lib/email-template-document";
 import {
+  boxChromeCssStyle,
   COLUMN_LIMITS,
+  getBlockBoxChrome,
   getBlockBoxSize,
   GRID_LIMITS,
   gridCellIndex,
@@ -73,8 +80,10 @@ export interface BuilderBlockProps {
   onSelectImageTextChild?: (child: "image" | "text") => void;
 }
 
-const builderEditorClass =
-  "min-h-[3rem] select-text px-0 py-0 text-[15px] leading-relaxed text-[#18181b]";
+/** Keep in sync with unselected text preview so selecting a block doesn’t grow it. */
+const builderTextSurfaceClass =
+  "min-h-10 px-0 py-0 text-[15px] leading-relaxed text-[#18181b] [&_p]:my-0 [&_h1]:my-0 [&_h2]:my-0 [&_h3]:my-0";
+const builderEditorClass = `select-text ${builderTextSurfaceClass}`;
 
 function isBlankHtml(html: string): boolean {
   const text = html
@@ -86,9 +95,139 @@ function isBlankHtml(html: string): boolean {
   return text.length === 0;
 }
 
+function blockChromeLabel(type: EmailTemplateBlock["type"]): string {
+  switch (type) {
+    case "columns":
+      return "Section";
+    case "grid":
+      return "Grid";
+    case "text":
+      return "Text";
+    case "button":
+      return "Button";
+    case "image":
+      return "Image";
+    case "imageText":
+      return "Image text";
+    case "spacer":
+      return "Spacer";
+    case "divider":
+      return "Divider";
+    case "table":
+      return "Table";
+    case "html":
+      return "HTML";
+    default:
+      return "Block";
+  }
+}
+
+function columnItemLabel(kind: ColumnItem["kind"]): string {
+  switch (kind) {
+    case "text":
+      return "Text";
+    case "button":
+      return "Button";
+    case "image":
+      return "Image";
+    case "spacer":
+      return "Spacer";
+    case "html":
+      return "HTML";
+    default:
+      return "Item";
+  }
+}
+
+function NestedItemChrome({
+  label,
+  selected,
+  testId,
+  ariaLabel,
+  onSelect,
+  onDelete,
+  style,
+  children,
+}: {
+  label: string;
+  selected: boolean;
+  testId: string;
+  ariaLabel: string;
+  onSelect: () => void;
+  onDelete?: () => void;
+  style?: CSSProperties;
+  children: ReactNode;
+}): React.ReactElement {
+  const [hovered, setHovered] = useState(false);
+  const showChrome = selected || hovered;
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      data-testid={testId}
+      aria-label={ariaLabel}
+      aria-pressed={selected}
+      style={style}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.stopPropagation();
+          onSelect();
+        }
+      }}
+      className={cn(
+        "relative flow-root rounded-none bg-transparent p-0 text-left text-[15px] leading-relaxed transition-colors",
+        selected
+          ? "outline-1 outline-sky-500 outline-offset-0"
+          : hovered
+            ? "outline-1 outline-sky-500/45 outline-offset-0"
+            : "outline-none",
+      )}
+    >
+      {showChrome ? (
+        <div
+          data-testid="builder-nested-tag"
+          data-tb-tag-state={selected ? "selected" : "hover"}
+          className={cn(
+            "absolute top-0 left-0 z-30 flex h-5 -translate-y-full items-stretch rounded-none text-[11px] leading-none text-white",
+            selected ? "bg-sky-500" : "bg-sky-500/55",
+          )}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <span className="flex items-center px-1.5 font-medium whitespace-nowrap">
+            {label}
+          </span>
+          {selected && onDelete ? (
+            <button
+              type="button"
+              aria-label={`Delete ${label}`}
+              className="flex size-5 items-center justify-center rounded-none hover:bg-sky-600"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete();
+              }}
+            >
+              <MaterialIcon name="delete" className="text-sm" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {children}
+    </div>
+  );
+}
+
 type ChromeProps = {
   selected: boolean;
   blockId: string;
+  label: string;
   onSelect: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -96,8 +235,14 @@ type ChromeProps = {
   onMoveDown: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
+  /**
+   * Editor-only: widen the section outline past the page and only allow
+   * section hover/select from the side bleed (nested content wins otherwise).
+   */
+  sectionBleed?: boolean;
   width: number | null;
   height: number | null;
+  boxStyle?: CSSProperties;
   onResize: (size: { width?: number | null; height?: number | null }) => void;
 };
 
@@ -110,7 +255,7 @@ function ColumnsBlockEditor({
   onDropInColumn,
   selectedColumnItem,
   onSelectColumnItem,
-  selectedColumnIndex = null,
+  selectedColumnIndex: _selectedColumnIndex = null,
   onSelectColumn,
 }: {
   block: EmailTemplateColumnsBlock;
@@ -127,6 +272,7 @@ function ColumnsBlockEditor({
   selectedColumnIndex?: number | null;
   onSelectColumn?: (columnIndex: number) => void;
 }): React.ReactElement {
+  void _selectedColumnIndex;
   const [activeCol, setActiveCol] = useState(0);
   const [hoverCol, setHoverCol] = useState<number | null>(null);
   const [colEpoch, setColEpoch] = useState<number[]>(() =>
@@ -136,6 +282,9 @@ function ColumnsBlockEditor({
     COLUMN_LIMITS.maxColumns,
     Math.max(COLUMN_LIMITS.minColumns, block.columns.length),
   );
+  const columnWidths = resolveColumnWidths(block.columnWidths, colCount);
+  const widthSum = columnWidths.reduce((total, value) => total + value, 0);
+  const centerColumns = widthSum < 100;
 
   const cellPad = Math.max(0, block.cellPadding ?? 0);
   const valign =
@@ -158,6 +307,21 @@ function ColumnsBlockEditor({
     );
     columns[columnIndex] = html;
     onChange({ columns });
+  }
+
+  function handleDeleteColumn(columnIndex: number) {
+    if (block.columns.length <= 1) {
+      chrome.onDelete();
+      return;
+    }
+    const nextColumns = block.columns.filter((_, index) => index !== columnIndex);
+    const nextWidths = columnWidths.filter((_, index) => index !== columnIndex);
+    const nextSum = nextWidths.reduce((total, value) => total + value, 0);
+    onChange({
+      columns: nextColumns,
+      columnWidths: nextWidths,
+      align: nextSum < 100 ? "center" : block.align,
+    });
   }
 
   function updateItems(columnIndex: number, items: ColumnItem[]) {
@@ -201,15 +365,14 @@ function ColumnsBlockEditor({
         data-testid="builder-columns-chrome"
       >
         <div
-          className="grid gap-y-3"
+          className="grid"
           style={{
             columnGap: block.columnGap ?? 24,
-            gridTemplateColumns: resolveColumnWidths(
-              block.columnWidths,
-              colCount,
-            )
-              .map((width) => `${width}fr`)
+            rowGap: 0,
+            gridTemplateColumns: columnWidths
+              .map((width) => (centerColumns ? `${width}%` : `${width}fr`))
               .join(" "),
+            justifyContent: centerColumns ? "center" : undefined,
             alignItems: valign,
           }}
           data-testid="builder-columns-grid"
@@ -217,6 +380,7 @@ function ColumnsBlockEditor({
         {Array.from({ length: colCount }, (_, index) => {
           const items = parseColumnItems(block.columns[index] ?? "");
           const showItemList = items.length > 0;
+          const isPlaceholder = !showItemList;
 
           return (
             <div
@@ -225,16 +389,27 @@ function ColumnsBlockEditor({
               data-builder-nested-drop=""
               aria-label={`Drop into column ${index + 1}`}
               className={cn(
-                "min-h-24 border border-dashed transition-colors",
-                hoverCol === index
-                  ? "border-sky-500 bg-sky-50"
-                  : selectedColumnIndex === index
-                    ? "border-sky-400 bg-sky-50/70"
-                    : "border-zinc-200",
+                "relative rounded-none bg-transparent transition-colors",
+                isPlaceholder
+                  ? "min-h-24 border border-dashed border-sky-300/70 bg-zinc-100"
+                  : "min-h-0",
+                hoverCol === index &&
+                  (isPlaceholder
+                    ? "border-sky-500"
+                    : "outline-1 outline-sky-500/50 -outline-offset-1"),
               )}
-              style={{ padding: Math.max(8, cellPad) }}
+              style={{
+                padding: Math.max(isPlaceholder ? 8 : 0, cellPad),
+                paddingTop: isPlaceholder
+                  ? Math.max(28, cellPad + 4)
+                  : Math.max(0, cellPad),
+              }}
               onClick={(event) => {
-                if ((event.target as HTMLElement).closest("[data-testid^=builder-column-item-]")) {
+                if (
+                  (event.target as HTMLElement).closest(
+                    "[data-testid^=builder-column-item-], [data-testid^=builder-column-delete-]",
+                  )
+                ) {
                   return;
                 }
                 event.stopPropagation();
@@ -283,6 +458,30 @@ function ColumnsBlockEditor({
                 });
               }}
             >
+              {isPlaceholder ? (
+                <button
+                  type="button"
+                  data-testid={`builder-column-delete-${index}`}
+                  aria-label={`Delete column ${index + 1}`}
+                  className="absolute top-1 left-1 z-20 flex size-6 items-center justify-center rounded-none border border-zinc-300 bg-zinc-200 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-800"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleDeleteColumn(index);
+                  }}
+                >
+                  <MaterialIcon name="delete" className="text-sm" />
+                </button>
+              ) : null}
+              {hoverCol === index ? (
+                <div
+                  data-testid="builder-insert-to-column"
+                  className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
+                >
+                  <span className="rounded-none bg-sky-500 px-2 py-1 text-[11px] font-medium text-white shadow-sm">
+                    Insert to Column
+                  </span>
+                </div>
+              ) : null}
               {showItemList ? (
                 <div className="space-y-0">
                   {items.map((item, itemIndex) => {
@@ -293,38 +492,26 @@ function ColumnsBlockEditor({
                         : (item.gapBefore ?? block.itemGap ?? 12);
                     return (
                       <div key={`${block.id}-${index}-item-${itemIndex}`}>
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          data-testid={`builder-column-item-${index}-${itemIndex}`}
-                          aria-label={`${item.kind} item ${itemIndex + 1}`}
-                          aria-pressed={itemSelected}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onSelectColumnItem?.({
-                              columnIndex: index,
-                              itemIndex,
-                            });
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              onSelectColumnItem?.({
-                                columnIndex: index,
-                                itemIndex,
-                              });
-                            }
-                          }}
+                        <NestedItemChrome
+                          label={columnItemLabel(item.kind)}
+                          selected={itemSelected}
+                          testId={`builder-column-item-${index}-${itemIndex}`}
+                          ariaLabel={`${item.kind} item ${itemIndex + 1}`}
                           style={
                             gapPx > 0 ? { paddingTop: gapPx } : undefined
                           }
-                          className={cn(
-                            "relative rounded border px-1 py-1 text-left text-[15px] leading-relaxed transition-colors",
-                            itemSelected
-                              ? "border-sky-500 bg-sky-50/80 ring-1 ring-sky-500"
-                              : "border-transparent hover:border-sky-300 hover:bg-sky-50/40",
-                          )}
+                          onSelect={() =>
+                            onSelectColumnItem?.({
+                              columnIndex: index,
+                              itemIndex,
+                            })
+                          }
+                          onDelete={() => {
+                            const next = items.filter(
+                              (_, i) => i !== itemIndex,
+                            );
+                            updateItems(index, next);
+                          }}
                         >
                           {itemIndex > 0 && selected ? (
                             <div
@@ -336,7 +523,7 @@ function ColumnsBlockEditor({
                               onClick={(event) => event.stopPropagation()}
                             >
                               <div className="h-px flex-1 bg-sky-200" />
-                              <label className="flex items-center gap-1 rounded bg-white/95 px-1 text-[10px] text-sky-700 shadow-sm ring-1 ring-sky-100">
+                              <label className="flex items-center gap-1 rounded-none bg-white/95 px-1 text-[10px] text-sky-700 shadow-sm outline-1 outline-sky-100">
                                 <span className="sr-only">
                                   Gap before item {itemIndex + 1}
                                 </span>
@@ -363,7 +550,7 @@ function ColumnsBlockEditor({
                                         : (block.itemGap ?? 12),
                                     );
                                   }}
-                                  className="h-6 w-14 rounded border border-sky-200 bg-white px-1 text-[11px] text-[#18181b]"
+                                  className="h-6 w-14 rounded-none border border-sky-200 bg-white px-1 text-[11px] text-[#18181b]"
                                 />
                                 <span>px</span>
                               </label>
@@ -378,7 +565,7 @@ function ColumnsBlockEditor({
                               <RichTextEditor
                                 key={`${block.id}-col-${index}-item-${itemIndex}-${colEpoch[index] ?? 0}`}
                                 ariaLabel={`Column ${index + 1} text item`}
-                                placeholder="Column text…"
+                                placeholder=""
                                 initialHtml={item.html}
                                 onChange={(value: RichTextValue) => {
                                   const next = [...items];
@@ -404,39 +591,13 @@ function ColumnsBlockEditor({
                               }}
                             />
                           )}
-                        </div>
+                        </NestedItemChrome>
                       </div>
                     );
                   })}
                 </div>
-              ) : selected ? (
-                <RichTextEditor
-                  key={`${block.id}-col-${index}-${colEpoch[index] ?? 0}`}
-                  ariaLabel={`Column ${index + 1}`}
-                  placeholder="Column text… or drop a component here"
-                  initialHtml={block.columns[index] ?? ""}
-                  onChange={(value: RichTextValue) => {
-                    updateItems(index, [
-                      {
-                        kind: "text",
-                        html: value.html,
-                        gapBefore: null,
-                      },
-                    ]);
-                  }}
-                  showToolbar={activeCol === index}
-                  acceptMergeFieldDrops
-                  toolbarPortal={activeCol === index ? toolbarPortal : null}
-                  className="border-0 bg-transparent"
-                  editorClassName={builderEditorClass}
-                />
               ) : (
-                <div
-                  className="px-0 py-0 text-[15px] leading-relaxed"
-                  dangerouslySetInnerHTML={{
-                    __html: serializeColumnItems(items, block.itemGap ?? 12),
-                  }}
-                />
+                <div className="min-h-16" aria-hidden="true" />
               )}
             </div>
           );
@@ -605,13 +766,12 @@ function GridBlockEditor({
                 data-builder-nested-drop=""
                 aria-label={`Drop into grid cell row ${rowIndex + 1} column ${columnIndex + 1}`}
                 className={cn(
-                  "min-h-20 border border-dashed transition-colors",
+                  "relative min-h-20 rounded-none bg-transparent transition-colors",
+                  !showItemList &&
+                    "border border-dashed border-sky-300/70 bg-zinc-100",
                   hovered
-                    ? "border-sky-500 bg-sky-50"
-                    : selectedGridCell?.rowIndex === rowIndex &&
-                        selectedGridCell?.columnIndex === columnIndex
-                      ? "border-sky-400 bg-sky-50/70"
-                      : "border-zinc-200",
+                    ? "border-sky-500 outline-1 outline-sky-500 outline-offset-0"
+                    : "outline-none",
                 )}
                 style={{ padding: pad }}
                 onClick={(event) => {
@@ -678,6 +838,16 @@ function GridBlockEditor({
                   setCellEpoch((value) => value + 1);
                 }}
               >
+                {hovered ? (
+                  <div
+                    data-testid="builder-insert-to-column"
+                    className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
+                  >
+                    <span className="rounded-none bg-sky-500 px-2 py-1 text-[11px] font-medium text-white shadow-sm">
+                      Insert to Column
+                    </span>
+                  </div>
+                ) : null}
                 {showItemList ? (
                   <div className="space-y-0">
                     {items.map((item, itemIndex) => {
@@ -694,43 +864,27 @@ function GridBlockEditor({
                         <div
                           key={`${block.id}-${rowIndex}-${columnIndex}-item-${itemIndex}`}
                         >
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            data-testid={`builder-grid-item-${rowIndex}-${columnIndex}-${itemIndex}`}
-                            aria-label={`${item.kind} item ${itemIndex + 1}`}
-                            aria-pressed={itemSelected}
-                            onClick={(event) => {
-                              event.stopPropagation();
+                          <NestedItemChrome
+                            label={columnItemLabel(item.kind)}
+                            selected={itemSelected}
+                            testId={`builder-grid-item-${rowIndex}-${columnIndex}-${itemIndex}`}
+                            ariaLabel={`${item.kind} item ${itemIndex + 1}`}
+                            style={
+                              gapPx > 0 ? { paddingTop: gapPx } : undefined
+                            }
+                            onSelect={() =>
                               onSelectColumnItem?.({
                                 rowIndex,
                                 columnIndex,
                                 itemIndex,
-                              });
-                            }}
-                            onKeyDown={(event) => {
-                              if (
-                                event.key === "Enter" ||
-                                event.key === " "
-                              ) {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                onSelectColumnItem?.({
-                                  rowIndex,
-                                  columnIndex,
-                                  itemIndex,
-                                });
-                              }
-                            }}
-                            style={
-                              gapPx > 0 ? { paddingTop: gapPx } : undefined
+                              })
                             }
-                            className={cn(
-                              "relative rounded border px-1 py-1 text-left text-[15px] leading-relaxed transition-colors",
-                              itemSelected
-                                ? "border-sky-500 bg-sky-50/80 ring-1 ring-sky-500"
-                                : "border-transparent hover:border-sky-300 hover:bg-sky-50/40",
-                            )}
+                            onDelete={() => {
+                              const next = items.filter(
+                                (_, i) => i !== itemIndex,
+                              );
+                              updateItems(rowIndex, columnIndex, next);
+                            }}
                           >
                             {itemIndex > 0 && selected ? (
                               <div
@@ -788,7 +942,7 @@ function GridBlockEditor({
                                 <RichTextEditor
                                   key={`${block.id}-grid-${rowIndex}-${columnIndex}-item-${itemIndex}-${cellEpoch}`}
                                   ariaLabel={`Grid cell ${rowIndex + 1},${columnIndex + 1} text item`}
-                                  placeholder="Cell text…"
+                                  placeholder=""
                                   initialHtml={item.html}
                                   onChange={(value: RichTextValue) => {
                                     const next = [...items];
@@ -812,42 +966,13 @@ function GridBlockEditor({
                                 }}
                               />
                             )}
-                          </div>
+                          </NestedItemChrome>
                         </div>
                       );
                     })}
                   </div>
-                ) : selected ? (
-                  <RichTextEditor
-                    key={`${block.id}-grid-${rowIndex}-${columnIndex}-${cellEpoch}`}
-                    ariaLabel={`Grid cell row ${rowIndex + 1} column ${columnIndex + 1}`}
-                    placeholder="Cell text… or drop a component here"
-                    initialHtml={cellHtml(rowIndex, columnIndex)}
-                    onChange={(value: RichTextValue) => {
-                      updateItems(rowIndex, columnIndex, [
-                        {
-                          kind: "text",
-                          html: value.html,
-                          gapBefore: null,
-                        },
-                      ]);
-                    }}
-                    showToolbar={active}
-                    acceptMergeFieldDrops
-                    toolbarPortal={active ? toolbarPortal : null}
-                    className="border-0 bg-transparent"
-                    editorClassName={builderEditorClass}
-                  />
                 ) : (
-                  <div
-                    className="px-0 py-0 text-[15px] leading-relaxed"
-                    dangerouslySetInnerHTML={{
-                      __html: serializeColumnItems(
-                        items,
-                        block.itemGap ?? 12,
-                      ),
-                    }}
-                  />
+                  <div className="min-h-16" aria-hidden="true" />
                 )}
               </div>
             );
@@ -937,9 +1062,15 @@ function TableBlockEditor({
   );
 }
 
+/** Editor-only: how far section/grid outlines extend past the 600px page. */
+const SECTION_BLEED_CLASS = "-mx-10 px-10";
+const SECTION_BLEED_HIT_CLASS =
+  "absolute inset-y-0 z-[5] w-10 cursor-pointer";
+
 function BlockChrome({
   selected,
   blockId,
+  label,
   onSelect,
   onDuplicate,
   onDelete,
@@ -947,127 +1078,178 @@ function BlockChrome({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  sectionBleed = false,
   width,
   height,
+  boxStyle,
   onResize,
   children,
 }: ChromeProps & { children: React.ReactNode }): React.ReactElement {
   const frameRef = useRef<HTMLDivElement | null>(null);
+  const [hovered, setHovered] = useState(false);
+  const showChrome = selected || hovered;
+  const tagState = selected ? "selected" : "hover";
+
+  function selectBlock(event: ReactMouseEvent) {
+    event.stopPropagation();
+    onSelect();
+  }
 
   return (
     <div
       // Avoid role="button" while editing — browsers block text selection inside buttons.
-      role={selected ? undefined : "button"}
-      tabIndex={selected ? undefined : 0}
+      // Sections only select from side bleed hit-targets so nested content wins hover/click.
+      role={selected || sectionBleed ? undefined : "button"}
+      tabIndex={selected || sectionBleed ? undefined : 0}
       ref={frameRef}
       data-testid="builder-block-frame"
-      onClick={(event) => {
-        event.stopPropagation();
-        onSelect();
-      }}
-      onKeyDown={(event) => {
-        if (selected) return;
-        const target = event.target as HTMLElement | null;
-        if (
-          target?.isContentEditable ||
-          target?.closest?.(
-            '[contenteditable="true"], input, textarea, select',
-          )
-        ) {
-          return;
-        }
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelect();
-        }
-      }}
+      data-tb-section-bleed={sectionBleed ? "true" : "false"}
+      onMouseEnter={sectionBleed ? undefined : () => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={sectionBleed ? undefined : selectBlock}
+      onKeyDown={
+        sectionBleed
+          ? undefined
+          : (event) => {
+              if (selected) return;
+              const target = event.target as HTMLElement | null;
+              if (
+                target?.isContentEditable ||
+                target?.closest?.(
+                  '[contenteditable="true"], input, textarea, select',
+                )
+              ) {
+                return;
+              }
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect();
+              }
+            }
+      }
       className={cn(
-        "relative bg-transparent p-0 text-left text-[#18181b]",
-        selected ? "ring-2 ring-sky-500" : "cursor-pointer",
+        // flow-root keeps child paragraph margins inside the outline so
+        // adjacent block outlines can sit flush against each other.
+        "relative flow-root rounded-none bg-transparent text-left text-[#18181b]",
+        sectionBleed ? SECTION_BLEED_CLASS : "mx-0 px-0",
+        selected
+          ? "outline-2 outline-sky-500 outline-offset-0"
+          : hovered
+            ? "outline-1 outline-sky-500/40 outline-offset-0"
+            : "outline-none",
+        !sectionBleed && "cursor-pointer",
       )}
       style={{
+        ...boxStyle,
         width: width != null && width > 0 ? width : undefined,
-        maxWidth: "100%",
+        maxWidth: sectionBleed ? "none" : "100%",
         minHeight: height != null && height > 0 ? height : undefined,
         height: undefined,
       }}
     >
-      {selected && (
+      {sectionBleed ? (
+        <>
+          <div
+            data-testid="builder-section-bleed-left"
+            aria-label={`Select ${label}`}
+            className={cn(SECTION_BLEED_HIT_CLASS, "left-0")}
+            onMouseEnter={() => setHovered(true)}
+            onClick={selectBlock}
+          />
+          <div
+            data-testid="builder-section-bleed-right"
+            aria-label={`Select ${label}`}
+            className={cn(SECTION_BLEED_HIT_CLASS, "right-0")}
+            onMouseEnter={() => setHovered(true)}
+            onClick={selectBlock}
+          />
+        </>
+      ) : null}
+      {showChrome ? (
         <div
-          className="absolute top-0 left-full z-20 ml-[calc(2.5rem+0.75rem)] flex flex-col gap-1"
+          data-testid="builder-block-tag"
+          data-tb-tag-state={tagState}
+          className={cn(
+            "absolute top-0 z-30 flex h-5 -translate-y-full items-stretch rounded-none text-[11px] leading-none text-white",
+            sectionBleed ? "left-10" : "left-0",
+            selected ? "bg-sky-500" : "bg-sky-500/55",
+          )}
           onClick={(event) => event.stopPropagation()}
         >
-          <Button
-            type="button"
-            size="icon-xs"
-            variant="outline"
-            aria-label="Drag to reorder"
-            draggable
-            onDragStart={(event) => {
-              event.stopPropagation();
-              setBlockDragData(event.dataTransfer, blockId);
-            }}
-            className="cursor-grab border-zinc-300 bg-white text-zinc-700 shadow-sm hover:bg-zinc-50 active:cursor-grabbing"
-          >
-            <MaterialIcon name="drag_indicator" className="text-sm" />
-          </Button>
-          <Button
-            type="button"
-            size="icon-xs"
-            variant="outline"
-            aria-label="Move up"
-            disabled={!canMoveUp}
-            onClick={(event) => {
-              event.stopPropagation();
-              onMoveUp();
-            }}
-            className="border-zinc-300 bg-white text-zinc-700 shadow-sm hover:bg-zinc-50"
-          >
-            <MaterialIcon name="arrow_upward" className="text-sm" />
-          </Button>
-          <Button
-            type="button"
-            size="icon-xs"
-            variant="outline"
-            aria-label="Move down"
-            disabled={!canMoveDown}
-            onClick={(event) => {
-              event.stopPropagation();
-              onMoveDown();
-            }}
-            className="border-zinc-300 bg-white text-zinc-700 shadow-sm hover:bg-zinc-50"
-          >
-            <MaterialIcon name="arrow_downward" className="text-sm" />
-          </Button>
-          <Button
-            type="button"
-            size="icon-xs"
-            variant="outline"
-            aria-label="Duplicate block"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDuplicate();
-            }}
-            className="border-zinc-300 bg-white text-zinc-700 shadow-sm hover:bg-zinc-50"
-          >
-            <MaterialIcon name="content_copy" className="text-sm" />
-          </Button>
-          <Button
-            type="button"
-            size="icon-xs"
-            variant="outline"
-            aria-label="Delete block"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDelete();
-            }}
-            className="border-zinc-300 bg-white text-zinc-700 shadow-sm hover:bg-zinc-50"
-          >
-            <MaterialIcon name="delete" className="text-sm" />
-          </Button>
+          <span className="flex items-center px-1.5 font-medium whitespace-nowrap">
+            {label}
+          </span>
+          {selected ? (
+            <div className="flex items-stretch">
+              <button
+                type="button"
+                aria-label="Drag to reorder"
+                draggable
+                onDragStart={(event) => {
+                  event.stopPropagation();
+                  setBlockDragData(event.dataTransfer, blockId);
+                }}
+                className="flex size-5 cursor-grab items-center justify-center rounded-none hover:bg-sky-600 active:cursor-grabbing"
+              >
+                <MaterialIcon name="drag_indicator" className="text-sm" />
+              </button>
+              <button
+                type="button"
+                aria-label="Move up"
+                disabled={!canMoveUp}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onMoveUp();
+                }}
+                className="flex size-5 items-center justify-center rounded-none hover:bg-sky-600 disabled:opacity-40"
+              >
+                <MaterialIcon name="arrow_upward" className="text-sm" />
+              </button>
+              <button
+                type="button"
+                aria-label="Move down"
+                disabled={!canMoveDown}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onMoveDown();
+                }}
+                className="flex size-5 items-center justify-center rounded-none hover:bg-sky-600 disabled:opacity-40"
+              >
+                <MaterialIcon name="arrow_downward" className="text-sm" />
+              </button>
+              <button
+                type="button"
+                aria-label="Duplicate block"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDuplicate();
+                }}
+                className="flex size-5 items-center justify-center rounded-none hover:bg-sky-600"
+              >
+                <MaterialIcon name="content_copy" className="text-sm" />
+              </button>
+              <button
+                type="button"
+                aria-label="Delete block"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete();
+                }}
+                className="flex size-5 items-center justify-center rounded-none hover:bg-sky-600"
+              >
+                <MaterialIcon name="delete" className="text-sm" />
+              </button>
+            </div>
+          ) : null}
         </div>
-      )}
-      {children}
+      ) : null}
+      <div
+        data-testid={sectionBleed ? "builder-section-content" : undefined}
+        className="relative"
+        onMouseEnter={sectionBleed ? () => setHovered(false) : undefined}
+      >
+        {children}
+      </div>
       {selected ? (
         <BlockResizeHandles
           width={width}
@@ -1113,6 +1295,7 @@ export function BuilderBlock({
   const chrome: ChromeProps = {
     selected,
     blockId: block.id,
+    label: blockChromeLabel(block.type),
     onSelect,
     onDuplicate,
     onDelete,
@@ -1120,8 +1303,15 @@ export function BuilderBlock({
     onMoveDown,
     canMoveUp,
     canMoveDown,
+    sectionBleed: block.type === "columns" || block.type === "grid",
     width: box.width,
     height: box.height,
+    boxStyle: (() => {
+      const boxChrome = getBlockBoxChrome(block);
+      return boxChrome
+        ? (boxChromeCssStyle(boxChrome) as CSSProperties)
+        : undefined;
+    })(),
     onResize: (size) => onChange(size),
   };
 
@@ -1150,12 +1340,16 @@ export function BuilderBlock({
               />
             </div>
           ) : isBlankHtml(block.html) ? (
-            <p className="min-h-10 px-0 py-0 text-[15px] italic leading-relaxed text-zinc-400">
+            <p
+              data-testid="builder-text-preview"
+              className={cn(builderTextSurfaceClass, "italic text-zinc-400")}
+            >
               Type your text here…
             </p>
           ) : (
             <div
-              className="min-h-10 prose prose-sm max-w-none px-0 py-0 text-[15px] leading-relaxed text-[#18181b]"
+              data-testid="builder-text-preview"
+              className={builderTextSurfaceClass}
               dangerouslySetInnerHTML={{ __html: block.html }}
             />
           )}
@@ -1231,10 +1425,11 @@ export function BuilderBlock({
               data-testid={`builder-imagetext-image-${block.id}`}
               aria-pressed={selectedImageTextChild === "image"}
               className={cn(
-                "rounded border border-transparent p-1",
+                "rounded-none p-1",
                 block.imagePosition === "right" ? "sm:order-2" : undefined,
-                selectedImageTextChild === "image" &&
-                  "border-sky-400 bg-sky-50/70",
+                selectedImageTextChild === "image"
+                  ? "outline-1 outline-sky-500 -outline-offset-1"
+                  : "outline-none hover:outline-1 hover:outline-sky-500/40 hover:-outline-offset-1",
               )}
               onClick={(event) => {
                 event.stopPropagation();
@@ -1273,10 +1468,11 @@ export function BuilderBlock({
               data-testid={`builder-imagetext-text-${block.id}`}
               aria-pressed={selectedImageTextChild === "text"}
               className={cn(
-                "rounded border border-transparent p-1",
+                "rounded-none p-1",
                 block.imagePosition === "right" ? "sm:order-1" : undefined,
-                selectedImageTextChild === "text" &&
-                  "border-sky-400 bg-sky-50/70",
+                selectedImageTextChild === "text"
+                  ? "outline-1 outline-sky-500 -outline-offset-1"
+                  : "outline-none hover:outline-1 hover:outline-sky-500/40 hover:-outline-offset-1",
               )}
               onClick={(event) => {
                 event.stopPropagation();
@@ -1315,12 +1511,12 @@ export function BuilderBlock({
                   />
                 </div>
               ) : isBlankHtml(block.text.html) ? (
-                <p className="min-h-10 px-0 py-0 text-[15px] italic leading-relaxed text-zinc-400">
+                <p className={cn(builderTextSurfaceClass, "italic text-zinc-400")}>
                   Type your text here…
                 </p>
               ) : (
                 <div
-                  className="px-0 py-0 text-[15px] leading-relaxed"
+                  className={builderTextSurfaceClass}
                   dangerouslySetInnerHTML={{ __html: block.text.html }}
                 />
               )}

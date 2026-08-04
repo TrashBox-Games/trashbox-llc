@@ -2,11 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   appendBlock,
   appendVariant,
+  BUILDER_COMPONENT_FOLDERS,
   createBlockFromVariant,
+  createBlocksFromVariant,
   createDefaultBlock,
+  DEFAULT_BOX_CHROME,
   DEFAULT_BUTTON_STYLE,
   DEFAULT_CONTENT_BACKGROUND,
   DEFAULT_DOCUMENT_BACKGROUND,
+  DEFAULT_PAGE_MARGIN,
+  DEFAULT_TEXT_BLOCK_HTML,
   documentFromStarter,
   documentToEmailHtml,
   documentToPlainText,
@@ -22,7 +27,9 @@ import {
   parseColumnItems,
   parseDocumentFromHtml,
   removeBlock,
+  removeColumn,
   renderColumnItemInner,
+  resolveColumnWidths,
   resizeTable,
   setColumnCount,
   setColumnGap,
@@ -43,13 +50,35 @@ describe("email-template-document", () => {
     const doc = emptyDocument();
     expect(DEFAULT_DOCUMENT_BACKGROUND).toBe("#ffffff");
     expect(DEFAULT_CONTENT_BACKGROUND).toBe("#ffffff");
+    expect(DEFAULT_PAGE_MARGIN).toBe(0);
     expect(doc.backgroundColor).toBe("#ffffff");
     expect(doc.contentBackgroundColor).toBe("#ffffff");
+    expect(doc.pageMarginTop).toBe(0);
+    expect(doc.pageMarginRight).toBe(0);
+    expect(doc.pageMarginBottom).toBe(0);
+    expect(doc.pageMarginLeft).toBe(0);
 
     const html = documentToEmailHtml(doc);
     expect(html).toMatch(/data-tb-bg="#ffffff"/);
     expect(html).toMatch(/data-tb-content-bg="#ffffff"/);
     expect(html).toMatch(/background-color:#ffffff/);
+    expect(html).toMatch(/padding:0/);
+    expect(html).not.toMatch(/padding:24px/);
+  });
+
+  it("keeps layout sections inside the 600px content column", () => {
+    const block = createBlockFromVariant("columns-2-50-50");
+    expect(block.type).toBe("columns");
+    if (block.type !== "columns") return;
+
+    const html = documentToEmailHtml({
+      ...emptyDocument(),
+      blocks: [block],
+    });
+    expect(html).not.toContain("data-tb-full-width");
+    expect(html).not.toContain("data-tb-full-bleed");
+    expect(html).toMatch(/max-width:600px/);
+    expect(html).toContain('data-tb-layout-chrome="1"');
   });
 
   it("still allows a contrasting page canvas when customized", () => {
@@ -79,17 +108,108 @@ describe("email-template-document", () => {
     }
   });
 
+  it("gives text blocks shared box chrome that round-trips in email html", () => {
+    const block = createDefaultBlock("text");
+    expect(block.type).toBe("text");
+    if (block.type !== "text") return;
+    expect(block.backgroundColor).toBe(DEFAULT_BOX_CHROME.backgroundColor);
+    expect(block.paddingX).toBe(0);
+    expect(block.paddingY).toBe(0);
+    expect(block.html).toBe(DEFAULT_TEXT_BLOCK_HTML);
+
+    const padded = {
+      ...block,
+      backgroundColor: "#fef3c7",
+      paddingX: 16,
+      paddingY: 12,
+      borderWidth: 1,
+      borderColor: "#f59e0b",
+      borderRadius: 8,
+    };
+    const html = documentToEmailHtml({
+      ...emptyDocument(),
+      blocks: [padded],
+    });
+    expect(html).toContain('data-tb-box-bg="#fef3c7"');
+    expect(html).toContain('data-tb-box-pad-x="16"');
+    expect(html).toContain('data-tb-box-pad-y="12"');
+    expect(html).toMatch(/padding:12px 16px/);
+    expect(html).toContain("This is a text block");
+
+    const parsed = parseDocumentFromHtml(html);
+    expect(parsed.blocks[0]?.type).toBe("text");
+    if (parsed.blocks[0]?.type !== "text") return;
+    expect(parsed.blocks[0].backgroundColor).toBe("#fef3c7");
+    expect(parsed.blocks[0].paddingX).toBe(16);
+    expect(parsed.blocks[0].paddingY).toBe(12);
+    expect(parsed.blocks[0].borderWidth).toBe(1);
+    expect(parsed.blocks[0].html).toContain("This is a text block");
+  });
+
   it("creates blocks from palette variants including 3 columns", () => {
     const three = createBlockFromVariant("columns-3");
     expect(three.type).toBe("columns");
     if (three.type === "columns") {
       expect(three.columns).toHaveLength(3);
     }
+    const paragraph = createBlockFromVariant("text-paragraph");
+    expect(paragraph.type).toBe("text");
+    if (paragraph.type === "text") {
+      expect(paragraph.html).toContain("This is a text block");
+      expect(paragraph.html).toMatch(/text-align:\s*center/i);
+    }
     const heading = createBlockFromVariant("text-heading");
     expect(heading.type).toBe("text");
     if (heading.type === "text") {
       expect(heading.html).toContain("h2");
+      expect(heading.html).toContain("This is a heading");
+      expect(heading.html).toMatch(/text-align:\s*center/i);
     }
+  });
+
+  it("exposes layout folder groups with empty column width presets", () => {
+    const layout = BUILDER_COMPONENT_FOLDERS.find(
+      (folder) => folder.id === "layout",
+    );
+    expect(layout).toBeTruthy();
+    expect(layout?.groups?.map((group) => group.id)).toEqual([
+      "layout-1",
+      "layout-2",
+      "layout-3",
+      "layout-4",
+      "layout-multi",
+    ]);
+
+    const twoCol = layout?.groups?.find((group) => group.id === "layout-2");
+    expect(twoCol?.variants.map((variant) => variant.id)).toEqual([
+      "columns-2-50-50",
+      "columns-2-33-67",
+      "columns-2-67-33",
+      "columns-2-25-75",
+      "columns-2-75-25",
+    ]);
+
+    const unequal = createBlockFromVariant("columns-2-33-67");
+    expect(unequal.type).toBe("columns");
+    if (unequal.type === "columns") {
+      expect(unequal.columnWidths).toEqual([33, 67]);
+      expect(unequal.columns).toEqual(["<p><br /></p>", "<p><br /></p>"]);
+      expect(unequal.columns.join("")).not.toMatch(/left|right|column/i);
+    }
+
+    const multi = createBlocksFromVariant("sections-100-50-50");
+    expect(multi).toHaveLength(2);
+    expect(multi[0]?.type).toBe("columns");
+    expect(multi[1]?.type).toBe("columns");
+    if (multi[0]?.type === "columns" && multi[1]?.type === "columns") {
+      expect(multi[0].columns).toHaveLength(1);
+      expect(multi[1].columnWidths).toBeNull();
+      expect(multi[1].columns).toHaveLength(2);
+    }
+
+    let doc = emptyDocument();
+    doc = appendVariant(doc, "sections-50-50-50-50");
+    expect(doc.blocks).toHaveLength(2);
   });
 
   it("creates a text chip block from a merge-field palette variant", () => {
@@ -113,7 +233,7 @@ describe("email-template-document", () => {
     if (block?.type !== "imageText") return;
     expect(block.image.src).toBe("");
     expect(block.image.alt).toBe("Image");
-    expect(block.text.html).toContain("<p>");
+    expect(block.text.html).toContain("This is a text block");
 
     doc = {
       ...doc,
@@ -331,6 +451,7 @@ describe("email-template-document", () => {
           id: "1",
           type: "text",
           html: "<p>Hi there</p>",
+          ...DEFAULT_BOX_CHROME,
           width: null,
           height: null,
         },
@@ -454,6 +575,36 @@ describe("email-template-document", () => {
       expect(parsed.blocks[0].headerFontWeight).toBe("700");
       expect(parsed.blocks[0].cellPadding).toBe(12);
     }
+  });
+
+  it("removes a column while keeping sibling widths and centers the remainder", () => {
+    let doc = emptyDocument();
+    doc = appendVariant(doc, "columns-2-50-50");
+    const columnsId = doc.blocks[0]!.id;
+    expect(doc.blocks[0]?.type).toBe("columns");
+    if (doc.blocks[0]?.type !== "columns") return;
+
+    doc = removeColumn(doc, columnsId, 0);
+    expect(doc.blocks).toHaveLength(1);
+    expect(doc.blocks[0]?.type).toBe("columns");
+    if (doc.blocks[0]?.type !== "columns") return;
+    expect(doc.blocks[0].columns).toHaveLength(1);
+    expect(doc.blocks[0].columnWidths).toEqual([50]);
+    expect(doc.blocks[0].align).toBe("center");
+    expect(resolveColumnWidths(doc.blocks[0].columnWidths, 1)).toEqual([50]);
+
+    const html = documentToEmailHtml(doc);
+    expect(html).toMatch(/width="50%"/);
+    expect(html).toMatch(/align="center"/);
+  });
+
+  it("deletes the section when the last column is removed", () => {
+    let doc = emptyDocument();
+    doc = appendVariant(doc, "columns-2-50-50");
+    const columnsId = doc.blocks[0]!.id;
+    doc = removeColumn(doc, columnsId, 0);
+    doc = removeColumn(doc, columnsId, 0);
+    expect(doc.blocks).toHaveLength(0);
   });
 
   it("resizes columns and table grids", () => {
@@ -668,7 +819,10 @@ describe("email-template-document", () => {
 
     const html = documentToEmailHtml(doc);
     expect(html).toContain('data-tb-margin="40,16,32,20"');
-    expect(html).toContain("padding:40px 16px 32px 20px");
+    expect(html).toContain("padding-top:40px");
+    expect(html).toContain("padding-bottom:32px");
+    expect(html).toContain("padding-left:20px");
+    expect(html).toContain("padding-right:16px");
     expect(html).toContain('data-tb-header="1"');
     expect(html).toContain('data-tb-footer="1"');
     expect(html).toContain("Acme Co");

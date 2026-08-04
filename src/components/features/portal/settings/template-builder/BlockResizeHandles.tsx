@@ -97,6 +97,10 @@ export function BlockResizeHandles({
 
   return (
     <>
+      {/*
+        Overlay-only chrome: absolute + centered on the outline edge so handles
+        never add layout height/width inside the block.
+      */}
       <div
         role="slider"
         aria-label="Resize height"
@@ -108,9 +112,9 @@ export function BlockResizeHandles({
         onPointerMove={(event) => applyMove(event.clientX, event.clientY)}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
-        className="absolute right-3 bottom-0 left-3 z-30 flex h-3 cursor-ns-resize items-end justify-center"
+        className="absolute bottom-0 left-1/2 z-30 flex h-3 w-12 -translate-x-1/2 translate-y-1/2 cursor-ns-resize items-center justify-center"
       >
-        <span className="mb-0.5 h-1 w-10 rounded-full bg-sky-500 shadow-[0_0_0_2px_rgba(14,165,233,0.25)]" />
+        <span className="h-1 w-10 rounded-full bg-sky-500 shadow-[0_0_0_2px_rgba(14,165,233,0.25)]" />
       </div>
       <div
         role="slider"
@@ -123,15 +127,15 @@ export function BlockResizeHandles({
         onPointerMove={(event) => applyMove(event.clientX, event.clientY)}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
-        className="absolute top-3 right-0 bottom-3 z-30 flex w-3 cursor-ew-resize items-center justify-end"
+        className="absolute top-1/2 right-0 z-30 flex h-12 w-3 translate-x-1/2 -translate-y-1/2 cursor-ew-resize items-center justify-center"
       >
-        <span className="mr-0.5 h-10 w-1 rounded-full bg-sky-500 shadow-[0_0_0_2px_rgba(14,165,233,0.25)]" />
+        <span className="h-10 w-1 rounded-full bg-sky-500 shadow-[0_0_0_2px_rgba(14,165,233,0.25)]" />
       </div>
       {badge ? (
         <div
           data-testid="builder-resize-badge"
           className={cn(
-            "pointer-events-none absolute bottom-4 left-1/2 z-40 -translate-x-1/2 rounded bg-zinc-900 px-2 py-0.5 text-[11px] font-medium text-white shadow",
+            "pointer-events-none absolute bottom-2 left-1/2 z-40 -translate-x-1/2 rounded bg-zinc-900 px-2 py-0.5 text-[11px] font-medium text-white shadow",
           )}
         >
           {badge}

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   BUILDER_COMPONENT_FOLDERS,
   type BuilderComponentFolder,
+  type BuilderComponentGroup,
   type BuilderComponentVariant,
 } from "@/lib/email-template-document";
 import { parseMergeFieldVariant } from "@/lib/email-content";
@@ -21,6 +22,68 @@ export interface BuilderComponentPaletteProps {
   className?: string;
   /** When true, omit the outer aside frame (used inside BuilderLeftSidebar). */
   embedded?: boolean;
+}
+
+function widthLabel(
+  width: number,
+  index: number,
+  labels?: readonly string[],
+): string {
+  return labels?.[index] ?? `${width}%`;
+}
+
+function LayoutRowPreview({
+  widths,
+  labels,
+}: {
+  widths: readonly number[];
+  labels?: readonly string[];
+}): React.ReactElement {
+  return (
+    <div className="flex w-full gap-1">
+      {widths.map((width, index) => (
+        <div
+          key={`${width}-${index}`}
+          className="flex h-9 items-center justify-center border border-zinc-300 bg-white text-[10px] font-medium text-zinc-600"
+          style={{ flex: `${width} 1 0%` }}
+        >
+          {widthLabel(width, index, labels)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LayoutVariantPreview({
+  variant,
+}: {
+  variant: BuilderComponentVariant;
+}): React.ReactElement {
+  const rows = variant.layoutRows;
+  if (rows && rows.length > 0) {
+    return (
+      <div className="flex w-full flex-col gap-2 px-1 py-1">
+        {rows.map((widths, rowIndex) => (
+          <div key={rowIndex} className="flex flex-col gap-1">
+            <span className="text-[10px] font-medium text-zinc-500">
+              Row {rowIndex + 1}
+            </span>
+            <LayoutRowPreview
+              widths={widths}
+              labels={variant.layoutRowLabels?.[rowIndex]}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const widths = variant.layoutWidths ?? [100];
+  return (
+    <div className="w-full px-1 py-1">
+      <LayoutRowPreview widths={widths} labels={variant.layoutLabels} />
+    </div>
+  );
 }
 
 function VariantPreview({
@@ -149,6 +212,8 @@ function VariantPreview({
           </span>
         </div>
       );
+    case "layout":
+      return <div className="h-14 w-full" />;
   }
 }
 
@@ -230,15 +295,92 @@ function MergeFieldList({
           );
         })}
       </ul>
-      {folder.note && (
-        <p className="text-xs leading-relaxed text-on-surface-variant">
-          Note: {folder.note}
-        </p>
-      )}
-      <p className="text-[11px] text-on-surface-variant">
-        Drag a field into a text block (or header/footer). Merge fields cannot
-        be placed on the page by themselves.
-      </p>
+    </div>
+  );
+}
+
+function LayoutVariantButton({
+  variant,
+  disabled,
+  onAdd,
+}: {
+  variant: BuilderComponentVariant;
+  disabled: boolean;
+  onAdd: (variantId: string) => void;
+}): React.ReactElement {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      draggable={!disabled}
+      aria-label={variant.label}
+      onDragStart={(event) => {
+        setVariantDragData(event.dataTransfer, variant.id);
+      }}
+      onClick={() => onAdd(variant.id)}
+      className="flex w-full cursor-grab flex-col items-stretch border border-zinc-300 bg-white p-2 text-left shadow-none transition-colors hover:border-sky-400 hover:bg-zinc-50 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <LayoutVariantPreview variant={variant} />
+    </button>
+  );
+}
+
+function LayoutGroupList({
+  groups,
+  disabled,
+  onAdd,
+}: {
+  groups: readonly BuilderComponentGroup[];
+  disabled: boolean;
+  onAdd: (variantId: string) => void;
+}): React.ReactElement {
+  const [openGroupIds, setOpenGroupIds] = useState<string[]>(() =>
+    groups.map((group) => group.id),
+  );
+
+  return (
+    <div className="space-y-1 p-2">
+      {groups.map((group) => {
+        const open = openGroupIds.includes(group.id);
+        return (
+          <div key={group.id} className="border-b border-zinc-200/80 pb-1">
+            <button
+              type="button"
+              disabled={disabled}
+              aria-expanded={open}
+              onClick={() =>
+                setOpenGroupIds((current) =>
+                  current.includes(group.id)
+                    ? current.filter((id) => id !== group.id)
+                    : [...current, group.id],
+                )
+              }
+              className="flex w-full items-center gap-1.5 px-1 py-2 text-left text-[12px] font-medium text-zinc-700 hover:text-zinc-900 disabled:opacity-50"
+            >
+              <MaterialIcon
+                name="arrow_drop_down"
+                className={cn(
+                  "text-base text-zinc-500 transition-transform",
+                  !open && "-rotate-90",
+                )}
+              />
+              {group.label}
+            </button>
+            {open && (
+              <div className="flex flex-col gap-2 px-1 pb-2">
+                {group.variants.map((variant) => (
+                  <LayoutVariantButton
+                    key={variant.id}
+                    variant={variant}
+                    disabled={disabled}
+                    onAdd={onAdd}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -254,6 +396,16 @@ function VariantGrid({
 }): React.ReactElement {
   if (folder.id === "merge") {
     return <MergeFieldList folder={folder} disabled={disabled} />;
+  }
+
+  if (folder.groups && folder.groups.length > 0) {
+    return (
+      <LayoutGroupList
+        groups={folder.groups}
+        disabled={disabled}
+        onAdd={onAdd}
+      />
+    );
   }
 
   if (folder.variants.length === 0) {
@@ -282,7 +434,11 @@ function VariantGrid({
             className="flex h-auto cursor-grab flex-col items-stretch gap-2 border border-zinc-300 bg-white px-2 py-2.5 text-left shadow-none transition-colors hover:border-sky-400 hover:bg-zinc-50 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50"
           >
             <div className="border border-zinc-200 bg-white">
-              <VariantPreview preview={variant.preview} />
+              {variant.preview === "layout" ? (
+                <LayoutVariantPreview variant={variant} />
+              ) : (
+                <VariantPreview preview={variant.preview} />
+              )}
             </div>
             <span className="text-center text-[11px] font-medium text-zinc-600">
               {variant.label}
@@ -290,14 +446,6 @@ function VariantGrid({
           </button>
         ))}
       </div>
-      {folder.note && (
-        <p className="text-xs leading-relaxed text-on-surface-variant">
-          Note: {folder.note}
-        </p>
-      )}
-      <p className="text-[11px] text-on-surface-variant">
-        Drag a layout onto the page, or click to add it at the end.
-      </p>
     </div>
   );
 }
@@ -355,12 +503,6 @@ export function BuilderComponentPalette({
           />
         )}
       </div>
-
-      <p className="mt-auto border-t border-outline-variant/15 px-4 py-3 text-xs text-on-surface-variant">
-        Hint: Drag merge fields from the Merge fields folder, or type{" "}
-        <code className="font-mono text-white">{"{{lead.first_name}}"}</code>{" "}
-        in text.
-      </p>
     </>
   );
 

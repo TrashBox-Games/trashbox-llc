@@ -34,10 +34,10 @@ seeded = {
     borderColor: "#e4e4e7",
     align: "center",
   },
-  pageMarginTop: 28,
-  pageMarginRight: 28,
-  pageMarginBottom: 28,
-  pageMarginLeft: 28,
+  pageMarginTop: 0,
+  pageMarginRight: 0,
+  pageMarginBottom: 0,
+  pageMarginLeft: 0,
   blocks: seeded.blocks.map((block) => {
     if (block.type === "text") {
       return {
@@ -45,6 +45,12 @@ seeded = {
         html: decorateMergeFieldsHtml(
           "<p>Hi {{lead.first_name}}, thanks for reaching out to {{business.name}}.</p>",
         ),
+        backgroundColor: "#f0f9ff",
+        paddingX: 16,
+        paddingY: 12,
+        borderWidth: 1,
+        borderColor: "#bae6fd",
+        borderRadius: 4,
       };
     }
     if (block.type === "button") {

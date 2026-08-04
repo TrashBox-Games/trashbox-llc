@@ -9,6 +9,7 @@ import {
   isMergeFieldDrag,
   readBuilderDragData,
   resolveInsertIndex,
+  resolveInsertPlacement,
   setBlockDragData,
   setVariantDragData,
   TB_MERGE_MIME,
@@ -105,5 +106,44 @@ describe("email template drag helpers", () => {
     expect(resolveInsertIndex(80, rects)).toBe(1);
     expect(resolveInsertIndex(200, rects)).toBe(2);
     expect(resolveInsertIndex(400, rects)).toBe(3);
+  });
+
+  it("names before/after from which half of a block the pointer is in", () => {
+    // Section (0–100), gap (100–120), Text (120–220)
+    const rects = [
+      { top: 0, height: 100 },
+      { top: 120, height: 100 },
+    ];
+
+    expect(resolveInsertPlacement(20, rects)).toEqual({
+      index: 0,
+      relation: "before",
+      anchorIndex: 0,
+    });
+    expect(resolveInsertPlacement(80, rects)).toEqual({
+      index: 1,
+      relation: "after",
+      anchorIndex: 0,
+    });
+    expect(resolveInsertPlacement(105, rects)).toEqual({
+      index: 1,
+      relation: "after",
+      anchorIndex: 0,
+    });
+    expect(resolveInsertPlacement(115, rects)).toEqual({
+      index: 1,
+      relation: "before",
+      anchorIndex: 1,
+    });
+    expect(resolveInsertPlacement(140, rects)).toEqual({
+      index: 1,
+      relation: "before",
+      anchorIndex: 1,
+    });
+    expect(resolveInsertPlacement(200, rects)).toEqual({
+      index: 2,
+      relation: "after",
+      anchorIndex: 1,
+    });
   });
 });

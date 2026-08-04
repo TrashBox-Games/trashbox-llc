@@ -33,9 +33,11 @@ describe("EmailTemplateBuilder", () => {
 
     const surface = screen.getByTestId("template-canvas-drop-surface");
     const paper = screen.getByTestId("template-paper-page");
-    expect(surface).toHaveStyle({ backgroundColor: "#ffffff" });
+    // Editor-only chrome: light grey backdrop + white content (not in email HTML).
+    expect(surface).toHaveStyle({ backgroundColor: "#e8e8ec" });
     expect(paper).toHaveStyle({ backgroundColor: "#ffffff" });
     expect(paper).toHaveAttribute("data-tb-flat-page", "true");
+    expect(paper.className).toMatch(/shadow-/);
 
     const pageBg = within(
       screen.getByRole("complementary", { name: /component properties/i }),
@@ -83,15 +85,93 @@ describe("EmailTemplateBuilder", () => {
     expect(paper).toHaveStyle({
       paddingTop: "40px",
       paddingRight: "12px",
-      paddingBottom: "24px",
-      paddingLeft: "24px",
+      paddingBottom: "0px",
+      paddingLeft: "0px",
+    });
+    expect(screen.getByTestId("template-canvas-drop-surface")).toHaveStyle({
+      paddingTop: "0px",
+      paddingBottom: "0px",
+    });
+  });
+
+  it("keeps the content page and layouts within 600px with editor hit padding", async () => {
+    const user = userEvent.setup();
+    render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
+
+    const paper = screen.getByTestId("template-paper-page");
+    expect(paper).toHaveStyle({
+      paddingTop: "0px",
+      paddingRight: "0px",
+      paddingBottom: "0px",
+      paddingLeft: "0px",
       maxWidth: "600px",
     });
-    // Outer page frame (preview chrome) stays outside the content card.
+    // Flat-page editor chrome insets the paper; document margins stay flush.
     expect(screen.getByTestId("template-canvas-drop-surface")).toHaveStyle({
       paddingTop: "24px",
-      paddingBottom: "24px",
+      paddingBottom: "48px",
     });
+
+    const palette = getComponentsPalette();
+    await user.click(
+      within(palette).getByRole("button", { name: /^layout$/i }),
+    );
+    await user.click(
+      within(palette).getByRole("button", { name: /^50% \/ 50%$/i }),
+    );
+
+    expect(screen.getByTestId("builder-block-wrap-0").className).toMatch(
+      /max-w-\[600px]/,
+    );
+    const frame = screen.getByTestId("builder-block-frame");
+    expect(frame.className).toMatch(/-mx-10/);
+    expect(frame.className).toMatch(/px-10/);
+    expect(screen.getByTestId("builder-columns-chrome")).toBeInTheDocument();
+
+    const inspector = screen.getByRole("complementary", {
+      name: /component properties/i,
+    });
+    expect(
+      within(inspector).queryByLabelText(/^full width$/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps block outlines flush with zero-height gaps and overlay chrome", async () => {
+    const user = userEvent.setup();
+    let doc = emptyDocument();
+    doc = appendBlock(doc, "text");
+    doc = appendBlock(doc, "text");
+    doc = {
+      ...doc,
+      blocks: doc.blocks.map((block, index) =>
+        block.type === "text"
+          ? { ...block, html: `<p>Block ${index + 1}</p>` }
+          : block,
+      ),
+    };
+
+    render(
+      <EmailTemplateBuilder
+        initialDocument={doc}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const gap = screen.getByTestId("builder-block-gap");
+    expect(gap.className).toMatch(/(?:^|\s)h-0(?:\s|$)/);
+    expect(gap.className).not.toMatch(/(?:^|\s)h-6(?:\s|$)/);
+
+    await user.click(screen.getByText("Block 2"));
+    const heightHandle = screen.getByRole("slider", { name: /resize height/i });
+    const widthHandle = screen.getByRole("slider", { name: /resize width/i });
+    expect(heightHandle.className).toMatch(/absolute/);
+    expect(heightHandle.className).toMatch(/translate-y-1\/2/);
+    expect(widthHandle.className).toMatch(/absolute/);
+    expect(widthHandle.className).toMatch(/translate-x-1\/2/);
+    expect(screen.getByTestId("builder-block-tag").className).toMatch(
+      /-translate-y-full/,
+    );
   });
 
   it("shows page margins flush at 0 with no phantom top spacer", async () => {
@@ -190,11 +270,10 @@ describe("EmailTemplateBuilder", () => {
     expect(
       screen.getByRole("textbox", { name: /text block/i }),
     ).toBeInTheDocument();
-    // Placeholder hint only — not real content that must be deleted.
-    expect(
-      screen.getByRole("textbox", { name: /text block/i }),
-    ).toHaveTextContent("");
-    expect(screen.getByText(/type your text here/i)).toBeInTheDocument();
+    const editor = screen.getByRole("textbox", { name: /text block/i });
+    expect(editor).toHaveTextContent(/this is a text block/i);
+    expect(editor.innerHTML).toMatch(/text-align:\s*center/i);
+    expect(screen.queryByText(/type your text here/i)).not.toBeInTheDocument();
     expect(
       screen.getByRole("toolbar", { name: /formatting/i }),
     ).toBeInTheDocument();
@@ -277,15 +356,17 @@ describe("EmailTemplateBuilder", () => {
 
   it("adds a grid block and shows layout settings", async () => {
     const user = userEvent.setup();
-    render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
+    let doc = emptyDocument();
+    doc = appendVariant(doc, "grid-2x2");
+    render(
+      <EmailTemplateBuilder
+        initialDocument={doc}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
 
-    const palette = getComponentsPalette();
-    await user.click(
-      within(palette).getByRole("button", { name: /^layout$/i }),
-    );
-    await user.click(
-      within(palette).getByRole("button", { name: /2 × 2 grid/i }),
-    );
+    await user.click(screen.getByTestId("builder-section-bleed-left"));
 
     expect(screen.getByTestId("builder-grid")).toBeInTheDocument();
     expect(screen.getByTestId("builder-grid-drop-0-0")).toBeInTheDocument();
@@ -322,7 +403,7 @@ describe("EmailTemplateBuilder", () => {
     expect(editor).toHaveTextContent("Hello world");
   });
 
-  it("opens layout folder with columns and grid options without image+text presets", async () => {
+  it("opens layout folder with nested width presets and empty columns", async () => {
     const user = userEvent.setup();
     render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
 
@@ -331,35 +412,51 @@ describe("EmailTemplateBuilder", () => {
       within(palette).getByRole("button", { name: /^layout$/i }),
     );
     expect(
-      within(palette).getByRole("button", { name: /1 column/i }),
+      within(palette).getByRole("button", { name: /^1 column$/i }),
     ).toBeInTheDocument();
     expect(
-      within(palette).getByRole("button", { name: /2 columns/i }),
+      within(palette).getByRole("button", { name: /^2 column$/i }),
     ).toBeInTheDocument();
     expect(
-      within(palette).getByRole("button", { name: /3 columns/i }),
+      within(palette).getByRole("button", { name: /^3 column$/i }),
     ).toBeInTheDocument();
     expect(
-      within(palette).getByRole("button", { name: /2 × 2 grid/i }),
+      within(palette).getByRole("button", { name: /^4 column$/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(palette).getByRole("button", { name: /^multiple sections$/i }),
     ).toBeInTheDocument();
     expect(
       within(palette).queryByRole("button", { name: /image \+ text/i }),
     ).not.toBeInTheDocument();
     expect(
-      within(palette).getByText(
-        /drop text, image, button, and other components into columns or grid cells/i,
-      ),
+      within(palette).queryByRole("button", { name: /2 × 2 grid/i }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      within(palette).getByRole("button", { name: /^100%$/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(palette).getByRole("button", { name: /^50% \/ 50%$/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(palette).getByRole("button", { name: /^33% \/ 67%$/i }),
     ).toBeInTheDocument();
 
     await user.click(
-      within(palette).getByRole("button", { name: /3 columns/i }),
+      within(palette).getByRole("button", {
+        name: /^33\.33% \/ 33\.33% \/ 33\.33%$/i,
+      }),
     );
+    expect(screen.getByTestId("builder-column-drop-0")).toBeInTheDocument();
+    expect(screen.getByTestId("builder-column-drop-2")).toBeInTheDocument();
     expect(
-      screen.getByRole("textbox", { name: /column 1/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("textbox", { name: /column 3/i }),
-    ).toBeInTheDocument();
+      screen.queryByRole("textbox", { name: /column \d/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/left column/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/details go here/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/column text/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/drop a component here/i)).not.toBeInTheDocument();
   });
 
   it("exposes layout chrome controls for columns on the inspector", async () => {
@@ -602,9 +699,10 @@ describe("EmailTemplateBuilder", () => {
     const columnCount = within(inspector).getByLabelText(/column count/i);
     await user.clear(columnCount);
     await user.type(columnCount, "3");
+    expect(screen.getByTestId("builder-column-drop-2")).toBeInTheDocument();
     expect(
-      screen.getByRole("textbox", { name: /column 3/i }),
-    ).toBeInTheDocument();
+      screen.queryByRole("textbox", { name: /column \d/i }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByText("Header 1"));
     expect(within(inspector).getByLabelText(/rows/i)).toBeInTheDocument();
@@ -675,6 +773,9 @@ describe("EmailTemplateBuilder", () => {
       Object.defineProperty(overEvent, "clientY", { value: 110 });
       fireEvent(surface, overEvent);
       expect(screen.getByTestId("builder-drop-slot-0")).toBeInTheDocument();
+      expect(
+        screen.getByLabelText(/^insert before section$/i),
+      ).toBeInTheDocument();
 
       // Column drop stops propagation — page handler must still clear the bar.
       const column = screen.getByTestId("builder-column-drop-0");
@@ -685,7 +786,7 @@ describe("EmailTemplateBuilder", () => {
         screen.queryByTestId("builder-drop-slot-0"),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByLabelText(/insert at position/i),
+        screen.queryByLabelText(/^insert before section$/i),
       ).not.toBeInTheDocument();
     } finally {
       HTMLElement.prototype.getBoundingClientRect = originalGetRect;
