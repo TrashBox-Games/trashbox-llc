@@ -108,9 +108,16 @@ describe("BuilderBlock selection chrome", () => {
 
     expect(screen.queryByTestId("builder-block-tag")).not.toBeInTheDocument();
 
-    await user.hover(screen.getByTestId("builder-column-item-0-0"));
+    const nested = screen.getByTestId("builder-column-item-0-0");
+    await user.hover(nested);
     expect(screen.getByTestId("builder-nested-tag")).toHaveTextContent("Text");
     expect(screen.queryByTestId("builder-block-tag")).not.toBeInTheDocument();
+
+    // Leave nested content into the section padding shell.
+    fireEvent.mouseLeave(nested);
+    fireEvent.mouseEnter(screen.getByTestId("builder-columns-chrome"));
+    expect(screen.getByTestId("builder-block-tag")).toHaveTextContent("Section");
+    expect(screen.queryByTestId("builder-nested-tag")).not.toBeInTheDocument();
 
     await user.hover(screen.getByTestId("builder-section-bleed-left"));
     const sectionTag = screen.getByTestId("builder-block-tag");

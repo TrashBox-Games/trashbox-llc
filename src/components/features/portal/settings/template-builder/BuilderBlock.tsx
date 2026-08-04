@@ -1,6 +1,9 @@
 "use client";
 
 import {
+  createContext,
+  useContext,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -139,6 +142,13 @@ function columnItemLabel(kind: ColumnItem["kind"]): string {
   }
 }
 
+type SectionHoverApi = {
+  setSectionHovered: (hovered: boolean) => void;
+  setNestedHovered: (hovered: boolean) => void;
+};
+
+const SectionHoverContext = createContext<SectionHoverApi | null>(null);
+
 function NestedItemChrome({
   label,
   selected,
@@ -158,6 +168,7 @@ function NestedItemChrome({
   style?: CSSProperties;
   children: ReactNode;
 }): React.ReactElement {
+  const sectionHover = useContext(SectionHoverContext);
   const [hovered, setHovered] = useState(false);
   const showChrome = selected || hovered;
 
@@ -169,8 +180,16 @@ function NestedItemChrome({
       aria-label={ariaLabel}
       aria-pressed={selected}
       style={style}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => {
+        setHovered(true);
+        sectionHover?.setNestedHovered(true);
+      }}
+      onMouseLeave={() => {
+        setHovered(false);
+        sectionHover?.setNestedHovered(false);
+        // Leaving nested content into section padding should hover the section.
+        sectionHover?.setSectionHovered(true);
+      }}
       onClick={(event) => {
         event.stopPropagation();
         onSelect();
@@ -352,7 +371,8 @@ function ColumnsBlockEditor({
 
   return (
     <BlockChrome {...chrome}>
-      <div
+      <SectionPaddingSurface
+        testId="builder-columns-chrome"
         className={cn("box-border", alignClass)}
         style={{
           backgroundColor: block.backgroundColor || "transparent",
@@ -362,7 +382,7 @@ function ColumnsBlockEditor({
           borderRadius: Math.max(0, block.borderRadius ?? 0),
           padding: `${Math.max(0, block.paddingY ?? 0)}px ${Math.max(0, block.paddingX ?? 0)}px`,
         }}
-        data-testid="builder-columns-chrome"
+        onSelectPadding={chrome.onSelect}
       >
         <div
           className="grid"
@@ -603,7 +623,7 @@ function ColumnsBlockEditor({
           );
         })}
       </div>
-      </div>
+      </SectionPaddingSurface>
     </BlockChrome>
   );
 }
@@ -714,7 +734,8 @@ function GridBlockEditor({
 
   return (
     <BlockChrome {...chrome}>
-      <div
+      <SectionPaddingSurface
+        testId="builder-grid-chrome"
         className={cn(
           "box-border",
           block.align === "center"
@@ -731,7 +752,7 @@ function GridBlockEditor({
           borderRadius: Math.max(0, block.borderRadius ?? 0),
           padding: `${Math.max(0, block.paddingY ?? 0)}px ${Math.max(0, block.paddingX ?? 0)}px`,
         }}
-        data-testid="builder-grid-chrome"
+        onSelectPadding={chrome.onSelect}
       >
       <div
         className="grid"
@@ -979,7 +1000,7 @@ function GridBlockEditor({
           }),
         )}
       </div>
-      </div>
+      </SectionPaddingSurface>
     </BlockChrome>
   );
 }
@@ -1067,6 +1088,41 @@ const SECTION_BLEED_CLASS = "-mx-10 px-10";
 const SECTION_BLEED_HIT_CLASS =
   "absolute inset-y-0 z-[5] w-10 cursor-pointer";
 
+/**
+ * Layout chrome padding shell: hovering/clicking the pad (not nested items)
+ * targets the parent section.
+ */
+function SectionPaddingSurface({
+  testId,
+  className,
+  style,
+  onSelectPadding,
+  children,
+}: {
+  testId: string;
+  className?: string;
+  style?: CSSProperties;
+  onSelectPadding: () => void;
+  children: ReactNode;
+}): React.ReactElement {
+  const sectionHover = useContext(SectionHoverContext);
+  return (
+    <div
+      data-testid={testId}
+      className={className}
+      style={style}
+      onMouseEnter={() => sectionHover?.setSectionHovered(true)}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return;
+        event.stopPropagation();
+        onSelectPadding();
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function BlockChrome({
   selected,
   blockId,
@@ -1087,15 +1143,29 @@ function BlockChrome({
 }: ChromeProps & { children: React.ReactNode }): React.ReactElement {
   const frameRef = useRef<HTMLDivElement | null>(null);
   const [hovered, setHovered] = useState(false);
-  const showChrome = selected || hovered;
+  const [nestedHovered, setNestedHovered] = useState(false);
+  const showSectionHover = hovered && !nestedHovered;
+  const showChrome = selected || showSectionHover;
   const tagState = selected ? "selected" : "hover";
+  const sectionHoverApi = useMemo<SectionHoverApi>(
+    () => ({
+      setSectionHovered: setHovered,
+      setNestedHovered,
+    }),
+    [],
+  );
 
   function selectBlock(event: ReactMouseEvent) {
     event.stopPropagation();
     onSelect();
   }
 
-  return (
+  function clearHover() {
+    setHovered(false);
+    setNestedHovered(false);
+  }
+
+  const frame = (
     <div
       // Avoid role="button" while editing — browsers block text selection inside buttons.
       // Sections only select from side bleed hit-targets so nested content wins hover/click.
@@ -1105,7 +1175,7 @@ function BlockChrome({
       data-testid="builder-block-frame"
       data-tb-section-bleed={sectionBleed ? "true" : "false"}
       onMouseEnter={sectionBleed ? undefined : () => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={clearHover}
       onClick={sectionBleed ? undefined : selectBlock}
       onKeyDown={
         sectionBleed
@@ -1134,7 +1204,7 @@ function BlockChrome({
         sectionBleed ? SECTION_BLEED_CLASS : "mx-0 px-0",
         selected
           ? "outline-2 outline-sky-500 outline-offset-0"
-          : hovered
+          : showSectionHover
             ? "outline-1 outline-sky-500/40 outline-offset-0"
             : "outline-none",
         !sectionBleed && "cursor-pointer",
@@ -1245,7 +1315,6 @@ function BlockChrome({
       <div
         data-testid={sectionBleed ? "builder-section-content" : undefined}
         className="relative"
-        onMouseEnter={sectionBleed ? () => setHovered(false) : undefined}
       >
         {children}
       </div>
@@ -1264,6 +1333,14 @@ function BlockChrome({
         />
       ) : null}
     </div>
+  );
+
+  if (!sectionBleed) return frame;
+
+  return (
+    <SectionHoverContext.Provider value={sectionHoverApi}>
+      {frame}
+    </SectionHoverContext.Provider>
   );
 }
 
