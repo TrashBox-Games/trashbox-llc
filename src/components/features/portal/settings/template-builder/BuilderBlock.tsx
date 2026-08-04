@@ -1170,8 +1170,7 @@ function BlockChrome({
           data-testid="builder-block-tag"
           data-tb-tag-state={tagState}
           className={cn(
-            "absolute top-0 z-30 flex h-5 -translate-y-full items-stretch rounded-none text-[11px] leading-none text-white",
-            sectionBleed ? "left-10" : "left-0",
+            "absolute top-0 left-0 z-30 flex h-5 -translate-y-full items-stretch rounded-none text-[11px] leading-none text-white",
             selected ? "bg-sky-500" : "bg-sky-500/55",
           )}
           onClick={(event) => event.stopPropagation()}
@@ -1292,8 +1291,16 @@ export function BuilderBlock({
   onSelectImageTextChild,
 }: BuilderBlockProps): React.ReactElement {
   const box = getBlockBoxSize(block);
+  // Only the leaf selection shows chrome — nested text/column/cell selection
+  // must not also outline/tag the parent section.
+  const hasNestedSelection =
+    selectedColumnItem != null ||
+    selectedColumnIndex != null ||
+    selectedGridCell != null ||
+    selectedImageTextChild != null;
+  const chromeSelected = selected && !hasNestedSelection;
   const chrome: ChromeProps = {
-    selected,
+    selected: chromeSelected,
     blockId: block.id,
     label: blockChromeLabel(block.type),
     onSelect,

@@ -440,6 +440,8 @@ export const COLUMN_LIMITS = {
 
 export const DEFAULT_LAYOUT_CHROME = {
   ...DEFAULT_BOX_CHROME,
+  /** Default vertical padding for column sections. */
+  paddingY: 20,
   align: "left" as LayoutAlign,
   cellPadding: 0,
   cellVerticalAlign: "top" as CellVerticalAlign,
@@ -579,6 +581,7 @@ export const GRID_LIMITS = {
 
 export const DEFAULT_GRID_STYLE = {
   ...DEFAULT_LAYOUT_CHROME,
+  paddingY: 0,
   columnGap: 16,
   rowGap: 16,
   itemGap: 12,

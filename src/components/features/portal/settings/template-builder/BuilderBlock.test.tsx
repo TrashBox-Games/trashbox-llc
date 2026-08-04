@@ -74,6 +74,9 @@ describe("BuilderBlock selection chrome", () => {
     expect(frame.className).toMatch(/flow-root/);
     expect(frame.className).not.toMatch(/(?:^|\s)p-2(?:\s|$)/);
     expect(frame.className).not.toMatch(/ring-/);
+    // Tag sits on the outer outline edge, not inset to the content page.
+    expect(tag.className).toMatch(/(?:^|\s)left-0(?:\s|$)/);
+    expect(tag.className).not.toMatch(/left-10/);
   });
 
   it("hovers a section only from the side bleed, not over nested content", async () => {
@@ -283,6 +286,11 @@ describe("BuilderBlock selection chrome", () => {
     const selectedTag = screen.getByTestId("builder-nested-tag");
     expect(selectedTag).toHaveTextContent("Text");
     expect(selectedTag).toHaveAttribute("data-tb-tag-state", "selected");
+    // Nested leaf selection hides parent section chrome.
+    expect(screen.queryByTestId("builder-block-tag")).not.toBeInTheDocument();
+    expect(screen.getByTestId("builder-block-frame").className).not.toMatch(
+      /outline-2/,
+    );
   });
 
   it("shows Insert to Column while dragging over a column", () => {

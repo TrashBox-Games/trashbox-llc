@@ -81,6 +81,21 @@ describe("email-template-document", () => {
     expect(html).toContain('data-tb-layout-chrome="1"');
   });
 
+  it("defaults column sections to 20px vertical padding", () => {
+    const block = createDefaultBlock("columns");
+    expect(block.type).toBe("columns");
+    if (block.type !== "columns") return;
+    expect(block.paddingY).toBe(20);
+    expect(block.paddingX).toBe(0);
+
+    const html = documentToEmailHtml({
+      ...emptyDocument(),
+      blocks: [block],
+    });
+    expect(html).toContain('data-tb-pad-y="20"');
+    expect(html).toMatch(/padding:20px 0/);
+  });
+
   it("still allows a contrasting page canvas when customized", () => {
     const doc = emptyDocument("#d8d8dc");
     expect(doc.backgroundColor).toBe("#d8d8dc");
