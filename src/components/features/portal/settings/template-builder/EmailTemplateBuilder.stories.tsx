@@ -7,7 +7,7 @@ import {
   emptyDocument,
 } from "@/lib/email-template-document";
 
-let seeded = emptyDocument("#e4e4e7");
+let seeded = emptyDocument();
 seeded = appendBlock(seeded, "text");
 seeded = appendBlock(seeded, "button");
 seeded = appendBlock(seeded, "columns");
@@ -133,5 +133,17 @@ export const ComposeMode: Story = {
   args: {
     mode: "compose",
     initialDocument: seeded,
+  },
+};
+
+export const ColoredPageCanvas: Story = {
+  args: {
+    initialName: "Card on canvas",
+    initialSubject: "Thanks for contacting us",
+    initialDocument: {
+      ...seeded,
+      backgroundColor: "#d8d8dc",
+      contentBackgroundColor: "#ffffff",
+    },
   },
 };

@@ -767,9 +767,24 @@ export interface EmailTemplatePageBand {
   align: PageBandAlign;
 }
 
-export const DEFAULT_DOCUMENT_BACKGROUND = "#d8d8dc";
+/** Flat white page by default (digest-style); customize for a colored canvas. */
+export const DEFAULT_DOCUMENT_BACKGROUND = "#ffffff";
 export const DEFAULT_CONTENT_BACKGROUND = "#ffffff";
 export const DEFAULT_PAGE_MARGIN = 24;
+
+/** True when page and content backgrounds match (no floating card canvas). */
+export function isFlatPageDocument(doc: {
+  backgroundColor?: string | null;
+  contentBackgroundColor?: string | null;
+}): boolean {
+  const page = (doc.backgroundColor || DEFAULT_DOCUMENT_BACKGROUND)
+    .trim()
+    .toLowerCase();
+  const content = (doc.contentBackgroundColor || DEFAULT_CONTENT_BACKGROUND)
+    .trim()
+    .toLowerCase();
+  return page === content;
+}
 
 export const DEFAULT_PAGE_BAND_STYLE = {
   backgroundColor: "transparent",
@@ -1230,7 +1245,8 @@ function layoutChromeAttrs(chrome: LayoutChromeFields): string {
 
 function parseLayoutChromeFromEl(el: Element): LayoutChromeFields {
   return {
-    backgroundColor: attr(el, "data-tb-bg") || DEFAULT_LAYOUT_CHROME.backgroundColor,
+    backgroundColor:
+      attr(el, "data-tb-bg") || DEFAULT_LAYOUT_CHROME.backgroundColor,
     borderWidth: parseNumberAttr(el, "data-tb-border-width", 0, 0, 12),
     borderColor:
       attr(el, "data-tb-border-color") || DEFAULT_LAYOUT_CHROME.borderColor,
@@ -3326,8 +3342,6 @@ export const BUILDER_COMPONENT_FOLDERS: readonly BuilderComponentFolder[] = [
     variants: [],
   },
 ];
-
-
 
 /** @deprecated Prefer BUILDER_COMPONENT_FOLDERS + createBlockFromVariant. */
 export const BUILDER_COMPONENT_TYPES: readonly {

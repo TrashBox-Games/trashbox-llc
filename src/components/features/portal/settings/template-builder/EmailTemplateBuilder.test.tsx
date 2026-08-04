@@ -14,7 +14,11 @@ import {
   appendVariant,
   insertVariantIntoColumn,
 } from "@/lib/email-template-document";
-import { TB_BLOCK_MIME, TB_MERGE_MIME, TB_VARIANT_MIME } from "@/lib/email-template-dnd";
+import {
+  TB_BLOCK_MIME,
+  TB_MERGE_MIME,
+  TB_VARIANT_MIME,
+} from "@/lib/email-template-dnd";
 
 function getComponentsPalette(): HTMLElement {
   const sidebar = screen.getByRole("complementary", {
@@ -24,6 +28,23 @@ function getComponentsPalette(): HTMLElement {
 }
 
 describe("EmailTemplateBuilder", () => {
+  it("starts with a flat white page and softens content chrome until a page canvas is set", () => {
+    render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
+
+    const surface = screen.getByTestId("template-canvas-drop-surface");
+    const paper = screen.getByTestId("template-paper-page");
+    expect(surface).toHaveStyle({ backgroundColor: "#ffffff" });
+    expect(paper).toHaveStyle({ backgroundColor: "#ffffff" });
+    expect(paper).toHaveAttribute("data-tb-flat-page", "true");
+
+    const pageBg = within(
+      screen.getByRole("complementary", { name: /component properties/i }),
+    ).getByLabelText(/page background$/i);
+    fireEvent.change(pageBg, { target: { value: "#d8d8dc" } });
+    expect(surface).toHaveStyle({ backgroundColor: "#d8d8dc" });
+    expect(paper).toHaveAttribute("data-tb-flat-page", "false");
+  });
+
   it("edits page background color and image from the design inspector", async () => {
     const user = userEvent.setup();
     render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
@@ -135,9 +156,7 @@ describe("EmailTemplateBuilder", () => {
     );
 
     const palette = getComponentsPalette();
-    await user.click(
-      within(palette).getByRole("button", { name: /^page$/i }),
-    );
+    await user.click(within(palette).getByRole("button", { name: /^page$/i }));
     await user.click(
       within(palette).getByRole("button", { name: /^header$/i }),
     );
@@ -194,9 +213,7 @@ describe("EmailTemplateBuilder", () => {
     doc = {
       ...doc,
       blocks: doc.blocks.map((block) =>
-        block.type === "text"
-          ? { ...block, html: "<p>Hello</p>" }
-          : block,
+        block.type === "text" ? { ...block, html: "<p>Hello</p>" } : block,
       ),
     };
 
@@ -363,12 +380,18 @@ describe("EmailTemplateBuilder", () => {
     const inspector = screen.getByRole("complementary", {
       name: /component properties/i,
     });
-    expect(within(inspector).getByLabelText(/^background$/i)).toBeInTheDocument();
-    expect(within(inspector).getByLabelText(/^block align$/i)).toBeInTheDocument();
+    expect(
+      within(inspector).getByLabelText(/^background$/i),
+    ).toBeInTheDocument();
+    expect(
+      within(inspector).getByLabelText(/^block align$/i),
+    ).toBeInTheDocument();
     expect(
       within(inspector).getByLabelText(/cell vertical align/i),
     ).toBeInTheDocument();
-    expect(within(inspector).getByLabelText(/^cell padding$/i)).toBeInTheDocument();
+    expect(
+      within(inspector).getByLabelText(/^cell padding$/i),
+    ).toBeInTheDocument();
 
     fireEvent.change(within(inspector).getByLabelText(/^background$/i), {
       target: { value: "#ffeedd" },

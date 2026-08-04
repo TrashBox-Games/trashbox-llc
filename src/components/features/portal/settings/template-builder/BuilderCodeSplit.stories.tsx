@@ -6,7 +6,7 @@ import {
   emptyDocument,
 } from "@/lib/email-template-document";
 
-let seeded = emptyDocument("#e4e4e7");
+let seeded = emptyDocument();
 seeded = appendBlock(seeded, "text");
 seeded = appendBlock(seeded, "button");
 seeded = {

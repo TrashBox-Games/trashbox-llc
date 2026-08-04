@@ -5,11 +5,14 @@ import {
   createBlockFromVariant,
   createDefaultBlock,
   DEFAULT_BUTTON_STYLE,
+  DEFAULT_CONTENT_BACKGROUND,
+  DEFAULT_DOCUMENT_BACKGROUND,
   documentFromStarter,
   documentToEmailHtml,
   documentToPlainText,
   duplicateBlock,
   emptyDocument,
+  isFlatPageDocument,
   emptyGridCells,
   insertVariantIntoColumn,
   insertVariantIntoGridCell,
@@ -36,6 +39,28 @@ import {
 } from "@/lib/email-template-document";
 
 describe("email-template-document", () => {
+  it("defaults to a flat white page like modern digest emails", () => {
+    const doc = emptyDocument();
+    expect(DEFAULT_DOCUMENT_BACKGROUND).toBe("#ffffff");
+    expect(DEFAULT_CONTENT_BACKGROUND).toBe("#ffffff");
+    expect(doc.backgroundColor).toBe("#ffffff");
+    expect(doc.contentBackgroundColor).toBe("#ffffff");
+
+    const html = documentToEmailHtml(doc);
+    expect(html).toMatch(/data-tb-bg="#ffffff"/);
+    expect(html).toMatch(/data-tb-content-bg="#ffffff"/);
+    expect(html).toMatch(/background-color:#ffffff/);
+  });
+
+  it("still allows a contrasting page canvas when customized", () => {
+    const doc = emptyDocument("#d8d8dc");
+    expect(doc.backgroundColor).toBe("#d8d8dc");
+    expect(doc.contentBackgroundColor).toBe("#ffffff");
+    expect(isFlatPageDocument(doc)).toBe(false);
+    expect(isFlatPageDocument(emptyDocument())).toBe(true);
+    expect(documentToEmailHtml(doc)).toMatch(/data-tb-bg="#d8d8dc"/);
+  });
+
   it("creates default blocks for every palette type", () => {
     const types = [
       "text",
@@ -284,12 +309,12 @@ describe("email-template-document", () => {
     expect(parsed.backgroundColor).toBe("#eeeeee");
     expect(parsed.blocks).toHaveLength(3);
     expect(parsed.blocks[0]?.type).toBe("text");
-    expect(parsed.blocks[0] && "html" in parsed.blocks[0] && parsed.blocks[0].html).toContain(
-      'data-tb-merge="lead.first_name"',
-    );
-    expect(parsed.blocks[0] && "html" in parsed.blocks[0] && parsed.blocks[0].html).toContain(
-      "{{lead.first_name}}",
-    );
+    expect(
+      parsed.blocks[0] && "html" in parsed.blocks[0] && parsed.blocks[0].html,
+    ).toContain('data-tb-merge="lead.first_name"');
+    expect(
+      parsed.blocks[0] && "html" in parsed.blocks[0] && parsed.blocks[0].html,
+    ).toContain("{{lead.first_name}}");
     expect(parsed.blocks[1]?.type).toBe("button");
     if (parsed.blocks[1]?.type === "button") {
       expect(parsed.blocks[1].label).toBe("Book now");
@@ -302,7 +327,13 @@ describe("email-template-document", () => {
     const doc: EmailTemplateDocument = {
       backgroundColor: "#fff",
       blocks: [
-        { id: "1", type: "text", html: "<p>Hi there</p>", width: null, height: null },
+        {
+          id: "1",
+          type: "text",
+          html: "<p>Hi there</p>",
+          width: null,
+          height: null,
+        },
         {
           id: "2",
           type: "button",

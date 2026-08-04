@@ -15,6 +15,7 @@ import type {
 import {
   documentContentPaddingStyle,
   documentPageBackgroundStyle,
+  isFlatPageDocument,
 } from "@/lib/email-template-document";
 import {
   isBuilderDrag,
@@ -308,9 +309,10 @@ export function BuilderCanvas({
 
   const margins = documentContentPaddingStyle(doc);
   const showEmpty = doc.blocks.length === 0 && !doc.header && !doc.footer;
+  const flatPage = isFlatPageDocument(doc);
 
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col bg-[#d8d8dc]", className)}>
+    <div className={cn("flex min-h-0 flex-1 flex-col bg-zinc-100", className)}>
       <style>{`
         [data-tb-merge], .tb-merge-field {
           display: inline;
@@ -374,7 +376,10 @@ export function BuilderCanvas({
         <div className="relative mx-auto w-full max-w-[600px]">
           <div
             className={cn(
-              "relative box-border min-h-[640px] w-full overflow-visible text-[#18181b] shadow-[0_8px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/5",
+              "relative box-border min-h-[640px] w-full overflow-visible text-[#18181b]",
+              flatPage
+                ? "ring-1 ring-zinc-200/80"
+                : "shadow-[0_8px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/5",
               dropIndex != null && "ring-2 ring-sky-500",
             )}
             style={{
@@ -384,6 +389,7 @@ export function BuilderCanvas({
             }}
             onClick={(event) => event.stopPropagation()}
             data-testid="template-paper-page"
+            data-tb-flat-page={flatPage ? "true" : "false"}
           >
             {doc.header ? (
               <PageBandEditor

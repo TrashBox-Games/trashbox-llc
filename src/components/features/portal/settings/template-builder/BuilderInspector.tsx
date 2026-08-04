@@ -1814,10 +1814,6 @@ function DocumentDesignInspector({
             onChange({ contentBackgroundColor })
           }
         />
-        <p className="text-[10px] leading-relaxed text-[#8c8c8c]">
-          Page background fills the area around the email. Content background is
-          the card that holds your blocks.
-        </p>
       </Section>
       <Section title="Page margins">
         <div className="grid grid-cols-2 gap-2">
