@@ -99,7 +99,7 @@ describe("OrgSettingsSectionContent", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: /subscription plans/i }),
+      screen.getByRole("heading", { name: /crm plans/i }),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^Solo$/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^Team$/i })).toBeInTheDocument();
