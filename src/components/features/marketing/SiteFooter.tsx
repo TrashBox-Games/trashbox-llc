@@ -32,7 +32,7 @@ export function SiteFooter() {
           </a>
         </div>
         <p className="font-body text-center text-xs text-white/50 md:text-right">
-          © {year} trashbox llc. Built for the kinetic monolith. Web development by{" "}
+          © {year} trashbox llc. Web development by{" "}
           <a
             href="https://trashbox.io/"
             className="text-white/70 underline-offset-2 transition-colors hover:text-white hover:underline"
