@@ -12,7 +12,7 @@ import { gsap } from "@/lib/gsap-client";
 
 const navItems = [
   { href: "/", label: "Home", exact: true },
-  { href: "/apps", label: "Apps" },
+  // { href: "/apps", label: "Apps" },
   { href: "/services", label: "Services" },
   { href: "/platform", label: "Platform" },
   { href: "/about", label: "About" },
@@ -69,11 +69,17 @@ export function SiteHeader() {
       <div
         className={cn(
           "border-b backdrop-blur-xl transition-colors duration-300",
-          scrolled ? "border-white/10 bg-background/75" : "border-transparent bg-transparent",
+          scrolled
+            ? "bg-background/75 border-white/10"
+            : "border-transparent bg-transparent",
         )}
       >
         <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-5 md:px-8 md:py-6">
-          <Link href="/" className="inline-flex items-center" aria-label="Trashbox LLC home">
+          <Link
+            href="/"
+            className="inline-flex items-center"
+            aria-label="Trashbox LLC home"
+          >
             <Image
               src="/images/trashbox-logo-white.png"
               alt="Trashbox LLC logo"
@@ -90,7 +96,9 @@ export function SiteHeader() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={navLinkClass(isActive(item.href, "exact" in item && item.exact))}
+                className={navLinkClass(
+                  isActive(item.href, "exact" in item && item.exact),
+                )}
               >
                 {item.label}
               </Link>
@@ -120,13 +128,15 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <div className="fixed inset-0 top-[73px] z-40 bg-background/95 px-6 pb-10 pt-6 md:hidden">
+        <div className="bg-background/95 fixed inset-0 top-[73px] z-40 px-6 pt-6 pb-10 md:hidden">
           <div className="flex flex-col gap-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={navLinkClass(isActive(item.href, "exact" in item && item.exact))}
+                className={navLinkClass(
+                  isActive(item.href, "exact" in item && item.exact),
+                )}
                 onClick={() => setOpen(false)}
               >
                 {item.label}
