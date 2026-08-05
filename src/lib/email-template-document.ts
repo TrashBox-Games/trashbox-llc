@@ -1411,7 +1411,7 @@ function wrapLayoutChrome(
 
 function wrapContentColumn(inner: string, paddingCss = ""): string {
   const pad = paddingCss ? `${paddingCss};` : "";
-  return `<div data-tb-content-col="1" style="max-width:600px;margin:0 auto;box-sizing:border-box;${pad}">${inner}</div>`;
+  return `<div data-tb-content-col="1" style="max-width:600px;margin:0 auto;box-sizing:border-box;overflow-wrap:anywhere;word-break:break-word;${pad}">${inner}</div>`;
 }
 
 function blockOuter(

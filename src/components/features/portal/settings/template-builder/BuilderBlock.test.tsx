@@ -58,6 +58,33 @@ describe("BuilderBlock selection chrome", () => {
     expect(editor.className).not.toMatch(/min-h-\[3rem\]/);
   });
 
+  it("wraps long unbroken strings inside text surfaces", () => {
+    const block = createBlockFromVariant("text-paragraph");
+    if (block.type !== "text") throw new Error("expected text");
+
+    render(
+      <BuilderBlock
+        block={{
+          ...block,
+          html: `<p>${"a".repeat(120)}</p>`,
+        }}
+        selected={false}
+        onSelect={vi.fn()}
+        onChange={vi.fn()}
+        onDuplicate={vi.fn()}
+        onDelete={vi.fn()}
+        onMoveUp={vi.fn()}
+        onMoveDown={vi.fn()}
+        canMoveUp
+        canMoveDown
+      />,
+    );
+
+    const preview = screen.getByTestId("builder-text-preview");
+    expect(preview.className).toMatch(/break-words|overflow-wrap|break-all/);
+    expect(preview.className).toMatch(/min-w-0/);
+  });
+
   it("shows a sharp Section tag and outline when a columns block is selected", () => {
     renderColumnsBlock({ selected: true });
 

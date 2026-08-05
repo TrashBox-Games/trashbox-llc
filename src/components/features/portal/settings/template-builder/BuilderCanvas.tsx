@@ -266,12 +266,12 @@ function PageBandEditor({
             toolbarOverlay
             acceptMergeFieldDrops
             className="border-0 bg-transparent"
-            editorClassName="min-h-[2.5rem] select-text px-0 py-0 text-[15px] leading-relaxed text-[#18181b]"
+            editorClassName="min-h-[2.5rem] min-w-0 select-text break-words [overflow-wrap:anywhere] px-0 py-0 text-[15px] leading-relaxed text-[#18181b]"
           />
         </div>
       ) : (
         <div
-          className="px-0 py-0 text-[15px] leading-relaxed"
+          className="min-w-0 break-words [overflow-wrap:anywhere] px-0 py-0 text-[15px] leading-relaxed"
           dangerouslySetInnerHTML={{ __html: band.html || "<p><br /></p>" }}
         />
       )}    </div>
@@ -481,7 +481,7 @@ export function BuilderCanvas({
         <div className="relative mx-auto w-full max-w-[600px]">
           <div
             className={cn(
-              "relative box-border w-full overflow-visible text-[#18181b]",
+              "relative box-border w-full min-w-0 overflow-visible break-words [overflow-wrap:anywhere] text-[#18181b]",
               "shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/5",
               dropIndex != null && "ring-2 ring-sky-500",
             )}

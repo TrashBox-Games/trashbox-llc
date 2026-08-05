@@ -83,7 +83,7 @@ export interface BuilderBlockProps {
 
 /** Keep in sync with unselected text preview so selecting a block doesn’t grow it. */
 const builderTextSurfaceClass =
-  "min-h-10 px-0 py-0 text-[15px] leading-relaxed text-[#18181b] [&_p]:my-0 [&_h1]:my-0 [&_h2]:my-0 [&_h3]:my-0";
+  "min-h-10 min-w-0 break-words [overflow-wrap:anywhere] px-0 py-0 text-[15px] leading-relaxed text-[#18181b] [&_p]:my-0 [&_h1]:my-0 [&_h2]:my-0 [&_h3]:my-0";
 const builderEditorClass = `select-text ${builderTextSurfaceClass}`;
 
 /** Space/Enter activate role=button chrome — skip when typing in nested editors. */
@@ -209,7 +209,7 @@ function NestedItemChrome({
         }
       }}
       className={cn(
-        "relative flow-root rounded-none bg-transparent p-0 text-left text-[15px] leading-relaxed transition-colors",
+        "relative min-w-0 flow-root rounded-none bg-transparent p-0 text-left text-[15px] leading-relaxed break-words [overflow-wrap:anywhere] transition-colors",
         selected
           ? "outline-1 outline-sky-500 outline-offset-0"
           : hovered
@@ -414,7 +414,7 @@ function ColumnsBlockEditor({
               data-builder-nested-drop=""
               aria-label={`Drop into column ${index + 1}`}
               className={cn(
-                "relative rounded-none bg-transparent transition-colors",
+                "relative min-w-0 rounded-none bg-transparent transition-colors",
                 isPlaceholder
                   ? "min-h-24 border border-dashed border-sky-300/70 bg-zinc-100"
                   : "min-h-0",

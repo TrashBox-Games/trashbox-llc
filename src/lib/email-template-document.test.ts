@@ -108,6 +108,8 @@ describe("email-template-document", () => {
     expect(html).not.toContain("data-tb-full-bleed");
     expect(html).toMatch(/max-width:600px/);
     expect(html).toContain('data-tb-layout-chrome="1"');
+    expect(html).toMatch(/overflow-wrap:anywhere/);
+    expect(html).toMatch(/word-break:break-word/);
   });
 
   it("defaults column sections to 20px vertical padding", () => {
