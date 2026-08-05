@@ -7,15 +7,20 @@ import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { gsap } from "@/lib/gsap-client";
 
-const navItems = [
-  { href: "/", label: "Home", exact: true },
-  // { href: "/apps", label: "Apps" },
-  { href: "/services", label: "Services" },
-  { href: "/platform", label: "Platform" },
-  { href: "/about", label: "About" },
+const serviceItems = [
+  { href: "/services", label: "App Design" },
+  { href: "/services", label: "Development" },
+  { href: "/services", label: "AI Integration" },
+  { href: "/platform", label: "CRM" },
 ] as const;
 
 function navLinkClass(active: boolean) {
@@ -32,6 +37,7 @@ export function SiteHeader() {
   const navRef = useRef<HTMLElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
 
   useGSAP(
     () => {
@@ -59,10 +65,16 @@ export function SiteHeader() {
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) setServicesOpen(false);
+  }, [open]);
+
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href;
     return pathname.startsWith(href);
   }
+
+  const servicesActive = pathname.startsWith("/services");
 
   return (
     <nav ref={navRef} className="fixed top-0 z-50 w-full">
@@ -92,17 +104,42 @@ export function SiteHeader() {
           </Link>
 
           <div className="hidden items-center gap-10 md:flex md:gap-12">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={navLinkClass(
-                  isActive(item.href, "exact" in item && item.exact),
-                )}
+            <Link href="/" className={navLinkClass(isActive("/", true))}>
+              Home
+            </Link>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className={cn(navLinkClass(servicesActive), "outline-none")}
               >
-                {item.label}
-              </Link>
-            ))}
+                Services
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="min-w-48 border-white/10 bg-surface-container-low"
+              >
+                {serviceItems.map((item) => (
+                  <DropdownMenuItem key={item.label} asChild>
+                    <Link
+                      href={item.href}
+                      className="font-headline text-sm uppercase tracking-tight"
+                    >
+                      {item.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Link
+              href="/platform"
+              className={navLinkClass(isActive("/platform"))}
+            >
+              Platform
+            </Link>
+            <Link href="/about" className={navLinkClass(isActive("/about"))}>
+              About
+            </Link>
           </div>
 
           <div className="flex items-center gap-3">
@@ -130,18 +167,54 @@ export function SiteHeader() {
       {open && (
         <div className="bg-background/95 fixed inset-0 top-[73px] z-40 px-6 pt-6 pb-10 md:hidden">
           <div className="flex flex-col gap-6">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={navLinkClass(
-                  isActive(item.href, "exact" in item && item.exact),
-                )}
-                onClick={() => setOpen(false)}
+            <Link
+              href="/"
+              className={navLinkClass(isActive("/", true))}
+              onClick={() => setOpen(false)}
+            >
+              Home
+            </Link>
+
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                className={cn(navLinkClass(servicesActive), "text-left")}
+                aria-expanded={servicesOpen}
+                onClick={() => setServicesOpen((v) => !v)}
               >
-                {item.label}
-              </Link>
-            ))}
+                Services
+              </button>
+              {servicesOpen && (
+                <div className="flex flex-col gap-3 border-l border-white/10 pl-4">
+                  {serviceItems.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className="font-headline text-sm uppercase tracking-tight text-white/60 transition-colors hover:text-white"
+                      onClick={() => setOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Link
+              href="/platform"
+              className={navLinkClass(isActive("/platform"))}
+              onClick={() => setOpen(false)}
+            >
+              Platform
+            </Link>
+            <Link
+              href="/about"
+              className={navLinkClass(isActive("/about"))}
+              onClick={() => setOpen(false)}
+            >
+              About
+            </Link>
+
             <Button asChild className="mt-4">
               <Link href="/services#contact" onClick={() => setOpen(false)}>
                 Contact

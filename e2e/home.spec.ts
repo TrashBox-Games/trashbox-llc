@@ -9,7 +9,7 @@ test.describe("home page", () => {
     await expect(page.getByRole("heading", { name: /trashbox llc/i })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Trashbox LLC home" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Home", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Services", exact: true })).toBeVisible();
+    await expect(nav.getByRole("button", { name: "Services", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "About", exact: true })).toBeVisible();
   });
 });

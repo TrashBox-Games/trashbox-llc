@@ -6,7 +6,12 @@ test.describe("site navigation", () => {
 
     const nav = page.getByRole("navigation");
 
-    await nav.getByRole("link", { name: "Services", exact: true }).click();
+    await nav.getByRole("button", { name: "Services", exact: true }).click();
+    await nav.getByRole("menuitem", { name: "CRM", exact: true }).click();
+    await expect(page).toHaveURL(/\/platform\/?$/);
+
+    await nav.getByRole("button", { name: "Services", exact: true }).click();
+    await nav.getByRole("menuitem", { name: "App Design", exact: true }).click();
     await expect(page).toHaveURL(/\/services\/?$/);
     await expect(
       page.getByRole("heading", { name: /engineering/i }),
