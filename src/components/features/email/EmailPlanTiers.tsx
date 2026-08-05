@@ -48,11 +48,11 @@ export function EmailPlanTiers({
           Pricing
         </p>
         <h2 className="mt-4 font-headline text-3xl font-bold tracking-tight text-white md:text-4xl">
-          Subscription plans
+          CRM plans
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-sm text-on-surface-variant">
-          Start free with 10 submissions a month. Upgrade when you need more
-          volume or teammates.
+          Start free with room for your first leads in Trashbox CRM. Upgrade when you need more
+          volume, templates, or teammates.
         </p>
       </div>
 

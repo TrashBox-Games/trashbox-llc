@@ -3,26 +3,35 @@ import { FadeIn } from "@/components/atoms/FadeIn";
 import { API_DOCS_URL, PORTAL_PATHS } from "@/lib/sites";
 
 export const metadata: Metadata = {
-  title: "Platform Documentation",
-  description: "Accounts, API keys, billing, and OpenAPI reference for Trashbox Platform.",
+  title: "Trashbox CRM Documentation",
+  description:
+    "Accounts, teams, lead capture, templates, and billing for Trashbox CRM.",
 };
 
 const sections = [
   {
     title: "Account",
-    body: "Sign up on the portal, then create a Form API account with your business name. No card required to start.",
+    body: "Sign up on the portal and create your business workspace. No card required to start capturing leads.",
+  },
+  {
+    title: "Leads and messaging",
+    body: "New form submissions land in your Trashbox CRM inbox. Reply from the built-in messaging tools and keep every conversation in one place.",
+  },
+  {
+    title: "Email templates",
+    body: "Use templates to follow up faster and more consistently—helping increase customer response rates by 40%.",
+  },
+  {
+    title: "Team access",
+    body: "Invite teammates securely so the right people can manage leads without sharing logins.",
   },
   {
     title: "API keys",
-    body: "Issue or rotate a key from your account. The raw key is shown once — store it in your site env as the X-Api-Key header value.",
+    body: "Issue or rotate a key from your account. The raw key is shown once—store it in your site env as the X-Api-Key header value.",
   },
   {
     title: "Billing",
-    body: "Start on Free, then add Solo or Team via Stripe Checkout. Manage or cancel anytime from the billing portal. Submission usage resets each UTC month.",
-  },
-  {
-    title: "Inbox",
-    body: "Submissions count toward your monthly plan limit. When that limit is reached, new form posts are rejected until you upgrade or the next month starts.",
+    body: "Start on Free, then add Solo or Team via Stripe Checkout. Manage or cancel anytime from the billing portal. Lead volume resets each UTC month.",
   },
 ] as const;
 
@@ -34,10 +43,11 @@ export default function PortalDocumentationPage() {
           Documentation
         </p>
         <h1 className="max-w-3xl font-headline text-4xl font-bold tracking-tighter text-white md:text-6xl">
-          How the platform fits together.
+          How Trashbox CRM fits together.
         </h1>
         <p className="mt-6 max-w-xl text-lg text-on-surface-variant">
-          High-level guide for owners. For request and response schemas, use the live OpenAPI docs.
+          A quick guide for owners focused on lead generation and retention. For request and
+          response schemas, use the live OpenAPI docs.
         </p>
       </FadeIn>
 

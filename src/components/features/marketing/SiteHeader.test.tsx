@@ -17,10 +17,11 @@ describe("SiteHeader", () => {
 
     await user.click(screen.getByRole("button", { name: /^services$/i }));
 
-    expect(await screen.findByRole("menuitem", { name: /^crm$/i })).toHaveAttribute(
-      "href",
-      "/platform",
-    );
+    expect(
+      await screen.findByRole("menuitem", {
+        name: /^customer relationship management$/i,
+      }),
+    ).toHaveAttribute("href", "/platform");
     expect(screen.getByRole("menuitem", { name: /^app design$/i })).toHaveAttribute(
       "href",
       "/services",

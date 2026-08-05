@@ -4,9 +4,9 @@ import { EmailPlanTiers } from "@/components/features/email/EmailPlanTiers";
 import { PlanComparisonTable } from "@/components/features/email/PlanComparisonTable";
 
 export const metadata: Metadata = {
-  title: "Platform Pricing",
+  title: "Trashbox CRM Pricing",
   description:
-    "Free, Solo, and Team Form API plans metered by monthly form submissions.",
+    "Free, Solo, and Team Trashbox CRM plans for lead generation, retention, and growing teams.",
 };
 
 export default function PortalPricingPage() {
@@ -20,8 +20,8 @@ export default function PortalPricingPage() {
           Simple plans. Free to start.
         </h1>
         <p className="mt-6 max-w-xl text-lg text-on-surface-variant">
-          Plans are based on monthly form submissions. Start on Free, then add
-          Solo or Team when you need more volume or seats.
+          Choose a plan that fits how many leads you handle each month. Start free, then move to
+          Solo or Team when you need more volume, templates, or seats.
         </p>
       </FadeIn>
 

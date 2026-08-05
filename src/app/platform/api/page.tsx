@@ -3,8 +3,9 @@ import { FadeIn } from "@/components/atoms/FadeIn";
 import { API_DOCS_URL, PORTAL_PATHS } from "@/lib/sites";
 
 export const metadata: Metadata = {
-  title: "Platform API",
-  description: "Submit contact forms to the Trashbox Form API with X-Api-Key.",
+  title: "Trashbox CRM API",
+  description:
+    "Send website form leads into Trashbox CRM with a simple API key.",
 };
 
 const example = `const response = await fetch("https://api.trashbox.io/submit", {
@@ -28,11 +29,15 @@ export default function PortalApiPage() {
       <FadeIn>
         <p className="mb-6 font-label text-xs uppercase tracking-[0.4em] text-outline">API</p>
         <h1 className="max-w-3xl font-headline text-4xl font-bold tracking-tighter text-white md:text-6xl">
-          One endpoint for every site form.
+          Capture leads from any site.
         </h1>
         <p className="mt-6 max-w-xl text-lg text-on-surface-variant">
-          POST JSON to <code className="text-white">/submit</code> with your Form API key. Restrict
-          allowed origins on your client so the public key only works from your domains.
+          Connect your contact forms to Trashbox CRM with one endpoint. New inquiries show up as
+          leads you can message, reply to, and follow up with templates.
+        </p>
+        <p className="mt-4 max-w-xl text-base text-on-surface-variant">
+          POST JSON to <code className="text-white">/submit</code> with your API key. Restrict
+          allowed origins so the key only works from your domains.
         </p>
       </FadeIn>
 

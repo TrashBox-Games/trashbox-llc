@@ -19,13 +19,13 @@ export const FORM_PLANS = [
     formsPerProject: 1,
     projects: "1",
     submitterConfirmation: false,
-    blurb: "Capture leads and try the inbox with a light monthly allowance.",
+    blurb: "Capture leads and try the CRM inbox with a light monthly allowance.",
     features: [
       "10 form submissions / month",
       "1 team seat",
       "1 project",
       "1 form",
-      "CRM inbox & notifications",
+      "Lead inbox & notifications",
     ],
   },
   {
@@ -38,13 +38,13 @@ export const FORM_PLANS = [
     projects: "Unlimited",
     submitterConfirmation: false,
     blurb:
-      "Run your forms, projects, and lead inbox yourself—built for a real business site.",
+      "Run lead capture, messaging, and email templates yourself—built for a growing business.",
     features: [
       "500 form submissions / month",
       "1 team seat",
       "10 forms per project",
       "Unlimited projects",
-      "CRM inbox, templates & notifications",
+      "CRM inbox, templates & messaging",
     ],
   },
   {
@@ -58,13 +58,13 @@ export const FORM_PLANS = [
     submitterConfirmation: true,
     featured: true,
     blurb:
-      "Share the inbox with your crew, handle more volume, and confirm every submission.",
+      "Share the CRM with your crew, handle more leads, and keep response rates high together.",
     features: [
       "5,000 form submissions / month",
       "Up to 5 team seats",
       "100 forms per project",
       "Unlimited projects",
-      "Submitter confirmation emails",
+      "Secure team management",
     ],
   },
 ] as const;

@@ -1,0 +1,80 @@
+import Link from "next/link";
+import { FadeIn } from "@/components/atoms/FadeIn";
+import { PLATFORM_PATHS, PORTAL_PATHS } from "@/lib/sites";
+
+const cards = [
+  {
+    href: PLATFORM_PATHS.features,
+    label: "Features",
+    blurb:
+      "Lead management, email templates, messaging, and secure team tools in Trashbox CRM.",
+  },
+  {
+    href: PLATFORM_PATHS.pricing,
+    label: "Pricing",
+    blurb: "Free, Solo, and Team plans that grow with your lead volume.",
+  },
+  {
+    href: PLATFORM_PATHS.api,
+    label: "API",
+    blurb: "Capture leads from your site forms and route them straight into Trashbox CRM.",
+  },
+  {
+    href: PLATFORM_PATHS.documentation,
+    label: "Documentation",
+    blurb: "Set up accounts, teams, templates, and lead capture from end to end.",
+  },
+] as const;
+
+export function PlatformOverview() {
+  return (
+    <div>
+      <FadeIn>
+        <p className="mb-6 font-label text-xs uppercase tracking-[0.4em] text-outline">
+          Trashbox CRM
+        </p>
+        <h1 className="max-w-4xl font-headline text-5xl font-bold leading-tight tracking-tighter text-white md:text-7xl">
+          Trashbox CRM for retention{" "}
+          <span className="text-outline">and lead generation.</span>
+        </h1>
+        <p className="mt-6 max-w-2xl text-lg text-on-surface-variant">
+          Trashbox CRM is built for customer retention and lead generation—so you can follow up
+          faster, stay organized, and keep more conversations moving.
+        </p>
+        <p className="mt-4 max-w-2xl text-base text-on-surface-variant">
+          Email templates help increase customer response rates by 40%. Pair that with built-in
+          messaging and replies, lead management, and secure team access.
+        </p>
+        <div className="mt-10 flex flex-wrap gap-4">
+          <Link
+            href={PORTAL_PATHS.signup}
+            className="bg-primary px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-on-primary transition-opacity hover:opacity-80"
+          >
+            Get started
+          </Link>
+          <Link
+            href={PORTAL_PATHS.login}
+            className="border border-outline-variant/30 px-8 py-4 font-headline text-xs font-bold uppercase tracking-widest text-white transition-colors hover:border-white"
+          >
+            Login
+          </Link>
+        </div>
+      </FadeIn>
+
+      <div className="mt-20 grid gap-6 md:grid-cols-2">
+        {cards.map((card) => (
+          <Link
+            key={card.href}
+            href={card.href}
+            className="border border-outline-variant/10 bg-surface-container-low p-8 transition-colors hover:border-outline-variant/30"
+          >
+            <p className="font-label text-[10px] uppercase tracking-widest text-outline">
+              {card.label}
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-on-surface-variant">{card.blurb}</p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}

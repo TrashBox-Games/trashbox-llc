@@ -20,7 +20,7 @@ const serviceItems = [
   { href: "/services", label: "App Design" },
   { href: "/services", label: "Development" },
   { href: "/services", label: "AI Integration" },
-  { href: "/platform", label: "CRM" },
+  { href: "/platform", label: "Customer Relationship Management" },
 ] as const;
 
 function navLinkClass(active: boolean) {
@@ -116,7 +116,7 @@ export function SiteHeader() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="min-w-48 border-white/10 bg-surface-container-low"
+                className="min-w-64 border-white/10 bg-surface-container-low"
               >
                 {serviceItems.map((item) => (
                   <DropdownMenuItem key={item.label} asChild>
@@ -135,7 +135,7 @@ export function SiteHeader() {
               href="/platform"
               className={navLinkClass(isActive("/platform"))}
             >
-              Platform
+              CRM
             </Link>
             <Link href="/about" className={navLinkClass(isActive("/about"))}>
               About
@@ -205,7 +205,7 @@ export function SiteHeader() {
               className={navLinkClass(isActive("/platform"))}
               onClick={() => setOpen(false)}
             >
-              Platform
+              CRM
             </Link>
             <Link
               href="/about"

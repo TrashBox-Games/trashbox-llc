@@ -25,7 +25,7 @@ export function PlatformNav() {
 
   return (
     <div className="mb-12 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/10 pb-6">
-      <nav className="flex flex-wrap gap-6 md:gap-8" aria-label="Platform">
+      <nav className="flex flex-wrap gap-6 md:gap-8" aria-label="Trashbox CRM">
         <Link
           href={PLATFORM_PATHS.hub}
           className={linkClass(
