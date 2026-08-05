@@ -419,6 +419,12 @@ export function BuilderCanvas({
           background: #bae6fd;
           box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.45);
         }
+        /* Override site-wide white selection so text is visible on the white paper. */
+        [data-tb-selection="invert"]::selection,
+        [data-tb-selection="invert"] *::selection {
+          background-color: #18181b;
+          color: #ffffff;
+        }
       `}</style>
       <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-zinc-300/80 bg-surface-container-high px-3 py-1.5">
         <label className="font-label flex items-center text-[10px] uppercase tracking-widest text-outline">
@@ -472,6 +478,7 @@ export function BuilderCanvas({
             onClick={(event) => event.stopPropagation()}
             data-testid="template-paper-page"
             data-tb-flat-page={flatPage ? "true" : "false"}
+            data-tb-selection="invert"
           >
             {doc.header ? (
               <div className="mx-auto w-full max-w-[600px]">

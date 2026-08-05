@@ -39,6 +39,8 @@ describe("EmailTemplateBuilder", () => {
     expect(paper).toHaveAttribute("data-tb-flat-page", "true");
     expect(paper.className).toMatch(/shadow-/);
     expect(paper.className).not.toMatch(/min-h-/);
+    // Global selection is white-on-white; paper uses inverted highlight.
+    expect(paper).toHaveAttribute("data-tb-selection", "invert");
     expect(screen.getByTestId("builder-block-wrap-0")).toBeInTheDocument();
     expect(
       screen.queryByText(/drag components anywhere on this page/i),
