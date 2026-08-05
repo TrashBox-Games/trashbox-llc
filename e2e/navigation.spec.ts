@@ -4,9 +4,11 @@ test.describe("site navigation", () => {
   test("header links move between key pages", async ({ page }) => {
     await page.goto("/");
 
-    const nav = page.getByRole("navigation");
+    const marketingNav = page.getByRole("navigation");
 
-    await nav.getByRole("button", { name: "Services", exact: true }).click();
+    await marketingNav
+      .getByRole("button", { name: "Services", exact: true })
+      .click();
     await page
       .getByRole("menuitem", {
         name: "Customer Relationship Management",
@@ -15,13 +17,33 @@ test.describe("site navigation", () => {
       .click();
     await expect(page).toHaveURL(/\/platform\/?$/);
 
-    await nav.getByRole("button", { name: "Services", exact: true }).click();
+    const platformNav = page.getByRole("navigation", { name: /trashbox crm/i });
+    await expect(
+      platformNav.getByRole("link", { name: "Overview", exact: true }),
+    ).toBeVisible();
+    await expect(
+      platformNav.getByRole("link", { name: "Login", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Services", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "About", exact: true }),
+    ).toHaveCount(0);
+
+    await page.goto("/");
+
+    await page
+      .getByRole("navigation")
+      .getByRole("button", { name: "Services", exact: true })
+      .click();
     await page.getByRole("menuitem", { name: "App Design", exact: true }).click();
     await expect(page).toHaveURL(/\/services\/?$/);
     await expect(
       page.getByRole("heading", { name: /engineering/i }),
     ).toBeVisible();
 
+    const nav = page.getByRole("navigation");
     await nav.getByRole("link", { name: "About", exact: true }).click();
     await expect(page).toHaveURL(/\/about\/?$/);
     await expect(

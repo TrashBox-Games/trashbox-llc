@@ -11,5 +11,6 @@ test.describe("home page", () => {
     await expect(nav.getByRole("link", { name: "Home", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Services", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "About", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "CRM", exact: true })).toHaveCount(0);
   });
 });

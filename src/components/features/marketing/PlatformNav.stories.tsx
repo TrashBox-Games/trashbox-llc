@@ -6,6 +6,7 @@ const meta = {
   component: PlatformNav,
   tags: ["autodocs"],
   parameters: {
+    layout: "fullscreen",
     nextjs: {
       navigation: {
         pathname: "/platform/",
@@ -14,8 +15,11 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className="mx-auto max-w-screen-2xl bg-background px-8 py-16">
+      <div className="min-h-48 bg-background">
         <Story />
+        <div className="px-8 pt-32 font-body text-on-surface-variant">
+          Platform page content sits below the fixed CRM header.
+        </div>
       </div>
     ),
   ],

@@ -47,6 +47,20 @@ describe("MarketingLayout", () => {
     expect(screen.getByText("Portal content")).toBeInTheDocument();
   });
 
+  it("omits marketing chrome on platform routes", () => {
+    usePathname.mockReturnValue("/platform/");
+
+    render(
+      <MarketingLayout>
+        <p>Platform content</p>
+      </MarketingLayout>,
+    );
+
+    expect(screen.queryByText("Site header")).not.toBeInTheDocument();
+    expect(screen.queryByText("Site footer")).not.toBeInTheDocument();
+    expect(screen.getByText("Platform content")).toBeInTheDocument();
+  });
+
   it("treats a null pathname as a marketing route", () => {
     usePathname.mockReturnValue(null);
 

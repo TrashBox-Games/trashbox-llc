@@ -144,12 +144,6 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link
-              href="/platform"
-              className={navLinkClass(isActive("/platform"))}
-            >
-              CRM
-            </Link>
             <Link href="/about" className={navLinkClass(isActive("/about"))}>
               About
             </Link>
@@ -213,13 +207,6 @@ export function SiteHeader() {
               )}
             </div>
 
-            <Link
-              href="/platform"
-              className={navLinkClass(isActive("/platform"))}
-              onClick={() => setOpen(false)}
-            >
-              CRM
-            </Link>
             <Link
               href="/about"
               className={navLinkClass(isActive("/about"))}

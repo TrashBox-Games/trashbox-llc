@@ -44,4 +44,12 @@ describe("SiteHeader", () => {
       "/services",
     );
   });
+
+  it("does not expose a top-level CRM link", () => {
+    render(<SiteHeader />);
+
+    expect(
+      screen.queryByRole("link", { name: /^crm$/i }),
+    ).not.toBeInTheDocument();
+  });
 });

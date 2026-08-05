@@ -8,13 +8,13 @@ import {
   isPortalWorkspacePath,
   subscribePortalNavigate,
 } from "@/lib/portal-routes";
-import { isPortalPath } from "@/lib/sites";
+import { isPortalPath, isPlatformPath } from "@/lib/sites";
 
 type MarketingLayoutProps = {
   children: React.ReactNode;
 };
 
-/** Marketing chrome; portal routes use PortalHeader instead. */
+/** Marketing chrome; portal and platform routes use their own headers. */
 export function MarketingLayout({ children }: MarketingLayoutProps) {
   const nextPath = usePathname();
   const [pathname, setPathname] = useState(nextPath);
@@ -27,7 +27,7 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
     return subscribePortalNavigate(setPathname);
   }, [nextPath]);
 
-  if (isPortalPath(pathname)) {
+  if (isPortalPath(pathname) || isPlatformPath(pathname)) {
     return <div className="flex min-h-dvh flex-col">{children}</div>;
   }
 
