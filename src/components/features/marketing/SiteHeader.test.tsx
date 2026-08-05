@@ -11,6 +11,15 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("SiteHeader", () => {
+  it("hides before paint so the entrance animation does not flash then snap", () => {
+    render(<SiteHeader />);
+
+    expect(screen.getByRole("navigation")).toHaveStyle({
+      opacity: "0",
+      transform: "translateY(-16px)",
+    });
+  });
+
   it("opens a Services dropdown with CRM linking to the platform", async () => {
     const user = userEvent.setup();
     render(<SiteHeader />);

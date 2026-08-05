@@ -23,6 +23,12 @@ const serviceItems = [
   { href: "/platform", label: "Customer Relationship Management" },
 ] as const;
 
+/** Match FadeIn/HomeHero: hide before paint so the header doesn't flash then snap. */
+const headerEnterStyle = {
+  opacity: 0,
+  transform: "translateY(-16px)",
+} as const;
+
 function navLinkClass(active: boolean) {
   return cn(
     "font-headline tracking-tight text-sm uppercase transition-colors",
@@ -45,7 +51,14 @@ export function SiteHeader() {
       gsap.fromTo(
         navRef.current,
         { y: -16, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.55,
+          ease: "power3.out",
+          // First paint already matches the "from" state (inline style below).
+          immediateRender: false,
+        },
       );
     },
     { scope: navRef },
@@ -77,7 +90,7 @@ export function SiteHeader() {
   const servicesActive = pathname.startsWith("/services");
 
   return (
-    <nav ref={navRef} className="fixed top-0 z-50 w-full">
+    <nav ref={navRef} className="fixed top-0 z-50 w-full" style={headerEnterStyle}>
       <div
         className={cn(
           "border-b backdrop-blur-xl transition-colors duration-300",
