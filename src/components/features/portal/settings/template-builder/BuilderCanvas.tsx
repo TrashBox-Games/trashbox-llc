@@ -93,8 +93,6 @@ function blockTypeLabel(type: EmailTemplateBlock["type"]): string {
       return "Image text";
     case "spacer":
       return "Spacer";
-    case "divider":
-      return "Divider";
     case "table":
       return "Table";
     case "html":

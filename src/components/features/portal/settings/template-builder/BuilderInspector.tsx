@@ -149,7 +149,9 @@ function Section({
       <div className="flex h-8 items-center px-3">
         <h3 className="text-[11px] font-semibold text-[#f5f5f5]">{title}</h3>
       </div>
-      {children ? <div className="space-y-2.5 px-3 pb-3">{children}</div> : null}
+      {children ? (
+        <div className="space-y-2.5 px-3 pb-3">{children}</div>
+      ) : null}
     </section>
   );
 }
@@ -363,7 +365,9 @@ function ColorField({
             id={id}
             type="color"
             value={opaque}
-            onChange={(event) => onChange(setColorRgb(value, event.target.value))}
+            onChange={(event) =>
+              onChange(setColorRgb(value, event.target.value))
+            }
             className="absolute inset-0 cursor-pointer opacity-0"
             aria-label={label}
           />
@@ -372,7 +376,9 @@ function ColorField({
           <FieldIcon icon="tag" />
           <input
             value={toRgbHexDisplay(value)}
-            onChange={(event) => onChange(fromHexInput(event.target.value, value))}
+            onChange={(event) =>
+              onChange(fromHexInput(event.target.value, value))
+            }
             className={cn(inputSurface, "pl-7 font-mono uppercase")}
             aria-label={`${label} hex`}
             spellCheck={false}
@@ -835,7 +841,8 @@ function ColumnsInspector({
       <LayoutChromeFields
         idPrefix={`inspect-col-chrome-${block.id}`}
         value={{
-          backgroundColor: block.backgroundColor ?? DEFAULT_LAYOUT_CHROME.backgroundColor,
+          backgroundColor:
+            block.backgroundColor ?? DEFAULT_LAYOUT_CHROME.backgroundColor,
           borderWidth: block.borderWidth ?? 0,
           borderColor: block.borderColor ?? DEFAULT_LAYOUT_CHROME.borderColor,
           borderRadius: block.borderRadius ?? 0,
@@ -937,10 +944,7 @@ function ColumnsInspector({
                                   ? Math.max(1, Math.min(99, Math.round(entry)))
                                   : 1,
                               )
-                            : normalizeColumnWidths(
-                                block.columnWidths,
-                                count,
-                              );
+                            : normalizeColumnWidths(block.columnWidths, count);
                         const widths = current.map((entry, i) =>
                           i === index ? nextWidth : entry,
                         );
@@ -1086,7 +1090,8 @@ function GridInspector({
       <LayoutChromeFields
         idPrefix={`inspect-grid-chrome-${block.id}`}
         value={{
-          backgroundColor: block.backgroundColor ?? DEFAULT_LAYOUT_CHROME.backgroundColor,
+          backgroundColor:
+            block.backgroundColor ?? DEFAULT_LAYOUT_CHROME.backgroundColor,
           borderWidth: block.borderWidth ?? 0,
           borderColor: block.borderColor ?? DEFAULT_LAYOUT_CHROME.borderColor,
           borderRadius: block.borderRadius ?? 0,
@@ -1516,7 +1521,11 @@ function TableInspector({
           style={{ fontFamily: block.fontFamily }}
         >
           {BUTTON_FONT_FAMILIES.map((font) => (
-            <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
+            <option
+              key={font.value}
+              value={font.value}
+              style={{ fontFamily: font.value }}
+            >
               {font.label}
             </option>
           ))}
@@ -1744,10 +1753,7 @@ function ColumnItemInspector({
       height: null,
     };
     return (
-      <ButtonInspector
-        block={asBlock}
-        onChange={(patch) => onChange(patch)}
-      />
+      <ButtonInspector block={asBlock} onChange={(patch) => onChange(patch)} />
     );
   }
 
@@ -1816,7 +1822,9 @@ function DocumentDesignInspector({
           value={doc.backgroundSize}
           onChange={(backgroundSize) =>
             onChange({
-              backgroundSize: parseBackgroundSize(backgroundSize) as BackgroundSize,
+              backgroundSize: parseBackgroundSize(
+                backgroundSize,
+              ) as BackgroundSize,
             })
           }
         >
@@ -1866,7 +1874,10 @@ function DocumentDesignInspector({
             suffix="px"
             onChange={(pageMarginTop) =>
               onChange({
-                pageMarginTop: Math.min(120, Math.max(0, Math.round(pageMarginTop))),
+                pageMarginTop: Math.min(
+                  120,
+                  Math.max(0, Math.round(pageMarginTop)),
+                ),
               })
             }
           />
@@ -1949,8 +1960,7 @@ function PageBandInspector({
           value={band.align}
           onChange={(align) =>
             onChange({
-              align:
-                align === "center" || align === "right" ? align : "left",
+              align: align === "center" || align === "right" ? align : "left",
             })
           }
         >
@@ -2087,8 +2097,7 @@ export function BuilderInspector({
         {selectedColumnItem && onChangeColumnItem ? (
           <>
             <p className="border-b border-[#444] px-3 py-2 text-[10px] text-[#8c8c8c]">
-              Editing item inside{" "}
-              {block?.type === "grid" ? "Grid" : "Columns"}
+              Editing item inside {block?.type === "grid" ? "Grid" : "Columns"}
             </p>
             <ColumnItemInspector
               item={selectedColumnItem}
@@ -2145,7 +2154,10 @@ export function BuilderInspector({
               {selectedGridCell.columnIndex + 1}. Drop components into the cell
               on the canvas, or select a nested item for its settings.
             </p>
-            <GridInspector block={block} onChange={(patch) => onChange(patch)} />
+            <GridInspector
+              block={block}
+              onChange={(patch) => onChange(patch)}
+            />
           </>
         ) : selectedPageBand && pageBand && onChangePageBand ? (
           <PageBandInspector
@@ -2192,7 +2204,8 @@ export function BuilderInspector({
                 openInNewTab: Boolean(block.openInNewTab),
                 borderRadius: block.borderRadius ?? 0,
                 borderWidth: block.borderWidth ?? 0,
-                borderColor: block.borderColor ?? DEFAULT_IMAGE_STYLE.borderColor,
+                borderColor:
+                  block.borderColor ?? DEFAULT_IMAGE_STYLE.borderColor,
                 paddingX: block.paddingX ?? 0,
                 paddingY: block.paddingY ?? 0,
               }}
@@ -2237,7 +2250,8 @@ export function BuilderInspector({
                 width={block.width}
                 height={block.height}
                 onChange={(patch) => {
-                  if (patch.width !== undefined) onChange({ width: patch.width });
+                  if (patch.width !== undefined)
+                    onChange({ width: patch.width });
                   if (patch.height != null && patch.height > 0) {
                     onChange({ height: patch.height });
                   }
