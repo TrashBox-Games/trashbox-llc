@@ -76,13 +76,13 @@ export function PlatformNav() {
       >
         <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-5 md:px-8 md:py-6">
           <Link
-            href={PLATFORM_PATHS.hub}
+            href="/"
             className="inline-flex items-center"
-            aria-label="Trashbox CRM home"
+            aria-label="Trashbox LLC home"
           >
             <Image
               src="/images/trashbox-logo-white.png"
-              alt="Trashbox CRM logo"
+              alt="Trashbox LLC logo"
               width={160}
               height={40}
               className="h-9 md:h-10"

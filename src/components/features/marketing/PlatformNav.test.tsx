@@ -21,8 +21,8 @@ describe("PlatformNav", () => {
     expect(nav).toHaveClass("fixed");
 
     expect(
-      screen.getByRole("link", { name: /trashbox crm home/i }),
-    ).toHaveAttribute("href", expect.stringMatching(/\/platform\/?$/));
+      screen.getByRole("link", { name: /trashbox llc home/i }),
+    ).toHaveAttribute("href", "/");
 
     expect(screen.getByRole("link", { name: /^overview$/i })).toHaveAttribute(
       "href",
