@@ -1,30 +1,6 @@
 import Link from "next/link";
 import { FadeIn } from "@/components/atoms/FadeIn";
-import { PLATFORM_PATHS, PORTAL_PATHS } from "@/lib/sites";
-
-const cards = [
-  {
-    href: PLATFORM_PATHS.features,
-    label: "Features",
-    blurb:
-      "Lead management, email templates, messaging, and secure team tools in Trashbox CRM.",
-  },
-  {
-    href: PLATFORM_PATHS.pricing,
-    label: "Pricing",
-    blurb: "Free, Solo, and Team plans that grow with your lead volume.",
-  },
-  {
-    href: PLATFORM_PATHS.api,
-    label: "API",
-    blurb: "Capture leads from your site forms and route them straight into Trashbox CRM.",
-  },
-  {
-    href: PLATFORM_PATHS.documentation,
-    label: "Documentation",
-    blurb: "Set up accounts, teams, templates, and lead capture from end to end.",
-  },
-] as const;
+import { PORTAL_PATHS } from "@/lib/sites";
 
 export function PlatformOverview() {
   return (
@@ -60,21 +36,6 @@ export function PlatformOverview() {
           </Link>
         </div>
       </FadeIn>
-
-      <div className="mt-20 grid gap-6 md:grid-cols-2">
-        {cards.map((card) => (
-          <Link
-            key={card.href}
-            href={card.href}
-            className="border border-outline-variant/10 bg-surface-container-low p-8 transition-colors hover:border-outline-variant/30"
-          >
-            <p className="font-label text-[10px] uppercase tracking-widest text-outline">
-              {card.label}
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-on-surface-variant">{card.blurb}</p>
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }

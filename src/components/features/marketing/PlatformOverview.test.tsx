@@ -14,9 +14,10 @@ describe("PlatformOverview", () => {
     expect(screen.getAllByText(/lead generation/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/40%/i)).toBeInTheDocument();
     expect(screen.getAllByText(/email templates/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("link", { name: /features/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /get started/i })).toHaveAttribute(
       "href",
-      expect.stringMatching(/\/platform\/features\/?/),
+      expect.stringMatching(/\/portal\/signup\/?/),
     );
+    expect(screen.queryByRole("link", { name: /^features$/i })).not.toBeInTheDocument();
   });
 });
