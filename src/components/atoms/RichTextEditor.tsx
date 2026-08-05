@@ -532,6 +532,36 @@ function applyFontSizeToSelection(px: number): void {
   selection.addRange(next);
 }
 
+const LIVE_COLOR_ATTR = "data-tb-live-color";
+
+/** Wrap a range once so later drag updates only change the span style. */
+function wrapRangeForLiveColor(
+  range: Range,
+  mode: "color" | "highlight",
+): HTMLSpanElement {
+  const span = document.createElement("span");
+  span.setAttribute(LIVE_COLOR_ATTR, mode);
+  if (range.collapsed) {
+    span.appendChild(document.createTextNode("\u200b"));
+    range.insertNode(span);
+    return span;
+  }
+  try {
+    range.surroundContents(span);
+  } catch {
+    const contents = range.extractContents();
+    span.appendChild(contents);
+    range.insertNode(span);
+  }
+  return span;
+}
+
+function selectNodeContents(rangeTarget: Node): Range {
+  const next = document.createRange();
+  next.selectNodeContents(rangeTarget);
+  return next;
+}
+
 function ToolbarIconButton({
   label,
   icon,
@@ -858,6 +888,9 @@ export const RichTextEditor = forwardRef<
     };
   }, [toolbarOverlay, showToolbar]);
   const savedRangeRef = useRef<Range | null>(null);
+  /** Stable span updated while the color/highlight picker is open (drag-friendly). */
+  const liveColorSpanRef = useRef<HTMLSpanElement | null>(null);
+  const liveColorEmitRafRef = useRef<number | null>(null);
   const [isEmpty, setIsEmpty] = useState(true);
   const [font, setFont] = useState<(typeof FONT_OPTIONS)[number]>("Arial");
   const [fontSizePx, setFontSizePx] = useState(DEFAULT_FONT_SIZE_PX);
@@ -896,6 +929,59 @@ export const RichTextEditor = forwardRef<
     selection.removeAllRanges();
     selection.addRange(range);
   }, []);
+
+  const scheduleLiveEmit = useCallback(() => {
+    if (liveColorEmitRafRef.current != null) return;
+    liveColorEmitRafRef.current = window.requestAnimationFrame(() => {
+      liveColorEmitRafRef.current = null;
+      emit();
+    });
+  }, [emit]);
+
+  const ensureLiveColorSpan = useCallback(
+    (mode: "color" | "highlight"): HTMLSpanElement | null => {
+      const existing = liveColorSpanRef.current;
+      if (
+        existing?.isConnected &&
+        existing.getAttribute(LIVE_COLOR_ATTR) === mode
+      ) {
+        return existing;
+      }
+
+      const el = editorRef.current;
+      const range = savedRangeRef.current;
+      if (!el || !range) return null;
+
+      el.focus();
+      const selection = window.getSelection();
+      if (!selection) return null;
+      try {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } catch {
+        return null;
+      }
+
+      const active = selection.getRangeAt(0);
+      const span = wrapRangeForLiveColor(active, mode);
+      liveColorSpanRef.current = span;
+      const next = selectNodeContents(span);
+      savedRangeRef.current = next;
+      selection.removeAllRanges();
+      selection.addRange(next);
+      return span;
+    },
+    [],
+  );
+
+  const clearLiveColorSpan = useCallback(() => {
+    liveColorSpanRef.current = null;
+    if (liveColorEmitRafRef.current != null) {
+      window.cancelAnimationFrame(liveColorEmitRafRef.current);
+      liveColorEmitRafRef.current = null;
+      emit();
+    }
+  }, [emit]);
 
   const onMenuOpenChange = useCallback(
     (open: boolean) => {
@@ -1041,29 +1127,41 @@ export const RichTextEditor = forwardRef<
 
   const applyTextColor = useCallback(
     (color: string) => {
+      const css = colorToCss(color);
       setTextColor(color);
-      restoreSelection();
-      // Avoid focusing the editor while the picker is open — that dismisses it.
-      if (!textColorOpen) {
-        editorRef.current?.focus();
+      const span = ensureLiveColorSpan("color");
+      if (span) {
+        span.style.color = css;
+        scheduleLiveEmit();
+        return;
       }
+      restoreSelection();
       if (typeof document.execCommand === "function") {
-        document.execCommand("foreColor", false, colorToCss(color));
+        document.execCommand("foreColor", false, css);
       }
       emit();
       saveSelection();
     },
-    [emit, restoreSelection, saveSelection, textColorOpen],
+    [
+      emit,
+      ensureLiveColorSpan,
+      restoreSelection,
+      saveSelection,
+      scheduleLiveEmit,
+    ],
   );
 
   const applyHighlightColor = useCallback(
     (color: string) => {
       const css = colorToCss(color);
       setHighlightColor(color);
-      restoreSelection();
-      if (!highlightOpen) {
-        editorRef.current?.focus();
+      const span = ensureLiveColorSpan("highlight");
+      if (span) {
+        span.style.backgroundColor = css;
+        scheduleLiveEmit();
+        return;
       }
+      restoreSelection();
       if (typeof document.execCommand === "function") {
         const ok = document.execCommand("hiliteColor", false, css);
         if (!ok) document.execCommand("backColor", false, css);
@@ -1071,24 +1169,36 @@ export const RichTextEditor = forwardRef<
       emit();
       saveSelection();
     },
-    [emit, highlightOpen, restoreSelection, saveSelection],
+    [
+      emit,
+      ensureLiveColorSpan,
+      restoreSelection,
+      saveSelection,
+      scheduleLiveEmit,
+    ],
   );
 
   const onTextColorOpenChange = useCallback(
     (open: boolean) => {
       onMenuOpenChange(open);
       setTextColorOpen(open);
+      if (!open) clearLiveColorSpan();
+      else liveColorSpanRef.current = null;
     },
-    [onMenuOpenChange],
+    [clearLiveColorSpan, onMenuOpenChange],
   );
 
   const onHighlightOpenChange = useCallback(
     (open: boolean) => {
       onMenuOpenChange(open);
       setHighlightOpen(open);
+      if (!open) clearLiveColorSpan();
+      else liveColorSpanRef.current = null;
     },
-    [onMenuOpenChange],
+    [clearLiveColorSpan, onMenuOpenChange],
   );
+
+  const colorPicking = textColorOpen || highlightOpen;
 
   return (
     <div
@@ -1100,6 +1210,14 @@ export const RichTextEditor = forwardRef<
         className,
       )}
     >
+      <style>{`
+        /* Let live text/highlight colors show through while the picker is open. */
+        [data-tb-color-picking="true"]::selection,
+        [data-tb-color-picking="true"] *::selection {
+          background-color: transparent !important;
+          color: inherit !important;
+        }
+      `}</style>
       {showToolbar
         ? (() => {
             const toolbar = (
@@ -1446,6 +1564,7 @@ export const RichTextEditor = forwardRef<
             }
             emit();
           }}
+          data-tb-color-picking={colorPicking ? "true" : undefined}
           className={cn(
             "text-on-surface min-h-40 w-full px-4 py-3 text-sm leading-relaxed focus:outline-none",
             "[&_a]:text-primary [&_a]:underline",

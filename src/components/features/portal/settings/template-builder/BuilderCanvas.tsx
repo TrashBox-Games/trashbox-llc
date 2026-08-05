@@ -434,6 +434,12 @@ export function BuilderCanvas({
           background-color: #18181b;
           color: #ffffff;
         }
+        /* While picking text/highlight color, show the real paint instead. */
+        [data-tb-selection="invert"] [data-tb-color-picking="true"]::selection,
+        [data-tb-selection="invert"] [data-tb-color-picking="true"] *::selection {
+          background-color: transparent;
+          color: inherit;
+        }
       `}</style>
       <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-zinc-300/80 bg-surface-container-high px-3 py-1.5">
         <label className="font-label flex items-center text-[10px] uppercase tracking-widest text-outline">

@@ -186,18 +186,101 @@ describe("RichTextEditor", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("keeps picker above presets and applies color immediately", async () => {
+  it("updates selected text color live across picker changes", async () => {
     const user = userEvent.setup();
-    const execCommand = vi.fn(() => true);
-    Object.defineProperty(document, "execCommand", {
-      configurable: true,
-      value: execCommand,
+    render(
+      <RichTextEditor
+        ariaLabel="Reply"
+        onChange={vi.fn()}
+        initialHtml="<p>Hi</p>"
+      />,
+    );
+
+    const editor = screen.getByRole("textbox", { name: /reply/i });
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    await user.click(screen.getByRole("button", { name: /^text color$/i }));
+    await screen.findByLabelText(/text color color picker/i);
+
+    await user.click(screen.getByRole("button", { name: /text color #e53935/i }));
+    const live = editor.querySelector("[data-tb-live-color='color']");
+    expect(live).toBeTruthy();
+    expect(live).toHaveStyle({ color: "rgb(229, 57, 53)" });
+
+    await user.click(screen.getByRole("button", { name: /text color #1e88e5/i }));
+    expect(editor.querySelector("[data-tb-live-color='color']")).toHaveStyle({
+      color: "rgb(30, 136, 229)",
     });
+    expect(
+      screen.getByLabelText(/text color color picker/i),
+    ).toBeInTheDocument();
+  });
+
+  it("updates highlight color live across picker changes", async () => {
+    const user = userEvent.setup();
+    render(
+      <RichTextEditor
+        ariaLabel="Reply"
+        onChange={vi.fn()}
+        initialHtml="<p>Hi</p>"
+      />,
+    );
+
+    const editor = screen.getByRole("textbox", { name: /reply/i });
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    await user.click(screen.getByRole("button", { name: /^highlight$/i }));
+    await screen.findByLabelText(/highlight color picker/i);
+
+    await user.click(screen.getByRole("button", { name: /highlight #e53935/i }));
+    expect(
+      editor.querySelector("[data-tb-live-color='highlight']"),
+    ).toHaveStyle({ backgroundColor: "rgb(229, 57, 53)" });
+
+    await user.click(screen.getByRole("button", { name: /highlight #1e88e5/i }));
+    expect(
+      editor.querySelector("[data-tb-live-color='highlight']"),
+    ).toHaveStyle({ backgroundColor: "rgb(30, 136, 229)" });
+  });
+
+  it("softens selection chrome while the color picker is open", async () => {
+    const user = userEvent.setup();
     render(<RichTextEditor ariaLabel="Reply" onChange={vi.fn()} />);
 
     const editor = screen.getByRole("textbox", { name: /reply/i });
-    editor.focus();
-    await user.type(editor, "Hi");
+    expect(editor).not.toHaveAttribute("data-tb-color-picking");
+
+    await user.click(screen.getByRole("button", { name: /^text color$/i }));
+    await screen.findByLabelText(/text color color picker/i);
+    expect(editor).toHaveAttribute("data-tb-color-picking", "true");
+
+    await user.click(document.body);
+    expect(editor).not.toHaveAttribute("data-tb-color-picking");
+
+    await user.click(screen.getByRole("button", { name: /^highlight$/i }));
+    await screen.findByLabelText(/highlight color picker/i);
+    expect(editor).toHaveAttribute("data-tb-color-picking", "true");
+  });
+
+  it("keeps picker above presets and applies color immediately", async () => {
+    const user = userEvent.setup();
+    render(
+      <RichTextEditor
+        ariaLabel="Reply"
+        onChange={vi.fn()}
+        initialHtml="<p>Hi</p>"
+      />,
+    );
+
+    const editor = screen.getByRole("textbox", { name: /reply/i });
     const selection = window.getSelection();
     const range = document.createRange();
     range.selectNodeContents(editor);
@@ -218,14 +301,11 @@ describe("RichTextEditor", () => {
       value.compareDocumentPosition(preset) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
-    execCommand.mockClear();
     await user.click(preset);
-    expect(execCommand).toHaveBeenCalledWith(
-      "foreColor",
-      false,
-      expect.stringMatching(/#e53935|rgb\(229,\s*57,\s*53\)/i),
-    );
-    // Live apply focuses the editor; picker must stay open for dragging.
+    expect(editor.querySelector("[data-tb-live-color='color']")).toHaveStyle({
+      color: "rgb(229, 57, 53)",
+    });
+    // Live apply may focus the editor; picker must stay open for dragging.
     editor.focus();
     expect(
       screen.getByLabelText(/text color color picker/i),
@@ -241,21 +321,19 @@ describe("RichTextEditor", () => {
     expect(
       screen.queryByLabelText(/text color color picker/i),
     ).not.toBeInTheDocument();
-    delete (document as { execCommand?: unknown }).execCommand;
   });
 
   it("applies highlight color immediately without confirm", async () => {
     const user = userEvent.setup();
-    const execCommand = vi.fn(() => true);
-    Object.defineProperty(document, "execCommand", {
-      configurable: true,
-      value: execCommand,
-    });
-    render(<RichTextEditor ariaLabel="Reply" onChange={vi.fn()} />);
+    render(
+      <RichTextEditor
+        ariaLabel="Reply"
+        onChange={vi.fn()}
+        initialHtml="<p>Hi</p>"
+      />,
+    );
 
     const editor = screen.getByRole("textbox", { name: /reply/i });
-    editor.focus();
-    await user.type(editor, "Hi");
     const selection = window.getSelection();
     const range = document.createRange();
     range.selectNodeContents(editor);
@@ -264,23 +342,19 @@ describe("RichTextEditor", () => {
 
     await user.click(screen.getByRole("button", { name: /^highlight$/i }));
     await screen.findByLabelText(/highlight color picker/i);
-    execCommand.mockClear();
     await user.click(
       screen.getByRole("button", { name: /highlight #e53935/i }),
     );
 
-    expect(execCommand).toHaveBeenCalledWith(
-      expect.stringMatching(/^(hiliteColor|backColor)$/),
-      false,
-      expect.stringMatching(/#e53935|rgb\(229,\s*57,\s*53\)/i),
-    );
+    expect(
+      editor.querySelector("[data-tb-live-color='highlight']"),
+    ).toHaveStyle({ backgroundColor: "rgb(229, 57, 53)" });
     expect(
       screen.getByLabelText(/highlight color picker/i),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("textbox", { name: /highlight color value/i }),
     ).toHaveValue("rgb(229, 57, 53)");
-    delete (document as { execCommand?: unknown }).execCommand;
   });
 
   it("renders toolbarStart and toolbarEnd slots", () => {
