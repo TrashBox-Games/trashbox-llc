@@ -86,6 +86,16 @@ const builderTextSurfaceClass =
   "min-h-10 px-0 py-0 text-[15px] leading-relaxed text-[#18181b] [&_p]:my-0 [&_h1]:my-0 [&_h2]:my-0 [&_h3]:my-0";
 const builderEditorClass = `select-text ${builderTextSurfaceClass}`;
 
+/** Space/Enter activate role=button chrome — skip when typing in nested editors. */
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  return Boolean(
+    el.isContentEditable ||
+      el.closest?.('[contenteditable="true"], input, textarea, select'),
+  );
+}
+
 function isBlankHtml(html: string): boolean {
   const text = html
     .replace(/<br\s*\/?>/gi, "")
@@ -191,6 +201,7 @@ function NestedItemChrome({
         onSelect();
       }}
       onKeyDown={(event) => {
+        if (isTypingTarget(event.target)) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           event.stopPropagation();
@@ -1172,15 +1183,7 @@ function BlockChrome({
           ? undefined
           : (event) => {
               if (selected) return;
-              const target = event.target as HTMLElement | null;
-              if (
-                target?.isContentEditable ||
-                target?.closest?.(
-                  '[contenteditable="true"], input, textarea, select',
-                )
-              ) {
-                return;
-              }
+              if (isTypingTarget(event.target)) return;
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
                 onSelect();
@@ -1509,6 +1512,7 @@ export function BuilderBlock({
                 onSelectImageTextChild?.("image");
               }}
               onKeyDown={(event) => {
+                if (isTypingTarget(event.target)) return;
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   event.stopPropagation();
@@ -1552,6 +1556,7 @@ export function BuilderBlock({
                 onSelectImageTextChild?.("text");
               }}
               onKeyDown={(event) => {
+                if (isTypingTarget(event.target)) return;
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   event.stopPropagation();

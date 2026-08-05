@@ -205,6 +205,15 @@ function PageBandEditor({
         onSelect();
       }}
       onKeyDown={(event) => {
+        const target = event.target as HTMLElement | null;
+        if (
+          target?.isContentEditable ||
+          target?.closest?.(
+            '[contenteditable="true"], input, textarea, select',
+          )
+        ) {
+          return;
+        }
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           event.stopPropagation();

@@ -418,6 +418,30 @@ describe("EmailTemplateBuilder", () => {
     expect(editor).toHaveTextContent("Hello world");
   });
 
+  it("allows typing spaces in a text item inside a column", async () => {
+    const user = userEvent.setup();
+    let doc = emptyDocument();
+    doc = appendVariant(doc, "columns-1");
+    doc = insertVariantIntoColumn(doc, doc.blocks[0]!.id, 0, "text-paragraph");
+
+    render(
+      <EmailTemplateBuilder
+        initialDocument={doc}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByTestId("builder-column-item-0-0"));
+    const editor = screen.getByRole("textbox", {
+      name: /column 1 text item/i,
+    });
+    await user.clear(editor);
+    await user.type(editor, "Hello world");
+
+    expect(editor).toHaveTextContent("Hello world");
+  });
+
   it("opens layout folder with nested width presets and empty columns", async () => {
     const user = userEvent.setup();
     render(<EmailTemplateBuilder onSave={vi.fn()} onCancel={vi.fn()} />);
