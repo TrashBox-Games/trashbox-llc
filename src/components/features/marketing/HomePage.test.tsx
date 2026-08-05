@@ -6,16 +6,13 @@ vi.mock("@gsap/react", () => ({
 }));
 
 describe("HomePage", () => {
-  it("renders hero items hidden before the entrance animation runs", () => {
+  it("renders hero, about, and cta sections without selected outputs", () => {
     render(<HomePage />);
 
-    const heading = screen.getByRole("heading", { name: "Trashbox LLC" });
-    const tagline = screen.getByText(/Architecting the next generation/i);
-    const ctaGroup = screen.getByRole("link", { name: /Work With Us/i }).closest("[data-hero-item]");
-
-    for (const el of [heading, tagline, ctaGroup]) {
-      expect(el).toHaveAttribute("data-hero-item");
-      expect(el).toHaveStyle({ opacity: "0", transform: "translateY(28px)" });
-    }
+    expect(screen.getByRole("heading", { name: "Trashbox LLC" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /engineering/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /let.s build/i })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /selected outputs/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/aura capital/i)).not.toBeInTheDocument();
   });
 });
