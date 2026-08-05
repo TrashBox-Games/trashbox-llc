@@ -14,6 +14,10 @@ test.describe("site navigation", () => {
     await expect(page).toHaveURL(/\/services\/?$/);
     await expect(page.getByRole("heading", { name: /engineering/i })).toBeVisible();
 
+    await nav.getByRole("link", { name: "About", exact: true }).click();
+    await expect(page).toHaveURL(/\/about\/?$/);
+    await expect(page.getByRole("heading", { name: /trashbox/i })).toBeVisible();
+
     await nav.getByRole("link", { name: "Home", exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole("heading", { name: /trashbox llc/i })).toBeVisible();

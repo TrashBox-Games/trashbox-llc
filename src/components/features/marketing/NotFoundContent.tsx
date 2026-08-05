@@ -72,10 +72,10 @@ export function NotFoundContent() {
               <ul className="flex flex-col items-start gap-2 md:items-end">
                 <li>
                   <Link
-                    href="/#about"
+                    href="/about"
                     className="block py-1 text-sm font-medium transition-colors hover:text-primary"
                   >
-                    Studio Portfolio
+                    About the Studio
                   </Link>
                 </li>
                 <li>

@@ -15,6 +15,7 @@ const navItems = [
   { href: "/apps", label: "Apps" },
   { href: "/services", label: "Services" },
   { href: "/platform", label: "Platform" },
+  { href: "/about", label: "About" },
 ] as const;
 
 function navLinkClass(active: boolean) {
@@ -94,12 +95,6 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/#about"
-              className="font-headline text-sm uppercase tracking-tight text-white/60 transition-colors hover:text-white"
-            >
-              About
-            </Link>
           </div>
 
           <div className="flex items-center gap-3">
@@ -137,13 +132,6 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/#about"
-              className="font-headline text-sm uppercase tracking-tight text-white/60"
-              onClick={() => setOpen(false)}
-            >
-              About
-            </Link>
             <Button asChild className="mt-4">
               <Link href="/services#contact" onClick={() => setOpen(false)}>
                 Contact
