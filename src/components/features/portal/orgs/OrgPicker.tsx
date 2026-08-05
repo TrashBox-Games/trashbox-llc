@@ -28,7 +28,6 @@ function enterOrg(
 ) {
   select(orgId, "");
   if (!orgSlug) {
-    window.location.assign(PORTAL_PATHS.orgs);
     return;
   }
   portalNavigate(portalWorkspacePath({ orgSlug, surface: "orgHome" }));
@@ -60,7 +59,7 @@ export function OrgPicker() {
                 portal.account.orgName ||
                 portal.account.clientName ||
                 "Organization",
-              orgSlug: "",
+              orgSlug: portal.account.orgSlug || "",
               role: portal.account.role || "member",
               tier: (portal.account.tier || "free") as "free" | "solo" | "team",
               active: portal.account.active !== false,
@@ -75,7 +74,7 @@ export function OrgPicker() {
                     portal.account.projectName ||
                     portal.account.clientName ||
                     "Project",
-                  projectSlug: "",
+                  projectSlug: portal.account.projectSlug || "",
                 },
               ].filter((p) => p.projectId),
             },

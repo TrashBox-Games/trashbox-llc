@@ -155,4 +155,85 @@ describe("OrgPicker", () => {
     expect(screen.getByLabelText(/organization name/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/project/i)).not.toBeInTheDocument();
   });
+
+  it("enters org workspace from account fallback when listOrgs is empty", async () => {
+    const user = userEvent.setup();
+    const pushState = vi.spyOn(window.history, "pushState");
+    render(
+      <StubAuthProvider
+        value={{
+          status: "signedIn",
+          configured: true,
+          email: "invitee@example.com",
+        }}
+      >
+        <StubPortalProvider
+          value={{
+            ready: true,
+            orgs: [],
+            account: {
+              linked: true,
+              email: "invitee@example.com",
+              orgId: "o1",
+              orgName: "Acme Co",
+              orgSlug: "acme-co",
+              clientId: "p1",
+              clientName: "Site",
+              role: "member",
+              tier: "free",
+              active: true,
+            },
+            selectWorkspace,
+          }}
+        >
+          <OrgPicker />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /acme co.*project/i }),
+    );
+    expect(selectWorkspace).toHaveBeenCalledWith("o1", "");
+    expect(assign).not.toHaveBeenCalled();
+    expect(pushState).toHaveBeenCalledWith(null, "", "/portal/acme-co/");
+  });
+
+  it("does not reload the org picker when account fallback has no slug", async () => {
+    const user = userEvent.setup();
+    render(
+      <StubAuthProvider
+        value={{
+          status: "signedIn",
+          configured: true,
+          email: "invitee@example.com",
+        }}
+      >
+        <StubPortalProvider
+          value={{
+            ready: true,
+            orgs: [],
+            account: {
+              linked: true,
+              email: "invitee@example.com",
+              orgId: "o1",
+              orgName: "Acme Co",
+              clientId: "p1",
+              clientName: "Site",
+              role: "member",
+            },
+            selectWorkspace,
+          }}
+        >
+          <OrgPicker />
+        </StubPortalProvider>
+      </StubAuthProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /acme co.*project/i }),
+    );
+    expect(selectWorkspace).toHaveBeenCalledWith("o1", "");
+    expect(assign).not.toHaveBeenCalled();
+  });
 });
