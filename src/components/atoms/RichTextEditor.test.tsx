@@ -57,11 +57,7 @@ describe("RichTextEditor", () => {
 
   it("renders the formatting toolbar as a floating overlay popup", () => {
     render(
-      <RichTextEditor
-        ariaLabel="Reply"
-        onChange={vi.fn()}
-        toolbarOverlay
-      />,
+      <RichTextEditor ariaLabel="Reply" onChange={vi.fn()} toolbarOverlay />,
     );
 
     const overlay = screen.getByTestId("rich-text-toolbar-overlay");
@@ -186,13 +182,27 @@ describe("RichTextEditor", () => {
       screen.getByRole("button", { name: /text color #e53935/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /^confirm$/i }),
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /^confirm$/i }),
+    ).not.toBeInTheDocument();
   });
 
-  it("keeps picker above presets and confirms selection", async () => {
+  it("keeps picker above presets and applies color immediately", async () => {
     const user = userEvent.setup();
+    const execCommand = vi.fn(() => true);
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: execCommand,
+    });
     render(<RichTextEditor ariaLabel="Reply" onChange={vi.fn()} />);
+
+    const editor = screen.getByRole("textbox", { name: /reply/i });
+    editor.focus();
+    await user.type(editor, "Hi");
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
 
     await user.click(screen.getByRole("button", { name: /^text color$/i }));
     const picker = await screen.findByLabelText(/text color color picker/i);
@@ -208,15 +218,69 @@ describe("RichTextEditor", () => {
       value.compareDocumentPosition(preset) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
+    execCommand.mockClear();
     await user.click(preset);
+    expect(execCommand).toHaveBeenCalledWith(
+      "foreColor",
+      false,
+      expect.stringMatching(/#e53935|rgb\(229,\s*57,\s*53\)/i),
+    );
+    // Live apply focuses the editor; picker must stay open for dragging.
+    editor.focus();
     expect(
       screen.getByLabelText(/text color color picker/i),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^confirm$/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: /text color color value/i }),
+    ).toHaveValue("rgb(229, 57, 53)");
 
-    await user.click(screen.getByRole("button", { name: /^confirm$/i }));
+    await user.click(document.body);
     expect(
       screen.queryByLabelText(/text color color picker/i),
     ).not.toBeInTheDocument();
+    delete (document as { execCommand?: unknown }).execCommand;
+  });
+
+  it("applies highlight color immediately without confirm", async () => {
+    const user = userEvent.setup();
+    const execCommand = vi.fn(() => true);
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: execCommand,
+    });
+    render(<RichTextEditor ariaLabel="Reply" onChange={vi.fn()} />);
+
+    const editor = screen.getByRole("textbox", { name: /reply/i });
+    editor.focus();
+    await user.type(editor, "Hi");
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    await user.click(screen.getByRole("button", { name: /^highlight$/i }));
+    await screen.findByLabelText(/highlight color picker/i);
+    execCommand.mockClear();
+    await user.click(
+      screen.getByRole("button", { name: /highlight #e53935/i }),
+    );
+
+    expect(execCommand).toHaveBeenCalledWith(
+      expect.stringMatching(/^(hiliteColor|backColor)$/),
+      false,
+      expect.stringMatching(/#e53935|rgb\(229,\s*57,\s*53\)/i),
+    );
+    expect(
+      screen.getByLabelText(/highlight color picker/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: /highlight color value/i }),
+    ).toHaveValue("rgb(229, 57, 53)");
+    delete (document as { execCommand?: unknown }).execCommand;
   });
 
   it("renders toolbarStart and toolbarEnd slots", () => {

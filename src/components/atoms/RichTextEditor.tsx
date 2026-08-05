@@ -583,6 +583,7 @@ const ToolbarMenuButton = forwardRef<
     disabled,
     className,
     type = "button",
+    onMouseDown,
     ...props
   },
   ref,
@@ -596,6 +597,11 @@ const ToolbarMenuButton = forwardRef<
       aria-label={label}
       title={label}
       disabled={disabled}
+      // Keep editor selection when opening menus (color/highlight apply to it).
+      onMouseDown={(event) => {
+        event.preventDefault();
+        onMouseDown?.(event);
+      }}
       className={cn(
         toolbarBtnClass,
         "font-body h-8 gap-0.5 px-1.5 text-xs font-normal tracking-normal normal-case",
@@ -648,12 +654,10 @@ function ColorPickerPanel({
   labelPrefix,
   value,
   onChange,
-  onCancel,
 }: {
   labelPrefix: string;
   value: string;
   onChange: (color: string) => void;
-  onCancel: () => void;
 }) {
   const initial = normalizeHexColor(value) ?? DEFAULT_TEXT_COLOR;
   const [draft, setDraft] = useState(initial);
@@ -679,27 +683,21 @@ function ColorPickerPanel({
     setInputValue(formatColorValue(draft, format));
   }, [draft, format]);
 
-  function updateDraft(next: string) {
+  function applyColor(next: string) {
     const normalized = normalizeHexColor(next);
     if (!normalized) return;
     setDraft(normalized);
-  }
-
-  function confirm() {
-    const fromInput = parseColorInput(inputValue);
-    const next = fromInput ?? normalizeHexColor(draft);
-    if (!next) return;
-    onChange(next);
+    onChange(normalized);
   }
 
   async function onEyedropper() {
     const picked = await pickScreenColor();
-    if (picked) updateDraft(picked);
+    if (picked) applyColor(picked);
   }
 
   function onInputCommit() {
     const parsed = parseColorInput(inputValue);
-    if (parsed) updateDraft(parsed);
+    if (parsed) applyColor(parsed);
     else setInputValue(formatColorValue(draft, format));
   }
 
@@ -707,7 +705,7 @@ function ColorPickerPanel({
     <div className="space-y-3">
       <div aria-label={`${labelPrefix} color picker`} className="space-y-3">
         <div className="chrome-color-sat-only">
-          <HexAlphaColorPicker color={draft} onChange={updateDraft} />
+          <HexAlphaColorPicker color={draft} onChange={applyColor} />
         </div>
         <div className="flex items-center gap-2.5">
           <button
@@ -721,7 +719,7 @@ function ColorPickerPanel({
             <MaterialIcon name="colorize" className="text-[20px]" />
           </button>
           <div className="chrome-color-sliders-only min-w-0 flex-1">
-            <HexAlphaColorPicker color={draft} onChange={updateDraft} />
+            <HexAlphaColorPicker color={draft} onChange={applyColor} />
           </div>
         </div>
       </div>
@@ -789,33 +787,10 @@ function ColorPickerPanel({
               )}
               style={{ backgroundColor: color }}
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => updateDraft(color)}
+              onClick={() => applyColor(color)}
             />
           ))}
         </div>
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          className="text-outline tracking-normal normal-case hover:text-white"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={onCancel}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          size="xs"
-          className="tracking-normal normal-case"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={confirm}
-        >
-          Confirm
-        </Button>
       </div>
     </div>
   );
@@ -1067,11 +1042,18 @@ export const RichTextEditor = forwardRef<
   const applyTextColor = useCallback(
     (color: string) => {
       setTextColor(color);
-      runCommand("foreColor", colorToCss(color));
-      onMenuOpenChange(false);
-      setTextColorOpen(false);
+      restoreSelection();
+      // Avoid focusing the editor while the picker is open — that dismisses it.
+      if (!textColorOpen) {
+        editorRef.current?.focus();
+      }
+      if (typeof document.execCommand === "function") {
+        document.execCommand("foreColor", false, colorToCss(color));
+      }
+      emit();
+      saveSelection();
     },
-    [onMenuOpenChange, runCommand],
+    [emit, restoreSelection, saveSelection, textColorOpen],
   );
 
   const applyHighlightColor = useCallback(
@@ -1079,16 +1061,17 @@ export const RichTextEditor = forwardRef<
       const css = colorToCss(color);
       setHighlightColor(color);
       restoreSelection();
-      editorRef.current?.focus();
+      if (!highlightOpen) {
+        editorRef.current?.focus();
+      }
       if (typeof document.execCommand === "function") {
         const ok = document.execCommand("hiliteColor", false, css);
         if (!ok) document.execCommand("backColor", false, css);
       }
       emit();
-      onMenuOpenChange(false);
-      setHighlightOpen(false);
+      saveSelection();
     },
-    [emit, onMenuOpenChange, restoreSelection],
+    [emit, highlightOpen, restoreSelection, saveSelection],
   );
 
   const onTextColorOpenChange = useCallback(
@@ -1120,265 +1103,283 @@ export const RichTextEditor = forwardRef<
       {showToolbar
         ? (() => {
             const toolbar = (
-      <div
-        className={cn(
-          "border-outline-variant/15 bg-surface-container-high flex flex-wrap items-center gap-1 px-3 py-2",
-          toolbarOverlay &&
-            "rounded-md border border-zinc-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]",
-          !toolbarPortal && !toolbarOverlay && "border-b",
-        )}
-        role="toolbar"
-        aria-label="Formatting"
-      >
-        {toolbarStart && (
-          <ToolbarGroup withDivider>{toolbarStart}</ToolbarGroup>
-        )}
-
-        <ToolbarGroup withDivider>
-          {STYLE_BUTTONS.map((button) => (
-            <ToolbarIconButton
-              key={button.command}
-              label={button.label}
-              icon={button.icon}
-              disabled={disabled}
-              onClick={() => runToolbarButton(button)}
-            />
-          ))}
-        </ToolbarGroup>
-
-        <ToolbarGroup withDivider>
-          <DropdownMenu onOpenChange={onMenuOpenChange}>
-            <DropdownMenuTrigger asChild>
-              <ToolbarMenuButton
-                label="Font"
-                text={font}
-                textStyle={{ fontFamily: font }}
-                disabled={disabled}
-                className="min-w-[8.5rem] justify-between"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100]"
-            >
-              {FONT_OPTIONS.map((option) => (
-                <DropdownMenuItem
-                  key={option}
-                  onSelect={() => {
-                    setFont(option);
-                    runCommand("fontName", option);
-                  }}
-                  style={{ fontFamily: option }}
-                >
-                  {option}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Popover open={fontSizeOpen} onOpenChange={onFontSizeOpenChange}>
-            <PopoverTrigger asChild>
-              <ToolbarMenuButton
-                label="Font size"
-                text={`${fontSizePx}`}
-                disabled={disabled}
-              />
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] w-44 p-2"
-              onOpenAutoFocus={(event) => event.preventDefault()}
-            >
-              <form
-                className="mb-2 flex items-center gap-1"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  applyFontSize(Number(fontSizeDraft));
-                }}
+              <div
+                className={cn(
+                  "border-outline-variant/15 bg-surface-container-high flex flex-wrap items-center gap-1 px-3 py-2",
+                  toolbarOverlay &&
+                    "rounded-md border border-zinc-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]",
+                  !toolbarPortal && !toolbarOverlay && "border-b",
+                )}
+                role="toolbar"
+                aria-label="Formatting"
               >
-                <Input
-                  aria-label="Custom font size"
-                  type="number"
-                  min={MIN_FONT_SIZE_PX}
-                  max={MAX_FONT_SIZE_PX}
-                  value={fontSizeDraft}
-                  onChange={(event) => setFontSizeDraft(event.target.value)}
-                  className="border-outline-variant/30 bg-surface-container-lowest h-8 px-2 py-1 text-sm"
-                />
-                <span className="font-label text-outline text-[10px] tracking-widest uppercase">
-                  px
-                </span>
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  size="xs"
-                  className="tracking-normal text-white normal-case"
-                >
-                  Apply
-                </Button>
-              </form>
-              <ul className="max-h-48 space-y-0.5 overflow-auto">
-                {FONT_SIZE_PRESETS.map((size) => (
-                  <li key={size}>
-                    <button
-                      type="button"
-                      aria-label={`${size} pixels`}
-                      className={cn(
-                        "hover:bg-surface-bright flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:text-white",
-                        size === fontSizePx && "bg-surface-bright text-white",
-                      )}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => applyFontSize(size)}
+                {toolbarStart && (
+                  <ToolbarGroup withDivider>{toolbarStart}</ToolbarGroup>
+                )}
+
+                <ToolbarGroup withDivider>
+                  {STYLE_BUTTONS.map((button) => (
+                    <ToolbarIconButton
+                      key={button.command}
+                      label={button.label}
+                      icon={button.icon}
+                      disabled={disabled}
+                      onClick={() => runToolbarButton(button)}
+                    />
+                  ))}
+                </ToolbarGroup>
+
+                <ToolbarGroup withDivider>
+                  <DropdownMenu onOpenChange={onMenuOpenChange}>
+                    <DropdownMenuTrigger asChild>
+                      <ToolbarMenuButton
+                        label="Font"
+                        text={font}
+                        textStyle={{ fontFamily: font }}
+                        disabled={disabled}
+                        className="min-w-[8.5rem] justify-between"
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100]"
                     >
-                      <span style={{ fontSize: Math.min(size, 18) }}>
-                        {size}
-                      </span>
-                      <span className="font-label text-outline text-[10px] tracking-widest uppercase">
-                        px
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </PopoverContent>
-          </Popover>
+                      {FONT_OPTIONS.map((option) => (
+                        <DropdownMenuItem
+                          key={option}
+                          onSelect={() => {
+                            setFont(option);
+                            runCommand("fontName", option);
+                          }}
+                          style={{ fontFamily: option }}
+                        >
+                          {option}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
-          <Popover open={textColorOpen} onOpenChange={onTextColorOpenChange}>
-            <PopoverTrigger asChild>
-              <ToolbarMenuButton
-                label="Text color"
-                icon="format_color_text"
-                swatchColor={solidHex(textColor)}
-                disabled={disabled}
-              />
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] w-[240px] p-3 shadow-xl"
-              onOpenAutoFocus={(event) => event.preventDefault()}
-            >
-              <ColorPickerPanel
-                labelPrefix="Text color"
-                value={textColor}
-                onChange={applyTextColor}
-                onCancel={() => onTextColorOpenChange(false)}
-              />
-            </PopoverContent>
-          </Popover>
-
-          <Popover open={highlightOpen} onOpenChange={onHighlightOpenChange}>
-            <PopoverTrigger asChild>
-              <ToolbarMenuButton
-                label="Highlight"
-                icon="border_color"
-                swatchColor={solidHex(highlightColor)}
-                disabled={disabled}
-              />
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] w-[240px] p-3 shadow-xl"
-              onOpenAutoFocus={(event) => event.preventDefault()}
-            >
-              <ColorPickerPanel
-                labelPrefix="Highlight"
-                value={highlightColor}
-                onChange={applyHighlightColor}
-                onCancel={() => onHighlightOpenChange(false)}
-              />
-            </PopoverContent>
-          </Popover>
-        </ToolbarGroup>
-
-        <ToolbarGroup withDivider>
-          <DropdownMenu onOpenChange={onMenuOpenChange}>
-            <DropdownMenuTrigger asChild>
-              <ToolbarMenuButton
-                label="Align"
-                icon="format_align_left"
-                disabled={disabled}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100]"
-            >
-              {ALIGN_OPTIONS.map((option) => (
-                <DropdownMenuItem
-                  key={option.command}
-                  onSelect={() => runCommand(option.command)}
-                >
-                  <MaterialIcon name={option.icon} className="text-base" />
-                  {option.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {LIST_BUTTONS.map((button) => (
-            <ToolbarIconButton
-              key={button.command}
-              label={button.label}
-              icon={button.icon}
-              disabled={disabled}
-              onClick={() => runToolbarButton(button)}
-            />
-          ))}
-
-          {INDENT_BUTTONS.map((button) => (
-            <ToolbarIconButton
-              key={button.command}
-              label={button.label}
-              icon={button.icon}
-              disabled={disabled}
-              onClick={() => runToolbarButton(button)}
-            />
-          ))}
-        </ToolbarGroup>
-
-        <ToolbarGroup withDivider>
-          {INSERT_BUTTONS.map((button) => (
-            <ToolbarIconButton
-              key={button.label}
-              label={button.label}
-              icon={button.icon}
-              disabled={disabled}
-              onClick={() => runToolbarButton(button)}
-            />
-          ))}
-
-          <Popover onOpenChange={onMenuOpenChange}>
-            <PopoverTrigger asChild>
-              <ToolbarMenuButton
-                label="Emoji"
-                icon="mood"
-                disabled={disabled}
-              />
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="border-outline-variant/20 bg-surface-container-high z-[100] w-auto p-2"
-            >
-              <div className="grid grid-cols-8 gap-1">
-                {EMOJIS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    aria-label={`Insert ${emoji}`}
-                    className="hover:bg-surface-variant size-8 rounded text-lg"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => insertEmoji(emoji)}
+                  <Popover
+                    open={fontSizeOpen}
+                    onOpenChange={onFontSizeOpenChange}
                   >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </ToolbarGroup>
+                    <PopoverTrigger asChild>
+                      <ToolbarMenuButton
+                        label="Font size"
+                        text={`${fontSizePx}`}
+                        disabled={disabled}
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] w-44 p-2"
+                      onOpenAutoFocus={(event) => event.preventDefault()}
+                    >
+                      <form
+                        className="mb-2 flex items-center gap-1"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          applyFontSize(Number(fontSizeDraft));
+                        }}
+                      >
+                        <Input
+                          aria-label="Custom font size"
+                          type="number"
+                          min={MIN_FONT_SIZE_PX}
+                          max={MAX_FONT_SIZE_PX}
+                          value={fontSizeDraft}
+                          onChange={(event) =>
+                            setFontSizeDraft(event.target.value)
+                          }
+                          className="border-outline-variant/30 bg-surface-container-lowest h-8 px-2 py-1 text-sm"
+                        />
+                        <span className="font-label text-outline text-[10px] tracking-widest uppercase">
+                          px
+                        </span>
+                        <Button
+                          type="submit"
+                          variant="ghost"
+                          size="xs"
+                          className="tracking-normal text-white normal-case"
+                        >
+                          Apply
+                        </Button>
+                      </form>
+                      <ul className="max-h-48 space-y-0.5 overflow-auto">
+                        {FONT_SIZE_PRESETS.map((size) => (
+                          <li key={size}>
+                            <button
+                              type="button"
+                              aria-label={`${size} pixels`}
+                              className={cn(
+                                "hover:bg-surface-bright flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:text-white",
+                                size === fontSizePx &&
+                                  "bg-surface-bright text-white",
+                              )}
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() => applyFontSize(size)}
+                            >
+                              <span style={{ fontSize: Math.min(size, 18) }}>
+                                {size}
+                              </span>
+                              <span className="font-label text-outline text-[10px] tracking-widest uppercase">
+                                px
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </PopoverContent>
+                  </Popover>
 
-        {toolbarEnd}
-      </div>
+                  <Popover
+                    open={textColorOpen}
+                    onOpenChange={onTextColorOpenChange}
+                  >
+                    <PopoverTrigger asChild>
+                      <ToolbarMenuButton
+                        label="Text color"
+                        icon="format_color_text"
+                        swatchColor={solidHex(textColor)}
+                        disabled={disabled}
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] w-[240px] p-3 shadow-xl"
+                      onOpenAutoFocus={(event) => event.preventDefault()}
+                      // Live color apply focuses the editor; don't dismiss for that.
+                      onFocusOutside={(event) => event.preventDefault()}
+                      onCloseAutoFocus={(event) => event.preventDefault()}
+                    >
+                      <ColorPickerPanel
+                        labelPrefix="Text color"
+                        value={textColor}
+                        onChange={applyTextColor}
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  <Popover
+                    open={highlightOpen}
+                    onOpenChange={onHighlightOpenChange}
+                  >
+                    <PopoverTrigger asChild>
+                      <ToolbarMenuButton
+                        label="Highlight"
+                        icon="border_color"
+                        swatchColor={solidHex(highlightColor)}
+                        disabled={disabled}
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100] w-[240px] p-3 shadow-xl"
+                      onOpenAutoFocus={(event) => event.preventDefault()}
+                      onFocusOutside={(event) => event.preventDefault()}
+                      onCloseAutoFocus={(event) => event.preventDefault()}
+                    >
+                      <ColorPickerPanel
+                        labelPrefix="Highlight"
+                        value={highlightColor}
+                        onChange={applyHighlightColor}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </ToolbarGroup>
+
+                <ToolbarGroup withDivider>
+                  <DropdownMenu onOpenChange={onMenuOpenChange}>
+                    <DropdownMenuTrigger asChild>
+                      <ToolbarMenuButton
+                        label="Align"
+                        icon="format_align_left"
+                        disabled={disabled}
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="border-outline-variant/20 bg-surface-container-high text-on-surface z-[100]"
+                    >
+                      {ALIGN_OPTIONS.map((option) => (
+                        <DropdownMenuItem
+                          key={option.command}
+                          onSelect={() => runCommand(option.command)}
+                        >
+                          <MaterialIcon
+                            name={option.icon}
+                            className="text-base"
+                          />
+                          {option.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {LIST_BUTTONS.map((button) => (
+                    <ToolbarIconButton
+                      key={button.command}
+                      label={button.label}
+                      icon={button.icon}
+                      disabled={disabled}
+                      onClick={() => runToolbarButton(button)}
+                    />
+                  ))}
+
+                  {INDENT_BUTTONS.map((button) => (
+                    <ToolbarIconButton
+                      key={button.command}
+                      label={button.label}
+                      icon={button.icon}
+                      disabled={disabled}
+                      onClick={() => runToolbarButton(button)}
+                    />
+                  ))}
+                </ToolbarGroup>
+
+                <ToolbarGroup withDivider>
+                  {INSERT_BUTTONS.map((button) => (
+                    <ToolbarIconButton
+                      key={button.label}
+                      label={button.label}
+                      icon={button.icon}
+                      disabled={disabled}
+                      onClick={() => runToolbarButton(button)}
+                    />
+                  ))}
+
+                  <Popover onOpenChange={onMenuOpenChange}>
+                    <PopoverTrigger asChild>
+                      <ToolbarMenuButton
+                        label="Emoji"
+                        icon="mood"
+                        disabled={disabled}
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="border-outline-variant/20 bg-surface-container-high z-[100] w-auto p-2"
+                    >
+                      <div className="grid grid-cols-8 gap-1">
+                        {EMOJIS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            aria-label={`Insert ${emoji}`}
+                            className="hover:bg-surface-variant size-8 rounded text-lg"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => insertEmoji(emoji)}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </ToolbarGroup>
+
+                {toolbarEnd}
+              </div>
             );
             if (toolbarOverlay && typeof document !== "undefined") {
               return createPortal(
