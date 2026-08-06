@@ -19,12 +19,13 @@ import { submitContactForm } from "@/lib/contact-form";
 const SERVICE_NONE = "__none__";
 
 const SERVICE_OPTIONS = [
-  "Websites",
-  "Web Applications",
-  "Systems",
-  "Mobile Apps",
-  "AI Integration",
-  "General Inquiry",
+  "Website",
+  "Web application",
+  "Mobile app",
+  "Systems / backend",
+  "AI integration",
+  "Ongoing development",
+  "Not sure yet",
 ] as const;
 
 export function ContactForm() {
@@ -78,11 +79,11 @@ export function ContactForm() {
   return (
     <section className="mx-auto max-w-4xl border-t border-outline-variant/10 pt-24" id="contact">
       <Reveal className="mb-20 text-center">
-        <h2 className="mb-4 font-headline text-5xl font-bold tracking-tighter text-white uppercase">
-          Start a Project
+        <h2 className="mb-4 font-headline text-5xl font-bold tracking-tighter text-white">
+          Start a project
         </h2>
-        <p className="font-label text-sm tracking-widest text-outline uppercase">
-          Initiate the transmission
+        <p className="text-base text-on-surface-variant">
+          Tell us what you need—we&apos;ll get back to you soon.
         </p>
       </Reveal>
 
@@ -98,39 +99,40 @@ export function ContactForm() {
           />
           <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
             <div>
-              <Label htmlFor="contact-name">Client Identity</Label>
+              <Label htmlFor="contact-name">Name</Label>
               <Input
                 id="contact-name"
                 name="name"
-                placeholder="Your Name"
+                placeholder="Your name"
                 type="text"
                 required
               />
             </div>
             <div>
-              <Label htmlFor="contact-email">Transmission Endpoint</Label>
+              <Label htmlFor="contact-email">Email</Label>
               <Input
                 id="contact-email"
                 name="email"
-                placeholder="Email Address"
+                placeholder="you@company.com"
                 type="email"
                 required
               />
             </div>
           </div>
           <div>
-            <Label htmlFor="contact-service">Project Objective</Label>
+            <Label htmlFor="contact-service">What do you need?</Label>
             <input type="hidden" name="service" value={serviceValue} />
-            <Select
-              value={service}
-              onValueChange={setService}
-            >
-              <SelectTrigger id="contact-service" aria-label="Project Objective" className="py-4">
-                <SelectValue placeholder="Select Service Area" />
+            <Select value={service} onValueChange={setService}>
+              <SelectTrigger
+                id="contact-service"
+                aria-label="What do you need?"
+                className="py-4"
+              >
+                <SelectValue placeholder="Select an option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={SERVICE_NONE} disabled className="hidden">
-                  Select Service Area
+                  Select an option
                 </SelectItem>
                 {SERVICE_OPTIONS.map((option) => (
                   <SelectItem key={option} value={option}>
@@ -141,18 +143,18 @@ export function ContactForm() {
             </Select>
           </div>
           <div>
-            <Label htmlFor="contact-message">Manifesto / Brief</Label>
+            <Label htmlFor="contact-message">Project details</Label>
             <Textarea
               id="contact-message"
               name="message"
-              placeholder="Tell us about the monolith you want to build..."
+              placeholder="Share a short brief, timeline, or goals…"
               rows={4}
               required
             />
           </div>
           {status === "sent" && (
             <p className="text-sm text-on-surface-variant">
-              Transmission received. We&apos;ll be in touch.
+              Thanks—we got your message and will be in touch.
             </p>
           )}
           {status === "error" && errorMessage && (
@@ -160,7 +162,7 @@ export function ContactForm() {
           )}
           <div className="pt-8">
             <Button type="submit" size="xl" disabled={status === "sending"}>
-              {status === "sending" ? "Sending…" : "Send Transmission"}
+              {status === "sending" ? "Sending…" : "Send message"}
             </Button>
           </div>
         </form>

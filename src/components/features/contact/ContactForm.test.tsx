@@ -12,20 +12,22 @@ describe("ContactForm", () => {
   it("shows success message after a valid submission", async () => {
     vi.mocked(submitContactForm).mockResolvedValue({
       success: true,
-      message: "Transmission received.",
+      message: "Thanks—we got your message.",
     });
 
     const user = userEvent.setup();
     render(<ContactForm />);
 
-    await user.type(screen.getByPlaceholderText("Your Name"), "Ada Lovelace");
-    await user.type(screen.getByPlaceholderText("Email Address"), "ada@example.com");
+    await user.type(screen.getByPlaceholderText("Your name"), "Ada Lovelace");
+    await user.type(screen.getByPlaceholderText("you@company.com"), "ada@example.com");
     await user.type(
-      screen.getByPlaceholderText("Tell us about the monolith you want to build..."),
-      "Need a kinetic portfolio site.",
+      screen.getByPlaceholderText("Share a short brief, timeline, or goals…"),
+      "Need a marketing site for launch.",
     );
-    await user.click(screen.getByRole("button", { name: /send transmission/i }));
+    await user.click(screen.getByRole("button", { name: /send message/i }));
 
-    expect(await screen.findByText(/transmission received/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/thanks—we got your message/i),
+    ).toBeInTheDocument();
   });
 });

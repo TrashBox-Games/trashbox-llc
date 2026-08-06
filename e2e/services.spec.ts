@@ -6,11 +6,11 @@ test.describe("services page", () => {
 
     await expect(page.getByRole("heading", { name: /build once/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: /start a project/i })).toBeVisible();
-    await expect(page.getByPlaceholder("Your Name")).toBeVisible();
-    await expect(page.getByPlaceholder("Email Address")).toBeVisible();
+    await expect(page.getByPlaceholder("Your name")).toBeVisible();
+    await expect(page.getByPlaceholder("you@company.com")).toBeVisible();
     await expect(
-      page.getByPlaceholder("Tell us about the monolith you want to build..."),
+      page.getByPlaceholder("Share a short brief, timeline, or goals…"),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: /send transmission/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /send message/i })).toBeVisible();
   });
 });
