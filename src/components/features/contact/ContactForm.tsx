@@ -19,8 +19,10 @@ import { submitContactForm } from "@/lib/contact-form";
 const SERVICE_NONE = "__none__";
 
 const SERVICE_OPTIONS = [
-  "App Design",
-  "Full-Stack Development",
+  "Websites",
+  "Web Applications",
+  "Systems",
+  "Mobile Apps",
   "AI Integration",
   "General Inquiry",
 ] as const;

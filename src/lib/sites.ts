@@ -7,6 +7,7 @@ export const API_BASE_URL = "https://api.trashbox.io";
 
 export const PLATFORM_BASE = "/platform";
 export const PORTAL_BASE = "/portal";
+export const SERVICES_BASE = "/services";
 
 export const PLATFORM_PATHS = {
   hub: "/platform/",
@@ -14,6 +15,16 @@ export const PLATFORM_PATHS = {
   pricing: "/platform/pricing/",
   api: "/platform/api/",
   documentation: "/platform/documentation/",
+} as const;
+
+export const SERVICE_PATHS = {
+  hub: "/services",
+  websites: "/services/websites",
+  webApplications: "/services/web-applications",
+  systems: "/services/systems",
+  mobileApps: "/services/mobile-apps",
+  aiIntegration: "/services/ai-integration",
+  contact: "/services#contact",
 } as const;
 
 export const PORTAL_PATHS = {

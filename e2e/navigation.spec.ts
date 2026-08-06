@@ -37,10 +37,10 @@ test.describe("site navigation", () => {
       .getByRole("navigation")
       .getByRole("button", { name: "Services", exact: true })
       .click();
-    await page.getByRole("menuitem", { name: "App Design", exact: true }).click();
-    await expect(page).toHaveURL(/\/services\/?$/);
+    await page.getByRole("menuitem", { name: "Websites", exact: true }).click();
+    await expect(page).toHaveURL(/\/services\/websites\/?$/);
     await expect(
-      page.getByRole("heading", { name: /engineering/i }),
+      page.getByRole("heading", { name: /sites that look sharp/i }),
     ).toBeVisible();
 
     const nav = page.getByRole("navigation");

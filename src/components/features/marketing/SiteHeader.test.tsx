@@ -20,29 +20,33 @@ describe("SiteHeader", () => {
     });
   });
 
-  it("opens a Services dropdown with CRM linking to the platform", async () => {
+  it("opens a Services dropdown with offering and CRM links", async () => {
     const user = userEvent.setup();
     render(<SiteHeader />);
 
     await user.click(screen.getByRole("button", { name: /^services$/i }));
 
     expect(
-      await screen.findByRole("menuitem", {
+      await screen.findByRole("menuitem", { name: /^websites$/i }),
+    ).toHaveAttribute("href", "/services/websites");
+    expect(
+      screen.getByRole("menuitem", { name: /^web applications$/i }),
+    ).toHaveAttribute("href", "/services/web-applications");
+    expect(screen.getByRole("menuitem", { name: /^systems$/i })).toHaveAttribute(
+      "href",
+      "/services/systems",
+    );
+    expect(
+      screen.getByRole("menuitem", { name: /^mobile apps$/i }),
+    ).toHaveAttribute("href", "/services/mobile-apps");
+    expect(
+      screen.getByRole("menuitem", { name: /^ai integration$/i }),
+    ).toHaveAttribute("href", "/services/ai-integration");
+    expect(
+      screen.getByRole("menuitem", {
         name: /^customer relationship management$/i,
       }),
-    ).toHaveAttribute("href", "/platform");
-    expect(screen.getByRole("menuitem", { name: /^app design$/i })).toHaveAttribute(
-      "href",
-      "/services",
-    );
-    expect(screen.getByRole("menuitem", { name: /^development$/i })).toHaveAttribute(
-      "href",
-      "/services",
-    );
-    expect(screen.getByRole("menuitem", { name: /^ai integration$/i })).toHaveAttribute(
-      "href",
-      "/services",
-    );
+    ).toHaveAttribute("href", expect.stringMatching(/\/platform\/?$/));
   });
 
   it("does not expose a top-level CRM link", () => {

@@ -4,11 +4,11 @@ import { ServicesPage } from "@/components/features/marketing/ServicesPage";
 export const metadata: Metadata = {
   title: "Services",
   description:
-    "Discover Trashbox LLC services in app design, full-stack development, and AI integration.",
+    "Websites, web applications, systems, mobile apps, and AI integration—one-off builds and ongoing development from Trashbox LLC.",
   openGraph: {
     title: "Trashbox LLC - Services",
     description:
-      "Start a project with Trashbox LLC across product strategy, engineering, and intelligent systems.",
+      "Start a project with Trashbox LLC across websites, apps, systems, and intelligent workflows.",
   },
 };
 

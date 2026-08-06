@@ -1,8 +1,8 @@
 import Image from "next/image";
-import Link from "next/link";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Reveal } from "@/components/atoms/Reveal";
+import { ReadyWhenYouAre } from "@/components/features/marketing/ReadyWhenYouAre";
 
 const focusAreas = [
   {
@@ -122,19 +122,7 @@ export function AboutPage() {
         </section>
       </div>
 
-      <section className="bg-surface-container-lowest px-8 py-32 text-center md:py-48">
-        <Reveal fade className="mx-auto max-w-3xl">
-          <h2 className="mb-10 font-headline text-5xl font-bold tracking-tighter text-white md:text-7xl">
-            Ready when you are.
-          </h2>
-          <Link
-            href="/services#contact"
-            className="kinetic-gradient monolith-shadow inline-block px-12 py-6 font-headline text-base font-bold tracking-widest text-on-primary-container uppercase transition-transform hover:scale-[1.05]"
-          >
-            Start a Project
-          </Link>
-        </Reveal>
-      </section>
+      <ReadyWhenYouAre />
     </>
   );
 }

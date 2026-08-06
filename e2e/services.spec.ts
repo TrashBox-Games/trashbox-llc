@@ -4,7 +4,7 @@ test.describe("services page", () => {
   test("shows contact form fields", async ({ page }) => {
     await page.goto("/services");
 
-    await expect(page.getByRole("heading", { name: /engineering/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /build once/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: /start a project/i })).toBeVisible();
     await expect(page.getByPlaceholder("Your Name")).toBeVisible();
     await expect(page.getByPlaceholder("Email Address")).toBeVisible();

@@ -3,13 +3,21 @@ import { settingsSectionPath } from "./portal-settings";
 import {
   PLATFORM_PATHS,
   PORTAL_PATHS,
+  SERVICE_PATHS,
   isPlatformPath,
   isPortalPath,
 } from "./sites";
 
 describe("sites helpers", () => {
-  it("exposes platform and portal paths", () => {
+  it("exposes platform, portal, and service paths", () => {
     expect(PLATFORM_PATHS.features).toBe("/platform/features/");
+    expect(SERVICE_PATHS.hub).toBe("/services");
+    expect(SERVICE_PATHS.websites).toBe("/services/websites");
+    expect(SERVICE_PATHS.webApplications).toBe("/services/web-applications");
+    expect(SERVICE_PATHS.systems).toBe("/services/systems");
+    expect(SERVICE_PATHS.mobileApps).toBe("/services/mobile-apps");
+    expect(SERVICE_PATHS.aiIntegration).toBe("/services/ai-integration");
+    expect(SERVICE_PATHS.contact).toBe("/services#contact");
     expect(PORTAL_PATHS.orgs).toBe("/portal/orgs/");
     expect(PORTAL_PATHS.account).toBe("/portal/account/");
     expect(PORTAL_PATHS.home).toBe("/portal/");

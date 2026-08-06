@@ -15,12 +15,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { gsap } from "@/lib/gsap-client";
+import { SERVICE_PATHS } from "@/lib/sites";
 
 const serviceItems = [
-  { href: "/services", label: "App Design" },
-  { href: "/services", label: "Development" },
-  { href: "/services", label: "AI Integration" },
-  { href: "/platform", label: "Customer Relationship Management" },
+  { href: SERVICE_PATHS.websites, label: "Websites" },
+  { href: SERVICE_PATHS.webApplications, label: "Web Applications" },
+  { href: SERVICE_PATHS.systems, label: "Systems" },
+  { href: SERVICE_PATHS.mobileApps, label: "Mobile Apps" },
+  { href: SERVICE_PATHS.aiIntegration, label: "AI Integration" },
+  {
+    href: "/platform",
+    label: "Customer Relationship Management",
+  },
 ] as const;
 
 /** Match FadeIn/HomeHero: hide before paint so the header doesn't flash then snap. */
@@ -151,7 +157,7 @@ export function SiteHeader() {
 
           <div className="flex items-center gap-3">
             <Button asChild className="hidden active:scale-95 md:inline-flex">
-              <Link href="/services#contact">Contact</Link>
+              <Link href={SERVICE_PATHS.contact}>Contact</Link>
             </Button>
             <Button
               type="button"
@@ -216,7 +222,7 @@ export function SiteHeader() {
             </Link>
 
             <Button asChild className="mt-4">
-              <Link href="/services#contact" onClick={() => setOpen(false)}>
+              <Link href={SERVICE_PATHS.contact} onClick={() => setOpen(false)}>
                 Contact
               </Link>
             </Button>
