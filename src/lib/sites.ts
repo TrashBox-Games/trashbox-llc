@@ -53,9 +53,7 @@ export const PORTAL_PATHS = {
 
 export function isPlatformPath(pathname: string | null | undefined): boolean {
   if (!pathname) return false;
-  return (
-    pathname === PLATFORM_BASE || pathname.startsWith(`${PLATFORM_BASE}/`)
-  );
+  return pathname === PLATFORM_BASE || pathname.startsWith(`${PLATFORM_BASE}/`);
 }
 
 export function isPortalPath(pathname: string | null | undefined): boolean {

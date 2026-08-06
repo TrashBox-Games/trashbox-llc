@@ -1,27 +1,8 @@
 import Image from "next/image";
 import { FadeIn } from "@/components/atoms/FadeIn";
-import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Reveal } from "@/components/atoms/Reveal";
 import { TiltMedia } from "@/components/atoms/TiltMedia";
 import { ReadyWhenYouAre } from "@/components/features/marketing/ReadyWhenYouAre";
-
-const focusAreas = [
-  {
-    icon: "smartphone",
-    title: "Mobile",
-    body: "Apps that feel natural on the phone and hold up in everyday use.",
-  },
-  {
-    icon: "language",
-    title: "Web",
-    body: "Websites and online tools that look sharp and stay quick as you grow.",
-  },
-  {
-    icon: "hub",
-    title: "Full Systems",
-    body: "Complete builds that cover everything—from what you see to what runs behind the scenes.",
-  },
-] as const;
 
 export function AboutPage() {
   return (
@@ -69,7 +50,7 @@ export function AboutPage() {
           </Reveal>
         </section>
 
-        <section className="mb-24 grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-20">
+        <section className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-20">
           <Reveal fade className="lg:col-span-5 lg:sticky lg:top-32">
             <TiltMedia className="relative aspect-[4/5]">
               <Image
@@ -108,20 +89,6 @@ export function AboutPage() {
               </p>
             </TiltMedia>
           </Reveal>
-        </section>
-
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {focusAreas.map((area, idx) => (
-            <Reveal fade key={area.title} delay={idx * 0.06}>
-              <div className="h-full border-l-2 border-outline-variant bg-surface-container-low p-8">
-                <MaterialIcon name={area.icon} className="mb-5 text-primary" />
-                <h3 className="mb-3 font-headline text-xl font-bold tracking-tight text-white uppercase">
-                  {area.title}
-                </h3>
-                <p className="leading-relaxed text-on-surface-variant">{area.body}</p>
-              </div>
-            </Reveal>
-          ))}
         </section>
       </div>
 
