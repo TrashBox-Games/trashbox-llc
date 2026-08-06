@@ -84,27 +84,29 @@ export function AboutPage() {
           </Reveal>
 
           <Reveal fade className="lg:col-span-7" delay={0.06}>
-            <span className="mb-4 block font-label text-xs tracking-[0.3em] text-primary/40 uppercase">
-              Founder
-            </span>
-            <h2 className="mb-8 font-headline text-4xl font-bold tracking-tight text-white md:text-6xl">
-              Ezekiel Mohr
-            </h2>
-            <p className="mb-6 text-lg leading-relaxed text-on-surface-variant">
-              Founded in Kingwood, Texas in 2025 by Ezekiel Mohr—a software developer with about four
-              years of experience building websites, mobile apps, and the systems behind them.
-            </p>
-            <p className="mb-6 text-lg leading-relaxed text-on-surface-variant">
-              As a senior web developer, he worked on projects under contracts connected to Amazon
-              Leo, Amazon&apos;s satellite internet program. That kind of work called for careful,
-              dependable engineering when getting it right really mattered.
-            </p>
-            <p className="text-lg leading-relaxed text-on-surface-variant">
-              Along the way he&apos;s shipped mobile apps, dabbled in some game development, and
-              built products from the ground up. Trashbox puts that mix of experience toward one
-              goal: helping more businesses get software and websites that actually lives up to
-              their name.
-            </p>
+            <TiltMedia framed={false}>
+              <span className="mb-4 block font-label text-xs tracking-[0.3em] text-primary/40 uppercase">
+                Founder
+              </span>
+              <h2 className="mb-8 font-headline text-4xl font-bold tracking-tight text-white md:text-6xl">
+                Ezekiel Mohr
+              </h2>
+              <p className="mb-6 text-lg leading-relaxed text-on-surface-variant">
+                Founded in Kingwood, Texas in 2025 by Ezekiel Mohr—a software developer with about four
+                years of experience building websites, mobile apps, and the systems behind them.
+              </p>
+              <p className="mb-6 text-lg leading-relaxed text-on-surface-variant">
+                As a senior web developer, he worked on projects under contracts connected to Amazon
+                Leo, Amazon&apos;s satellite internet program. That kind of work called for careful,
+                dependable engineering when getting it right really mattered.
+              </p>
+              <p className="text-lg leading-relaxed text-on-surface-variant">
+                Along the way he&apos;s shipped mobile apps, dabbled in some game development, and
+                built products from the ground up. Trashbox puts that mix of experience toward one
+                goal: helping more businesses get software and websites that actually lives up to
+                their name.
+              </p>
+            </TiltMedia>
           </Reveal>
         </section>
 

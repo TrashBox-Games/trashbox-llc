@@ -59,4 +59,16 @@ describe("TiltMedia", () => {
 
     expect(gsap.to).toHaveBeenCalled();
   });
+
+  it("supports an unframed variant for text content", () => {
+    render(
+      <TiltMedia framed={false}>
+        <p>Founder bio</p>
+      </TiltMedia>,
+    );
+
+    const frame = screen.getByTestId("tilt-media");
+    expect(frame.querySelector(".rounded-xl")).not.toBeInTheDocument();
+    expect(screen.getByText(/founder bio/i)).toBeInTheDocument();
+  });
 });

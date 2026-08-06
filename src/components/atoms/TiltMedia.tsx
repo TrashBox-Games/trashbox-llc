@@ -15,12 +15,15 @@ type TiltMediaProps = {
   className?: string;
   /** Max tilt in degrees on each axis. */
   maxTilt?: number;
+  /** When false, skips the media frame chrome for text/content blocks. */
+  framed?: boolean;
 };
 
 export function TiltMedia({
   children,
   className,
   maxTilt = 9,
+  framed = true,
 }: TiltMediaProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const tiltRef = useRef<HTMLDivElement>(null);
@@ -89,7 +92,10 @@ export function TiltMedia({
     >
       <div
         ref={tiltRef}
-        className="relative h-full w-full overflow-hidden rounded-xl bg-surface-container-low will-change-transform [transform-style:preserve-3d]"
+        className={cn(
+          "relative h-full w-full will-change-transform [transform-style:preserve-3d]",
+          framed && "overflow-hidden rounded-xl bg-surface-container-low",
+        )}
       >
         {children}
       </div>
