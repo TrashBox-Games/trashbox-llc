@@ -56,7 +56,23 @@ export function HomeScrollShowcase() {
       });
 
       const panelsEl = track.querySelectorAll<HTMLElement>("[data-panel]");
-      panelsEl.forEach((panel) => {
+      panelsEl.forEach((panel, index) => {
+        // First panel is already on-screen when the pin starts, so horizontal
+        // "left 75%" never crosses — reveal it as the section enters instead.
+        const scrollTrigger =
+          index === 0
+            ? {
+                trigger: section,
+                start: "top 75%",
+                once: true,
+              }
+            : {
+                trigger: panel,
+                containerAnimation: tween,
+                start: "left 75%",
+                once: true,
+              };
+
         gsap.fromTo(
           panel.querySelectorAll("[data-panel-item]"),
           { y: 36, opacity: 0 },
@@ -66,12 +82,7 @@ export function HomeScrollShowcase() {
             duration: 0.7,
             stagger: 0.08,
             ease: "reveal",
-            scrollTrigger: {
-              trigger: panel,
-              containerAnimation: tween,
-              start: "left 75%",
-              once: true,
-            },
+            scrollTrigger,
           },
         );
       });
