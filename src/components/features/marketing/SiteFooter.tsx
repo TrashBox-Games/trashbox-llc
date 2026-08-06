@@ -1,5 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import {
+  CONTACT_EMAIL,
+  CONTACT_MAILTO,
+  CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_TEL,
+} from "@/lib/sites";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
@@ -18,17 +24,17 @@ export function SiteFooter() {
           />
         </Link>
         <div className="flex flex-wrap justify-center gap-8">
-          <a className="font-body text-xs text-white/50 transition-colors hover:text-white" href="#">
-            Twitter
+          <a
+            className="font-body text-xs text-white/50 transition-colors hover:text-white"
+            href={CONTACT_MAILTO}
+          >
+            {CONTACT_EMAIL}
           </a>
-          <a className="font-body text-xs text-white/50 transition-colors hover:text-white" href="#">
-            GitHub
-          </a>
-          <a className="font-body text-xs text-white/50 transition-colors hover:text-white" href="#">
-            LinkedIn
-          </a>
-          <a className="font-body text-xs text-white/50 transition-colors hover:text-white" href="#">
-            Instagram
+          <a
+            className="font-body text-xs text-white/50 transition-colors hover:text-white"
+            href={CONTACT_PHONE_TEL}
+          >
+            {CONTACT_PHONE_DISPLAY}
           </a>
         </div>
         <p className="font-body text-center text-xs text-white/50 md:text-right">

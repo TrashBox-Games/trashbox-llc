@@ -5,6 +5,11 @@ export const API_DOCS_URL = "https://api.trashbox.io/docs";
 /** Production base URL for the Form API (matches the OpenAPI `servers` entry). */
 export const API_BASE_URL = "https://api.trashbox.io";
 
+export const CONTACT_EMAIL = "contact@trashbox.io";
+export const CONTACT_PHONE_DISPLAY = "714-586-1630";
+export const CONTACT_PHONE_TEL = "tel:+17145861630";
+export const CONTACT_MAILTO = `mailto:${CONTACT_EMAIL}`;
+
 export const PLATFORM_BASE = "/platform";
 export const PORTAL_BASE = "/portal";
 export const SERVICES_BASE = "/services";

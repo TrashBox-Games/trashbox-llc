@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { Reveal } from "@/components/atoms/Reveal";
+import {
+  CONTACT_MAILTO,
+  CONTACT_EMAIL,
+  CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_TEL,
+  SERVICE_PATHS,
+} from "@/lib/sites";
 
 export function HomeCta() {
   return (
@@ -10,19 +17,27 @@ export function HomeCta() {
           <br />
           the future.
         </h2>
-        <div className="flex flex-col items-center gap-8">
+        <div className="flex flex-col items-center gap-6">
           <Link
-            href="/services#contact"
+            href={SERVICE_PATHS.contact}
             className="kinetic-gradient monolith-shadow px-12 py-6 font-headline text-base font-bold tracking-widest text-on-primary-container uppercase transition-transform hover:scale-[1.05]"
           >
             Start Your Project
           </Link>
-          <a
-            className="font-label text-xs tracking-[0.4em] text-white/40 uppercase transition-colors hover:text-white"
-            href="mailto:contact@trashbox.io"
-          >
-            contact@trashbox.io
-          </a>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-8">
+            <a
+              className="font-label text-xs tracking-[0.4em] text-white/40 uppercase transition-colors hover:text-white"
+              href={CONTACT_MAILTO}
+            >
+              {CONTACT_EMAIL}
+            </a>
+            <a
+              className="font-label text-xs tracking-[0.4em] text-white/40 uppercase transition-colors hover:text-white"
+              href={CONTACT_PHONE_TEL}
+            >
+              {CONTACT_PHONE_DISPLAY}
+            </a>
+          </div>
         </div>
       </Reveal>
     </section>

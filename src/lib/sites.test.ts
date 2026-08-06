@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { settingsSectionPath } from "./portal-settings";
 import {
+  CONTACT_EMAIL,
+  CONTACT_MAILTO,
+  CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_TEL,
   PLATFORM_PATHS,
   PORTAL_PATHS,
   SERVICE_PATHS,
@@ -10,6 +14,10 @@ import {
 
 describe("sites helpers", () => {
   it("exposes platform, portal, and service paths", () => {
+    expect(CONTACT_EMAIL).toBe("contact@trashbox.io");
+    expect(CONTACT_MAILTO).toBe("mailto:contact@trashbox.io");
+    expect(CONTACT_PHONE_DISPLAY).toBe("714-586-1630");
+    expect(CONTACT_PHONE_TEL).toBe("tel:+17145861630");
     expect(PLATFORM_PATHS.features).toBe("/platform/features/");
     expect(SERVICE_PATHS.hub).toBe("/services");
     expect(SERVICE_PATHS.websites).toBe("/services/websites");

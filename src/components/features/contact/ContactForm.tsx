@@ -15,6 +15,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { submitContactForm } from "@/lib/contact-form";
+import {
+  CONTACT_EMAIL,
+  CONTACT_MAILTO,
+  CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_TEL,
+} from "@/lib/sites";
 
 const SERVICE_NONE = "__none__";
 
@@ -160,10 +166,24 @@ export function ContactForm() {
           {status === "error" && errorMessage && (
             <p className="text-sm text-red-300">{errorMessage}</p>
           )}
-          <div className="pt-8">
+          <div className="flex flex-col gap-6 pt-8 sm:flex-row sm:items-center sm:justify-between">
             <Button type="submit" size="xl" disabled={status === "sending"}>
               {status === "sending" ? "Sending…" : "Send message"}
             </Button>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <a
+                href={CONTACT_PHONE_TEL}
+                className="text-sm text-white/70 transition-colors hover:text-white"
+              >
+                {CONTACT_PHONE_DISPLAY}
+              </a>
+              <a
+                href={CONTACT_MAILTO}
+                className="text-sm text-white/50 transition-colors hover:text-white"
+              >
+                {CONTACT_EMAIL}
+              </a>
+            </div>
           </div>
         </form>
       </FadeIn>
