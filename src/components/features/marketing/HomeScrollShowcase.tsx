@@ -99,8 +99,8 @@ export function HomeScrollShowcase() {
       aria-label="What we build"
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-8 pt-12 md:px-12 md:pt-16">
-        <div className="mx-auto flex max-w-screen-2xl items-end justify-between gap-6">
-          <h2 className="font-headline text-3xl font-bold tracking-tight text-white md:text-5xl">
+        <div className="mx-auto flex max-w-screen-2xl flex-col items-center gap-6">
+          <h2 className="text-center font-headline text-3xl font-bold tracking-tight text-white md:text-5xl">
             What we build
           </h2>
           <div className="hidden h-px w-40 overflow-hidden bg-outline-variant/30 md:block">
