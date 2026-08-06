@@ -10,7 +10,7 @@ describe("HomeHero", () => {
     render(<HomeHero />);
 
     const heading = screen.getByRole("heading", { name: "Trashbox LLC" });
-    const tagline = screen.getByText(/Architecting the next generation/i);
+    const tagline = screen.getByText(/businesses of every size/i);
     const ctaGroup = screen
       .getByRole("link", { name: /Work With Us/i })
       .closest("[data-hero-item]");

@@ -67,8 +67,8 @@ export function HomeHero() {
           style={heroItemStyle}
           className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed font-light text-on-surface-variant md:text-xl"
         >
-          Architecting the next generation of digital tools through high-fidelity engineering and
-          editorial design systems.
+          Websites, apps, and systems for businesses of every size—built to look sharp, work hard,
+          and grow with you.
         </p>
         <div
           data-hero-item
