@@ -2,6 +2,7 @@ import Image from "next/image";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { MaterialIcon } from "@/components/atoms/MaterialIcon";
 import { Reveal } from "@/components/atoms/Reveal";
+import { TiltMedia } from "@/components/atoms/TiltMedia";
 import { ReadyWhenYouAre } from "@/components/features/marketing/ReadyWhenYouAre";
 
 const focusAreas = [
@@ -70,7 +71,7 @@ export function AboutPage() {
 
         <section className="mb-24 grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-20">
           <Reveal fade className="lg:col-span-5 lg:sticky lg:top-32">
-            <div className="relative aspect-[4/5] overflow-hidden bg-surface-container-low">
+            <TiltMedia className="relative aspect-[4/5]">
               <Image
                 src="/images/founder.png"
                 alt="Ezekiel Mohr"
@@ -79,7 +80,7 @@ export function AboutPage() {
                 sizes="(max-width: 1024px) 100vw, 40vw"
                 priority
               />
-            </div>
+            </TiltMedia>
           </Reveal>
 
           <Reveal fade className="lg:col-span-7" delay={0.06}>

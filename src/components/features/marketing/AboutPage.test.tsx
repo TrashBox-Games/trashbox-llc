@@ -13,6 +13,9 @@ describe("AboutPage", () => {
     expect(screen.getByText(/businesses of every size/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /ezekiel mohr/i })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: /ezekiel mohr/i })).toBeInTheDocument();
+    expect(screen.getByTestId("tilt-media")).toContainElement(
+      screen.getByRole("img", { name: /ezekiel mohr/i }),
+    );
     expect(screen.getAllByText(/kingwood/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/amazon leo/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /start a project/i })).toHaveAttribute(
