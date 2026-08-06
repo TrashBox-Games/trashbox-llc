@@ -2,12 +2,43 @@ import Image from "next/image";
 import Link from "next/link";
 import { FadeIn } from "@/components/atoms/FadeIn";
 import { Reveal } from "@/components/atoms/Reveal";
+import { TiltMedia } from "@/components/atoms/TiltMedia";
 import { ReadyWhenYouAre } from "@/components/features/marketing/ReadyWhenYouAre";
 import type { ServiceOffering } from "@/components/features/marketing/service-offerings";
+import { cn } from "@/lib/utils";
 
 type ServiceOfferingPageProps = {
   offering: ServiceOffering;
 };
+
+function OfferingImage({
+  src,
+  alt,
+  className,
+  sizes,
+  priority,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  sizes: string;
+  priority?: boolean;
+}) {
+  return (
+    <TiltMedia
+      className={cn("relative", className)}
+    >
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className="object-cover"
+        sizes={sizes}
+        priority={priority}
+      />
+    </TiltMedia>
+  );
+}
 
 function EngagementSections({ offering }: { offering: ServiceOffering }) {
   return (
@@ -92,31 +123,25 @@ function ShowcaseLayout({ offering }: { offering: ServiceOffering }) {
           </p>
         </FadeIn>
         <Reveal fade className="lg:col-span-6" delay={0.08}>
-          <div className="relative aspect-[16/10] overflow-hidden bg-surface-container-low">
-            <Image
-              src={offering.image.src}
-              alt={offering.image.alt}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              priority
-            />
-          </div>
+          <OfferingImage
+            src={offering.image.src}
+            alt={offering.image.alt}
+            className="aspect-[16/10]"
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            priority
+          />
         </Reveal>
       </header>
 
       <EngagementSections offering={offering} />
 
       <Reveal fade className="mt-32 lg:mt-40">
-        <div className="relative aspect-[21/9] overflow-hidden bg-surface-container-low md:aspect-[24/9]">
-          <Image
-            src={offering.image.src}
-            alt=""
-            fill
-            className="object-cover object-center opacity-80"
-            sizes="100vw"
-          />
-        </div>
+        <OfferingImage
+          src={offering.image.src}
+          alt=""
+          className="aspect-[21/9] md:aspect-[24/9] [&_img]:opacity-80"
+          sizes="100vw"
+        />
       </Reveal>
 
       <HighlightsRail offering={offering} />
@@ -170,15 +195,12 @@ function ProductLayout({ offering }: { offering: ServiceOffering }) {
 
       <section className="mt-32 grid grid-cols-1 items-center gap-12 lg:mt-40 lg:grid-cols-12 lg:gap-16">
         <Reveal fade className="lg:col-span-7">
-          <div className="relative aspect-[16/10] overflow-hidden bg-surface-container-low">
-            <Image
-              src={offering.image.src}
-              alt={offering.image.alt}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 58vw"
-            />
-          </div>
+          <OfferingImage
+            src={offering.image.src}
+            alt={offering.image.alt}
+            className="aspect-[16/10]"
+            sizes="(max-width: 1024px) 100vw, 58vw"
+          />
         </Reveal>
         <Reveal fade className="space-y-6 lg:col-span-5" delay={0.06}>
           <span className="block font-label text-xs tracking-[0.3em] text-primary/40 uppercase">
@@ -241,16 +263,13 @@ function FoundationLayout({ offering }: { offering: ServiceOffering }) {
 
       <section className="mt-24 grid grid-cols-1 items-start gap-12 lg:mt-32 lg:grid-cols-12 lg:gap-16">
         <Reveal fade className="lg:col-span-5 lg:sticky lg:top-32">
-          <div className="relative aspect-[4/5] overflow-hidden bg-surface-container-low">
-            <Image
-              src={offering.image.src}
-              alt={offering.image.alt}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 40vw"
-              priority
-            />
-          </div>
+          <OfferingImage
+            src={offering.image.src}
+            alt={offering.image.alt}
+            className="aspect-[4/5]"
+            sizes="(max-width: 1024px) 100vw, 40vw"
+            priority
+          />
         </Reveal>
         <div className="space-y-20 lg:col-span-7">
           <Reveal fade delay={0.06}>
@@ -321,16 +340,13 @@ function DeviceLayout({ offering }: { offering: ServiceOffering }) {
           ) : null}
         </FadeIn>
         <Reveal fade className="mx-auto w-full max-w-sm lg:col-span-5" delay={0.08}>
-          <div className="relative aspect-[3/4] overflow-hidden bg-surface-container-low">
-            <Image
-              src={offering.image.src}
-              alt={offering.image.alt}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 80vw, 30vw"
-              priority
-            />
-          </div>
+          <OfferingImage
+            src={offering.image.src}
+            alt={offering.image.alt}
+            className="aspect-[3/4]"
+            sizes="(max-width: 1024px) 80vw, 30vw"
+            priority
+          />
         </Reveal>
       </header>
 
@@ -373,16 +389,13 @@ function SignalLayout({ offering }: { offering: ServiceOffering }) {
       </FadeIn>
 
       <Reveal fade className="mt-16 md:mt-20">
-        <div className="relative aspect-[16/7] overflow-hidden bg-surface-container-low md:aspect-[21/8]">
-          <Image
-            src={offering.image.src}
-            alt={offering.image.alt}
-            fill
-            className="object-cover"
-            sizes="100vw"
-            priority
-          />
-        </div>
+        <OfferingImage
+          src={offering.image.src}
+          alt={offering.image.alt}
+          className="aspect-[16/7] md:aspect-[21/8]"
+          sizes="100vw"
+          priority
+        />
       </Reveal>
 
       <section className="mt-24 space-y-16 md:mt-32">

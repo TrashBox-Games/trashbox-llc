@@ -16,6 +16,10 @@ import {
 import { cn } from "@/lib/utils";
 import { gsap } from "@/lib/gsap-client";
 import { SERVICE_PATHS } from "@/lib/sites";
+import {
+  getForceHideSiteHeader,
+  subscribeForceHideSiteHeader,
+} from "@/lib/site-header-visibility";
 
 const serviceItems = [
   { href: SERVICE_PATHS.websites, label: "Websites" },
@@ -28,6 +32,9 @@ const serviceItems = [
     label: "Customer Relationship Management",
   },
 ] as const;
+
+const SCROLL_TOP_THRESHOLD = 12;
+const SCROLL_DELTA_THRESHOLD = 8;
 
 /** Match FadeIn/HomeHero: hide before paint so the header doesn't flash then snap. */
 const headerEnterStyle = {
@@ -46,8 +53,10 @@ function navLinkClass(active: boolean) {
 
 export function SiteHeader() {
   const pathname = usePathname() ?? "";
-  const navRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [forceHidden, setForceHidden] = useState(getForceHideSiteHeader);
   const [open, setOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
 
@@ -71,11 +80,35 @@ export function SiteHeader() {
   );
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    return subscribeForceHideSiteHeader(() => {
+      setForceHidden(getForceHideSiteHeader());
+    });
+  }, []);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > SCROLL_TOP_THRESHOLD);
+
+      if (open || y <= SCROLL_TOP_THRESHOLD) {
+        setHidden(false);
+        lastY = y;
+        return;
+      }
+
+      const delta = y - lastY;
+      if (Math.abs(delta) < SCROLL_DELTA_THRESHOLD) return;
+
+      setHidden(delta > 0);
+      lastY = y;
+    };
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [open]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -94,9 +127,17 @@ export function SiteHeader() {
   }
 
   const servicesActive = pathname.startsWith("/services");
+  const headerHidden = (hidden || forceHidden) && !open;
 
   return (
-    <nav ref={navRef} className="fixed top-0 z-50 w-full" style={headerEnterStyle}>
+    <nav
+      className={cn(
+        "fixed top-0 z-50 w-full transition-transform duration-300 ease-out",
+        headerHidden ? "-translate-y-full" : "translate-y-0",
+      )}
+      data-hidden={headerHidden ? "true" : "false"}
+    >
+      <div ref={navRef} style={headerEnterStyle}>
       <div
         className={cn(
           "border-b backdrop-blur-xl transition-colors duration-300",
@@ -229,6 +270,7 @@ export function SiteHeader() {
           </div>
         </div>
       )}
+      </div>
     </nav>
   );
 }

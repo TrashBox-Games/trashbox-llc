@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { setForceHideSiteHeader } from "@/lib/site-header-visibility";
 import { SiteHeader } from "./SiteHeader";
 
 vi.mock("@gsap/react", () => ({
@@ -14,12 +15,55 @@ describe("SiteHeader", () => {
   it("hides before paint so the entrance animation does not flash then snap", () => {
     render(<SiteHeader />);
 
-    expect(screen.getByRole("navigation")).toHaveStyle({
+    expect(screen.getByRole("navigation")).toHaveAttribute("data-hidden", "false");
+    expect(screen.getByRole("navigation").firstElementChild).toHaveStyle({
       opacity: "0",
       transform: "translateY(-16px)",
     });
   });
 
+  it("hides on scroll down and returns on scroll up", () => {
+    let scrollY = 0;
+    Object.defineProperty(window, "scrollY", {
+      configurable: true,
+      get: () => scrollY,
+    });
+
+    render(<SiteHeader />);
+    const nav = screen.getByRole("navigation");
+
+    act(() => {
+      scrollY = 40;
+      window.dispatchEvent(new Event("scroll"));
+    });
+    act(() => {
+      scrollY = 200;
+      window.dispatchEvent(new Event("scroll"));
+    });
+    expect(nav).toHaveAttribute("data-hidden", "true");
+
+    act(() => {
+      scrollY = 60;
+      window.dispatchEvent(new Event("scroll"));
+    });
+    expect(nav).toHaveAttribute("data-hidden", "false");
+  });
+
+  it("stays hidden while a page section forces the header away", () => {
+    setForceHideSiteHeader(false);
+    render(<SiteHeader />);
+    const nav = screen.getByRole("navigation");
+
+    act(() => {
+      setForceHideSiteHeader(true);
+    });
+    expect(nav).toHaveAttribute("data-hidden", "true");
+
+    act(() => {
+      setForceHideSiteHeader(false);
+    });
+    expect(nav).toHaveAttribute("data-hidden", "false");
+  });
   it("opens a Services dropdown with offering and CRM links", async () => {
     const user = userEvent.setup();
     render(<SiteHeader />);
