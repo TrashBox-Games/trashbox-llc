@@ -6,21 +6,21 @@ import { useHashScroll } from "@/hooks/use-hash-scroll";
 
 const aboutCards = [
   {
-    icon: "terminal",
-    title: "Kinetic Codebases",
-    body: "Lightweight, performant, and infinitely scalable architectures built with modern tech stacks like Rust, Go, and React.",
+    icon: "language",
+    title: "Sites that convert",
+    body: "Marketing sites and launches that look sharp, load fast, and make it easy for customers to take the next step.",
     border: "border-primary",
   },
   {
-    icon: "auto_awesome",
-    title: "Intelligent Motion",
-    body: "We utilize motion not as decoration, but as a functional guide for user attention and cognitive flow.",
+    icon: "devices",
+    title: "Products people use",
+    body: "Web and mobile apps built around real workflows—so your team and customers get value on day one, not after a rewrite.",
     border: "border-outline-variant",
   },
   {
-    icon: "token",
-    title: "Editorial Design",
-    body: "Precision typography and intentional white space that turns software into a premium editorial experience.",
+    icon: "hub",
+    title: "Systems that keep up",
+    body: "The APIs, integrations, and infrastructure behind the product—steady enough to ship once, flexible enough to grow with you.",
     border: "border-outline-variant",
   },
 ] as const;
@@ -34,16 +34,17 @@ export function HomeAbout() {
         <div className="grid grid-cols-1 items-start gap-24 lg:grid-cols-2">
           <Reveal fade className="lg:sticky lg:top-32">
             <h2 className="mb-8 font-headline text-5xl font-bold tracking-tight text-white md:text-7xl">
-              Engineering
+              Software that
               <br />
-              <span className="text-outline-variant">Elegance.</span>
+              <span className="text-outline-variant">earns its keep.</span>
             </h2>
             <p className="mb-12 text-xl leading-relaxed text-on-surface-variant">
-              We don&apos;t just build apps. We construct digital environments that respect the
-              user&apos;s intelligence and the machine&apos;s precision.
+              Trashbox helps businesses show up online with websites, apps, and systems that feel
+              intentional—whether you need a finished launch or a partner who keeps shipping with
+              you.
             </p>
             <div className="space-y-6">
-              {["Product Strategy", "UI/UX Systems", "AI Integration"].map((label, i) => (
+              {["One-off builds", "Ongoing development", "AI when it helps"].map((label, i) => (
                 <Reveal fade key={label} delay={i * 0.08}>
                   <div className="flex items-center gap-4 text-white">
                     <span className="font-label text-[10px] text-outline">

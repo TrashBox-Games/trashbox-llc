@@ -10,7 +10,7 @@ describe("HomePage", () => {
     render(<HomePage />);
 
     expect(screen.getByRole("heading", { name: "Trashbox LLC" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /engineering/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /software that/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /let.s build/i })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /selected outputs/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/aura capital/i)).not.toBeInTheDocument();

@@ -6,12 +6,17 @@ vi.mock("@gsap/react", () => ({
 }));
 
 describe("HomeAbout", () => {
-  it("renders the about section with approach cards", () => {
+  it("renders marketing-focused about copy and offering cards", () => {
     render(<HomeAbout />);
 
-    expect(screen.getByRole("heading", { name: /engineering/i })).toBeInTheDocument();
-    expect(screen.getByText(/kinetic codebases/i)).toBeInTheDocument();
-    expect(screen.getByText(/intelligent motion/i)).toBeInTheDocument();
-    expect(screen.getByText(/editorial design/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /software that/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/earns its keep/i)).toBeInTheDocument();
+    expect(screen.getByText(/sites that convert/i)).toBeInTheDocument();
+    expect(screen.getByText(/products people use/i)).toBeInTheDocument();
+    expect(screen.getByText(/systems that keep up/i)).toBeInTheDocument();
+    expect(screen.getByText(/one-off builds/i)).toBeInTheDocument();
+    expect(screen.getByText(/ongoing development/i)).toBeInTheDocument();
   });
 });
