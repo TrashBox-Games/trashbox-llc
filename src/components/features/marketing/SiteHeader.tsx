@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
-import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { MenuToggleIcon } from "@/components/atoms/MenuToggleIcon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -138,138 +138,169 @@ export function SiteHeader() {
       data-hidden={headerHidden ? "true" : "false"}
     >
       <div ref={navRef} style={headerEnterStyle}>
-      <div
-        className={cn(
-          "border-b backdrop-blur-xl transition-colors duration-300",
-          scrolled
-            ? "bg-background/75 border-white/10"
-            : "border-transparent bg-transparent",
-        )}
-      >
-        <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-5 md:px-8 md:py-6">
-          <Link
-            href="/"
-            className="inline-flex items-center"
-            aria-label="Trashbox LLC home"
-          >
-            <Image
-              src="/images/trashbox-logo-white.png"
-              alt="Trashbox LLC logo"
-              width={160}
-              height={40}
-              className="h-9 md:h-10"
-              style={{ width: "auto" }}
-              priority
-            />
-          </Link>
-
-          <div className="hidden items-center gap-10 md:flex md:gap-12">
-            <Link href="/" className={navLinkClass(isActive("/", true))}>
-              Home
-            </Link>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={cn(navLinkClass(servicesActive), "outline-none")}
-              >
-                Services
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="min-w-64 border-white/10 bg-surface-container-low"
-              >
-                {serviceItems.map((item) => (
-                  <DropdownMenuItem key={item.label} asChild>
-                    <Link
-                      href={item.href}
-                      className="font-headline text-sm uppercase tracking-tight"
-                    >
-                      {item.label}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Link href="/about" className={navLinkClass(isActive("/about"))}>
-              About
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button asChild className="hidden active:scale-95 md:inline-flex">
-              <Link href={SERVICE_PATHS.contact}>Contact</Link>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="text-white md:hidden"
-              aria-expanded={open}
-              aria-label={open ? "Close menu" : "Open menu"}
-              onClick={() => setOpen((v) => !v)}
-            >
-              <MaterialIcon
-                name={open ? "close" : "menu"}
-                className="text-[1.5rem]!"
-              />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {open && (
-        <div className="bg-background/95 fixed inset-0 top-[73px] z-40 px-6 pt-6 pb-10 md:hidden">
-          <div className="flex flex-col gap-6">
+        <div
+          className={cn(
+            "border-b backdrop-blur-xl transition-colors duration-300",
+            scrolled && !open
+              ? "bg-background/75 border-white/10"
+              : "border-transparent bg-transparent",
+            open && "bg-background",
+          )}
+        >
+          <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-5 md:px-8 md:py-6">
             <Link
               href="/"
-              className={navLinkClass(isActive("/", true))}
-              onClick={() => setOpen(false)}
+              className="inline-flex items-center"
+              aria-label="Trashbox LLC home"
             >
-              Home
+              <Image
+                src="/images/trashbox-logo-white.png"
+                alt="Trashbox LLC logo"
+                width={160}
+                height={40}
+                className="h-9 md:h-10"
+                style={{ width: "auto" }}
+                priority
+              />
             </Link>
 
-            <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                className={cn(navLinkClass(servicesActive), "text-left")}
-                aria-expanded={servicesOpen}
-                onClick={() => setServicesOpen((v) => !v)}
-              >
-                Services
-              </button>
-              {servicesOpen && (
-                <div className="flex flex-col gap-3 border-l border-white/10 pl-4">
+            <div className="hidden items-center gap-10 md:flex md:gap-12">
+              <Link href="/" className={navLinkClass(isActive("/", true))}>
+                Home
+              </Link>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className={cn(navLinkClass(servicesActive), "outline-none")}
+                >
+                  Services
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="bg-surface-container-low min-w-64 border-white/10"
+                >
                   {serviceItems.map((item) => (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className="font-headline text-sm uppercase tracking-tight text-white/60 transition-colors hover:text-white"
-                      onClick={() => setOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
+                    <DropdownMenuItem key={item.label} asChild>
+                      <Link
+                        href={item.href}
+                        className="font-headline text-sm tracking-tight uppercase"
+                      >
+                        {item.label}
+                      </Link>
+                    </DropdownMenuItem>
                   ))}
-                </div>
-              )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Link href="/about" className={navLinkClass(isActive("/about"))}>
+                About
+              </Link>
             </div>
 
-            <Link
-              href="/about"
-              className={navLinkClass(isActive("/about"))}
-              onClick={() => setOpen(false)}
-            >
-              About
-            </Link>
-
-            <Button asChild className="mt-4">
-              <Link href={SERVICE_PATHS.contact} onClick={() => setOpen(false)}>
-                Contact
-              </Link>
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button asChild className="hidden active:scale-95 md:inline-flex">
+                <Link href={SERVICE_PATHS.contact}>Contact</Link>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="text-white md:hidden"
+                aria-expanded={open}
+                aria-label={open ? "Close menu" : "Open menu"}
+                onClick={() => setOpen((v) => !v)}
+              >
+                <MenuToggleIcon open={open} />
+              </Button>
+            </div>
           </div>
         </div>
-      )}
+
+        <div
+          data-mobile-menu
+          data-open={open ? "true" : "false"}
+          aria-hidden={!open}
+          className={cn(
+            "grid bg-background transition-[grid-template-rows] duration-300 ease-out md:hidden",
+            open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          )}
+        >
+          <div
+            className={cn(
+              "min-h-0 overflow-hidden transition-opacity duration-300 ease-out",
+              open ? "opacity-100" : "opacity-0",
+            )}
+          >
+            <div
+              className={cn(
+                "flex flex-col gap-6 px-6 py-6 transition-transform duration-300 ease-out",
+                open ? "translate-y-0" : "-translate-y-2",
+              )}
+            >
+              <Link
+                href="/"
+                tabIndex={open ? undefined : -1}
+                className={navLinkClass(isActive("/", true))}
+                onClick={() => setOpen(false)}
+              >
+                Home
+              </Link>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  tabIndex={open ? undefined : -1}
+                  className={cn(navLinkClass(servicesActive), "text-left")}
+                  aria-expanded={servicesOpen}
+                  onClick={() => setServicesOpen((v) => !v)}
+                >
+                  Services
+                </button>
+                <div
+                  className={cn(
+                    "grid transition-[grid-template-rows] duration-200 ease-out",
+                    servicesOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                  )}
+                >
+                  <div className="min-h-0 overflow-hidden">
+                    <div className="flex flex-col gap-3 pl-4">
+                      {serviceItems.map((item) => (
+                        <Link
+                          key={item.label}
+                          href={item.href}
+                          tabIndex={open && servicesOpen ? undefined : -1}
+                          className="font-headline text-sm tracking-tight text-white/60 uppercase transition-colors hover:text-white"
+                          onClick={() => setOpen(false)}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Link
+                href="/about"
+                tabIndex={open ? undefined : -1}
+                className={navLinkClass(isActive("/about"))}
+                onClick={() => setOpen(false)}
+              >
+                About
+              </Link>
+
+              <Button asChild className="mt-4">
+                <Link
+                  href={SERVICE_PATHS.contact}
+                  tabIndex={open ? undefined : -1}
+                  onClick={() => setOpen(false)}
+                >
+                  Contact
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </nav>
   );

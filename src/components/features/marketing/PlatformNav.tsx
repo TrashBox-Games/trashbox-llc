@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { MaterialIcon } from "@/components/atoms/MaterialIcon";
+import { MenuToggleIcon } from "@/components/atoms/MenuToggleIcon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PLATFORM_BASE, PLATFORM_PATHS, PORTAL_PATHS } from "@/lib/sites";
@@ -62,16 +62,14 @@ export function PlatformNav() {
   }, [open]);
 
   return (
-    <nav
-      className="fixed top-0 z-50 w-full"
-      aria-label="Trashbox CRM"
-    >
+    <nav className="fixed top-0 z-50 w-full" aria-label="Trashbox CRM">
       <div
         className={cn(
           "border-b backdrop-blur-xl transition-colors duration-300",
-          scrolled
+          scrolled && !open
             ? "bg-background/75 border-white/10"
             : "border-transparent bg-transparent",
+          open && "bg-background",
         )}
       >
         <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-5 md:px-8 md:py-6">
@@ -122,22 +120,38 @@ export function PlatformNav() {
               aria-label={open ? "Close menu" : "Open menu"}
               onClick={() => setOpen((v) => !v)}
             >
-              <MaterialIcon
-                name={open ? "close" : "menu"}
-                className="text-[1.5rem]!"
-              />
+              <MenuToggleIcon open={open} />
             </Button>
           </div>
         </div>
       </div>
 
-      {open && (
-        <div className="bg-background/95 fixed inset-0 top-[73px] z-40 px-6 pt-6 pb-10 md:hidden">
-          <div className="flex flex-col gap-6">
+      <div
+        data-mobile-menu
+        data-open={open ? "true" : "false"}
+        aria-hidden={!open}
+        className={cn(
+          "grid bg-background transition-[grid-template-rows] duration-300 ease-out md:hidden",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div
+          className={cn(
+            "min-h-0 overflow-hidden transition-opacity duration-300 ease-out",
+            open ? "opacity-100" : "opacity-0",
+          )}
+        >
+          <div
+            className={cn(
+              "flex flex-col gap-6 px-6 py-6 transition-transform duration-300 ease-out",
+              open ? "translate-y-0" : "-translate-y-2",
+            )}
+          >
             {platformLinks.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
+                tabIndex={open ? undefined : -1}
                 className={linkClass(
                   isLinkActive(
                     pathname,
@@ -151,13 +165,17 @@ export function PlatformNav() {
               </Link>
             ))}
             <Button asChild className="mt-4">
-              <Link href={PORTAL_PATHS.login} onClick={() => setOpen(false)}>
+              <Link
+                href={PORTAL_PATHS.login}
+                tabIndex={open ? undefined : -1}
+                onClick={() => setOpen(false)}
+              >
                 Login
               </Link>
             </Button>
           </div>
         </div>
-      )}
+      </div>
     </nav>
   );
 }

@@ -56,11 +56,22 @@ describe("PlatformNav", () => {
     const user = userEvent.setup();
     render(<PlatformNav />);
 
+    const panel = screen
+      .getByRole("navigation")
+      .querySelector("[data-mobile-menu]");
+    expect(panel).toBeTruthy();
+    expect(panel).toHaveAttribute("data-open", "false");
+
     await user.click(screen.getByRole("button", { name: /open menu/i }));
 
     expect(
       screen.getByRole("button", { name: /close menu/i }),
     ).toBeInTheDocument();
+    expect(panel).toHaveAttribute("data-open", "true");
+    expect(panel).toHaveClass("bg-background");
+    expect(panel?.className).not.toMatch(/border-white/);
+    expect(panel).not.toHaveClass("fixed");
+    expect(panel).not.toHaveClass("inset-0");
     expect(
       screen.getAllByRole("link", { name: /^features$/i }).length,
     ).toBeGreaterThanOrEqual(1);
@@ -73,6 +84,8 @@ describe("PlatformNav", () => {
     usePathname.mockReturnValue(null);
 
     expect(() => render(<PlatformNav />)).not.toThrow();
-    expect(screen.getByRole("link", { name: /^features$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /^features$/i }),
+    ).toBeInTheDocument();
   });
 });

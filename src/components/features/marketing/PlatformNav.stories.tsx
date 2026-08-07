@@ -49,3 +49,17 @@ export const PricingActive: Story = {
     },
   },
 };
+
+export const MobileMenuOpen: Story = {
+  parameters: {
+    viewport: {
+      defaultViewport: "mobile1",
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const button = canvasElement.querySelector(
+      'button[aria-label="Open menu"]',
+    ) as HTMLButtonElement | null;
+    button?.click();
+  },
+};

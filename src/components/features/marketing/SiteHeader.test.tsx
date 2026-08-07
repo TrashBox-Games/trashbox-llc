@@ -15,7 +15,10 @@ describe("SiteHeader", () => {
   it("hides before paint so the entrance animation does not flash then snap", () => {
     render(<SiteHeader />);
 
-    expect(screen.getByRole("navigation")).toHaveAttribute("data-hidden", "false");
+    expect(screen.getByRole("navigation")).toHaveAttribute(
+      "data-hidden",
+      "false",
+    );
     expect(screen.getByRole("navigation").firstElementChild).toHaveStyle({
       opacity: "0",
       transform: "translateY(-16px)",
@@ -76,10 +79,9 @@ describe("SiteHeader", () => {
     expect(
       screen.getByRole("menuitem", { name: /^web applications$/i }),
     ).toHaveAttribute("href", "/services/web-applications");
-    expect(screen.getByRole("menuitem", { name: /^systems$/i })).toHaveAttribute(
-      "href",
-      "/services/systems",
-    );
+    expect(
+      screen.getByRole("menuitem", { name: /^systems$/i }),
+    ).toHaveAttribute("href", "/services/systems");
     expect(
       screen.getByRole("menuitem", { name: /^mobile apps$/i }),
     ).toHaveAttribute("href", "/services/mobile-apps");
@@ -99,5 +101,31 @@ describe("SiteHeader", () => {
     expect(
       screen.queryByRole("link", { name: /^crm$/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it("opens a mobile menu with a content-sized background panel", async () => {
+    const user = userEvent.setup();
+    render(<SiteHeader />);
+
+    const panel = screen
+      .getByRole("navigation")
+      .querySelector("[data-mobile-menu]");
+    expect(panel).toBeTruthy();
+    expect(panel).toHaveAttribute("data-open", "false");
+
+    await user.click(screen.getByRole("button", { name: /open menu/i }));
+
+    expect(panel).toHaveAttribute("data-open", "true");
+    expect(panel).toHaveClass("bg-background");
+    expect(panel?.className).not.toMatch(/border-white/);
+    expect(panel).not.toHaveClass("fixed");
+    expect(panel).not.toHaveClass("inset-0");
+
+    expect(
+      screen.getAllByRole("link", { name: /^about$/i }).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByRole("link", { name: /^contact$/i }).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });
