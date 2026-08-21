@@ -50,7 +50,7 @@ For GitHub Pages, set the same names as repository **Secrets** (used by `.github
 | --- | --- |
 | `/` | Home |
 | `/apps` | Apps portfolio |
-| `/apps/:app/:page` | App markdown pages (e.g. `/apps/bmplayer/privacy`) |
+| `/apps/:app/:page` | App markdown pages (e.g. `/apps/bmplayer/privacy`, `/apps/calorietracker/privacy`) |
 | `/services` | Services + contact form |
 | `/platform` | Platform hub (Overview / Features / Pricing / API / Documentation) |
 | `/platform/features` | Platform features |

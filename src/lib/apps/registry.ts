@@ -20,6 +20,13 @@ export const appPageMeta: Record<string, Partial<Record<string, AppPageMeta>>> =
         "Privacy policy for BMPlayer, including account data, AdMob, and your rights.",
     },
   },
+  calorietracker: {
+    privacy: {
+      title: "Calorie & Protein Tracker — Privacy Policy",
+      description:
+        "Privacy policy for Calorie & Protein Tracker. The app stores food logs on your device and collects nothing.",
+    },
+  },
 };
 
 const contentDir = join(process.cwd(), "src/content/apps");
