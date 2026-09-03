@@ -31,6 +31,26 @@ export function pendingConfirmPath(email: string): string {
   return `${PORTAL_PATHS.confirm}?email=${encodeURIComponent(normalized)}`;
 }
 
+/** Read `email` from a location search string (`?email=` or raw query). */
+export function emailFromSearchString(search: string): string {
+  const query = search.startsWith("?") ? search.slice(1) : search;
+  return new URLSearchParams(query).get("email")?.trim() ?? "";
+}
+
+function pathWithEmail(path: string, email?: string): string {
+  const trimmed = email?.trim();
+  if (!trimmed) return path;
+  return `${path}?email=${encodeURIComponent(trimmed)}`;
+}
+
+export function portalSignupPath(email?: string): string {
+  return pathWithEmail(PORTAL_PATHS.signup, email);
+}
+
+export function portalLoginPath(email?: string): string {
+  return pathWithEmail(PORTAL_PATHS.login, email);
+}
+
 export function setPendingSignupPassword(
   email: string,
   password: string,

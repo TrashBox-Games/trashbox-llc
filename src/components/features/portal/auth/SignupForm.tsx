@@ -1,17 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { AuthShell } from "@/components/features/portal/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import {
+  emailFromSearchString,
   pendingConfirmPath,
+  portalLoginPath,
   setPendingSignupPassword,
 } from "@/lib/portal-auth";
-import { PORTAL_PATHS } from "@/lib/sites";
 
 function redirect(path: string) {
   window.location.assign(path);
@@ -24,6 +25,11 @@ export function SignupForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const fromQuery = emailFromSearchString(window.location.search);
+    if (fromQuery) setEmail(fromQuery);
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -104,7 +110,7 @@ export function SignupForm() {
 
       <p className="text-on-surface-variant text-sm">
         Already have an account?{" "}
-        <Link href={PORTAL_PATHS.login} className="text-white underline">
+        <Link href={portalLoginPath(email)} className="text-white underline">
           Sign in
         </Link>
       </p>

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StubAuthProvider } from "@/lib/auth";
@@ -10,6 +10,31 @@ describe("LoginForm", () => {
   beforeEach(() => {
     signInWithPassword.mockReset();
     signInWithPassword.mockResolvedValue(undefined);
+    vi.stubGlobal("location", {
+      ...window.location,
+      search: "",
+    });
+  });
+
+  it("prefills email and keeps it on the signup link", async () => {
+    vi.stubGlobal("location", {
+      ...window.location,
+      search: "?email=Owner%40Example.com",
+    });
+    render(
+      <StubAuthProvider
+        value={{ status: "signedOut", configured: true, signInWithPassword }}
+      >
+        <LoginForm />
+      </StubAuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/email/i)).toHaveValue("Owner@Example.com");
+    });
+    expect(
+      screen.getByRole("link", { name: /sign up/i }).getAttribute("href"),
+    ).toMatch(/email=Owner%40Example.com/);
   });
 
   it("signs in with email and password", async () => {

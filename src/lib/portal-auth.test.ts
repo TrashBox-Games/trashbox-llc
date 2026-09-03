@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearPendingSignupPassword,
+  emailFromSearchString,
   getPendingSignupPassword,
   isPortalAuthPath,
   pendingConfirmPath,
+  portalLoginPath,
+  portalSignupPath,
   setPendingSignupPassword,
 } from "./portal-auth";
 
@@ -30,6 +33,31 @@ describe("pendingConfirmPath", () => {
     expect(pendingConfirmPath("Owner@Example.com")).toBe(
       "/portal/confirm/?email=owner%40example.com",
     );
+  });
+});
+
+describe("emailFromSearchString", () => {
+  it("reads a trimmed email query", () => {
+    expect(emailFromSearchString("?email=Owner%40Example.com")).toBe(
+      "Owner@Example.com",
+    );
+    expect(emailFromSearchString("")).toBe("");
+  });
+});
+
+describe("portal auth paths with email", () => {
+  it("appends email when present", () => {
+    expect(portalSignupPath("Owner@Example.com")).toBe(
+      "/portal/signup/?email=Owner%40Example.com",
+    );
+    expect(portalLoginPath("a@b.com")).toBe(
+      "/portal/login/?email=a%40b.com",
+    );
+  });
+
+  it("returns the bare path without an email", () => {
+    expect(portalSignupPath()).toBe("/portal/signup/");
+    expect(portalLoginPath("  ")).toBe("/portal/login/");
   });
 });
 

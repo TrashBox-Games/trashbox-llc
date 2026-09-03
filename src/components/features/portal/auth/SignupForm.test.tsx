@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StubAuthProvider } from "@/lib/auth";
@@ -14,7 +14,33 @@ describe("SignupForm", () => {
     sessionStorage.clear();
     vi.stubGlobal("location", {
       ...window.location,
+      search: "",
       assign,
+    });
+  });
+
+  it("prefills email from the query string", async () => {
+    vi.stubGlobal("location", {
+      ...window.location,
+      search: "?email=Owner%40Example.com",
+      assign,
+    });
+    render(
+      <StubAuthProvider
+        value={{
+          status: "signedOut",
+          configured: true,
+          signUpWithPassword,
+        }}
+      >
+        <SignupForm />
+      </StubAuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^email$/i)).toHaveValue(
+        "Owner@Example.com",
+      );
     });
   });
 
